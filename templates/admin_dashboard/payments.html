@@ -1,0 +1,803 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="payment-page">
+  <div class="payment-container">
+
+    <div class="payment-header d-flex flex-wrap justify-content-between align-items-center">
+      <div>
+        <h2><i class="bi bi-credit-card me-2"></i>Complete Payment</h2>
+        <p>Secure payment for your farm management subscription</p>
+      </div>
+      <span class="badge">
+        <i class="bi bi-shield-check me-1"></i>Secure
+      </span>
+    </div>
+
+    <div class="payment-grid">
+
+      <div class="payment-left">
+
+        <div>
+          <div class="section-title">
+            <i class="bi bi-wallet2"></i>
+            Your Saved Cards
+            <span style="font-size: 12px; color: #6B7A6B; font-weight: 400; margin-left: auto;">
+              {{ saved_cards|length }} card{{ saved_cards|length|pluralize }}
+            </span>
+          </div>
+
+          <div class="cards-grid" id="cardsContainer">
+            {% for card in saved_cards %}
+            <label class="card-item {% if forloop.first %}active{% endif %}" for="card_{{ card.id }}">
+              <input type="radio" name="savedCard" id="card_{{ card.id }}" value="{{ card.id }}" {% if forloop.first %}checked{% endif %}>
+              <span class="card-icon">{{ card.icon|default:"💳" }}</span>
+              <span class="card-number">•••• {{ card.last4 }}</span>
+              <span class="card-expiry">Expires {{ card.expiry }}</span>
+              {% if card.is_default %}
+              <span class="card-default">Default</span>
+              {% endif %}
+              <span class="card-check"><i class="bi bi-check-circle-fill"></i></span>
+            </label>
+            {% empty %}
+            <div class="add-card-btn" style="grid-column: 1 / -1;">
+              <i class="bi bi-plus-circle"></i>
+              <span>No saved cards. Add a new card</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">
+            <i class="bi bi-grid"></i>
+            Payment Methods
+          </div>
+
+          <div class="method-grid" id="methodContainer">
+            {% for method in payment_methods %}
+            <label class="method-item {% if forloop.first %}active{% endif %}" for="method_{{ method.id }}">
+              <input type="radio" name="paymentMethod" id="method_{{ method.id }}" value="{{ method.id }}" {% if forloop.first %}checked{% endif %}>
+              <span class="method-icon">{{ method.icon }}</span>
+              <span class="method-name">{{ method.name }}</span>
+              <span class="method-check"><i class="bi bi-check-circle-fill"></i></span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">
+            <i class="bi bi-receipt"></i>
+            Order Summary
+          </div>
+
+          <div class="order-summary">
+            <div class="order-item">
+              <span class="label"><i class="bi bi-box-seam me-2"></i>Plan</span>
+              <span class="value">{{ plan_name|default:"Premium Farm Management" }}</span>
+            </div>
+            <div class="order-item">
+              <span class="label"><i class="bi bi-calendar3 me-2"></i>Billing Period</span>
+              <span class="value">{{ billing_period|default:"Monthly" }}</span>
+            </div>
+            <div class="order-item">
+              <span class="label"><i class="bi bi-person me-2"></i>Account</span>
+              <span class="value">{{ user.full_name }}</span>
+            </div>
+            <div class="order-total">
+              <span class="label"><i class="bi bi-currency-naira me-2"></i>Total Due</span>
+              <span class="value">₦{{ amount|default:"49,000.00" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="pay-btn" id="payBtn">
+          <span class="btn-text">
+            <i class="bi bi-lock me-2"></i>
+            Pay ₦{{ amount|default:"49,000.00" }}
+          </span>
+          <span class="spinner">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Processing...
+          </span>
+        </button>
+
+        <div class="security-badge">
+          <i class="bi bi-shield-check"></i>
+          <span>Your payment is secured with 256-bit encryption</span>
+          <i class="bi bi-patch-check"></i>
+        </div>
+      </div>
+
+      <div class="payment-right">
+        <div>
+          <div class="section-title">
+            <i class="bi bi-clock-history"></i>
+            Payment History
+            <span style="font-size: 12px; color: #6B7A6B; font-weight: 400; margin-left: auto;">
+              {{ transactions|length }} transaction{{ transactions|length|pluralize }}
+            </span>
+          </div>
+
+          <div class="table-controls">
+            <select id="filterStatus">
+              <option value="all">All Status</option>
+              <option value="success">Successful</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+            </select>
+            <input type="text" id="searchTransaction" placeholder="🔍 Search transactions..." style="flex: 1;">
+            <select id="sortBy">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount_high">Highest Amount</option>
+              <option value="amount_low">Lowest Amount</option>
+            </select>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="transactions-table" id="transactionsTable">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsBody">
+                {% for transaction in transactions %}
+                <tr data-status="{{ transaction.status }}" data-amount="{{ transaction.amount }}" data-date="{{ transaction.date|date:'Y-m-d' }}">
+                  <td><strong>#{{ transaction.reference|truncatechars:10 }}</strong></td>
+                  <td>{{ transaction.date|date:"M d, Y H:i" }}</td>
+                  <td>₦{{ transaction.amount|floatformat:2 }}</td>
+                  <td>
+                    <span class="status status-{{ transaction.status }}">
+                      {{ transaction.status|title }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="download-btn" onclick="downloadReceipt('{{ transaction.reference }}')" title="Download Receipt">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 30px; color: #6B7A6B;">
+                    <i class="bi bi-inbox" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+                    No transactions yet
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .payment-page {
+    background: #F5F7F2;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .payment-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .payment-header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+    padding: 28px 32px;
+    border-radius: 16px 16px 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .payment-header h2 {
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .payment-header p {
+    color: rgba(255,255,255,0.85);
+    font-size: 14px;
+    margin: 4px 0 0 0;
+  }
+
+  .payment-header .badge {
+    background: #D4AF37;
+    color: #1B5E20;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+  }
+
+  .payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    background: #FFFFFF;
+    padding: 30px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+
+  .payment-left {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .payment-right {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1B5E20;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title i {
+    color: #D4AF37;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .card-item {
+    background: #FFFFFF;
+    border: 2px solid #E8EDE8;
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .card-item:hover {
+    border-color: #D4AF37;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(212,175,55,0.15);
+  }
+
+  .card-item.active {
+    border-color: #D4AF37;
+    background: rgba(212,175,55,0.04);
+  }
+
+  .card-item input[type="radio"] {
+    display: none;
+  }
+
+  .card-item .card-icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .card-item .card-number {
+    font-weight: 600;
+    color: #1B5E20;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+
+  .card-item .card-expiry {
+    font-size: 12px;
+    color: #6B7A6B;
+  }
+
+  .card-item .card-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #D4AF37;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .card-item.active .card-check {
+    opacity: 1;
+  }
+
+  .card-item .card-default {
+    background: #1B5E20;
+    color: #FFFFFF;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .add-card-btn {
+    border: 2px dashed #C8D6C8;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #FAFCFA;
+    color: #6B7A6B;
+  }
+
+  .add-card-btn:hover {
+    border-color: #D4AF37;
+    color: #1B5E20;
+    background: rgba(212,175,55,0.04);
+  }
+
+  .add-card-btn i {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .method-item {
+    background: #FFFFFF;
+    border: 2px solid #E8EDE8;
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .method-item:hover {
+    border-color: #D4AF37;
+    transform: translateY(-2px);
+  }
+
+  .method-item.active {
+    border-color: #D4AF37;
+    background: rgba(212,175,55,0.04);
+  }
+
+  .method-item input[type="radio"] {
+    display: none;
+  }
+
+  .method-item .method-icon {
+    font-size: 28px;
+    display: block;
+  }
+
+  .method-item .method-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #1B5E20;
+    margin-top: 4px;
+  }
+
+  .method-item .method-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    color: #D4AF37;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .method-item.active .method-check {
+    opacity: 1;
+  }
+
+  .order-summary {
+    background: #F8FAF8;
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid rgba(27,94,32,0.08);
+  }
+
+  .order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .order-item:last-child {
+    border-bottom: none;
+  }
+
+  .order-item .label {
+    color: #6B7A6B;
+    font-size: 13px;
+  }
+
+  .order-item .value {
+    color: #1B5E20;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .order-total {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .order-total .label {
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  .order-total .value {
+    color: #D4AF37;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .pay-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
+    color: #1B5E20;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .pay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(212,175,55,0.35);
+  }
+
+  .pay-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .pay-btn .spinner {
+    display: none;
+  }
+
+  .pay-btn.loading .btn-text {
+    display: none;
+  }
+
+  .pay-btn.loading .spinner {
+    display: inline-block;
+  }
+
+  .security-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #6B7A6B;
+    font-size: 13px;
+    padding: 16px 0 0 0;
+    border-top: 1px solid #E8EDE8;
+    margin-top: 8px;
+  }
+
+  .security-badge i {
+    color: #2E7D32;
+    font-size: 18px;
+  }
+
+  .table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .table-controls select,
+  .table-controls input {
+    border: 2px solid #E8EDE8;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    background: #FFFFFF;
+    color: #1B5E20;
+  }
+
+  .table-controls select:focus,
+  .table-controls input:focus {
+    border-color: #D4AF37;
+    outline: none;
+  }
+
+  .table-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid #E8EDE8;
+  }
+
+  .table-wrapper::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-track {
+    background: #F5F5F5;
+    border-radius: 3px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: #D4AF37;
+    border-radius: 3px;
+  }
+
+  .transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .transactions-table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: #6B7A6B;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #E8EDE8;
+  }
+
+  .transactions-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #F0F4F0;
+    color: #1B5E20;
+  }
+
+  .transactions-table tr:hover td {
+    background: #F8FAF8;
+  }
+
+  .transactions-table .status {
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .status-success {
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+
+  .status-pending {
+    background: #FFF3E0;
+    color: #E65100;
+  }
+
+  .status-failed {
+    background: #FFEBEE;
+    color: #C62828;
+  }
+
+  .transactions-table .download-btn {
+    background: none;
+    border: none;
+    color: #D4AF37;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .transactions-table .download-btn:hover {
+    background: rgba(212,175,55,0.1);
+  }
+
+  @media (max-width: 1024px) {
+    .payment-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .payment-page {
+      padding: 16px;
+    }
+
+    .payment-header {
+      padding: 20px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .payment-header h2 {
+      font-size: 20px;
+    }
+
+    .payment-grid {
+      padding: 16px;
+    }
+
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .method-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .table-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .transactions-table {
+      font-size: 12px;
+    }
+
+    .transactions-table th,
+    .transactions-table td {
+      padding: 8px 10px;
+    }
+
+    .order-total .value {
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .method-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .payment-header h2 {
+      font-size: 18px;
+    }
+
+    .payment-header p {
+      font-size: 13px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    'use strict';
+
+    document.querySelectorAll('.card-item input[type="radio"]').forEach(function(input) {
+      input.addEventListener('change', function() {
+        document.querySelectorAll('.card-item').forEach(function(el) {
+          el.classList.remove('active');
+        });
+        this.closest('.card-item').classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.method-item input[type="radio"]').forEach(function(input) {
+      input.addEventListener('change', function() {
+        document.querySelectorAll('.method-item').forEach(function(el) {
+          el.classList.remove('active');
+        });
+        this.closest('.method-item').classList.add('active');
+      });
+    });
+
+    var payBtn = document.getElementById('payBtn');
+
+    payBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      payBtn.disabled = true;
+      payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+
+      setTimeout(function() {
+        var tbody = document.getElementById('transactionsBody');
+        var now = new Date();
+        var ref = 'TAM-' + Math.floor(Math.random() * 1000000);
+
+        var row = document.createElement('tr');
+        row.innerHTML = '<td><strong>#' + ref + '</strong></td><td>' + now.toLocaleDateString() + ' ' + now.toLocaleTimeString() + '</td><td>₦49,000.00</td><td><span class="status status-success">Success</span></td><td><button class="download-btn" onclick="downloadReceipt(\'' + ref + '\')"><i class="bi bi-download"></i></button></td>';
+        tbody.prepend(row);
+
+        payBtn.disabled = false;
+        payBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i> Payment Successful!';
+        payBtn.style.background = 'linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)';
+        payBtn.style.color = '#FFFFFF';
+
+        var emptyRow = tbody.querySelector('td[colspan="5"]');
+        if (emptyRow) {
+          emptyRow.closest('tr').remove();
+        }
+
+        setTimeout(function() {
+          payBtn.style.background = '';
+          payBtn.style.color = '';
+          payBtn.innerHTML = '<i class="bi bi-lock me-2"></i> Pay ₦49,000.00';
+        }, 3000);
+
+      }, 1000);
+    });
+
+    var filterStatus = document.getElementById('filterStatus');
+    var searchInput = document.getElementById('searchTransaction');
+    var sortBy = document.getElementById('sortBy');
+
+    function filterTransactions() {
+      var status = filterStatus.value;
+      var search = searchInput.value.toLowerCase();
+      var rows = document.querySelectorAll('#transactionsBody tr');
+
+      rows.forEach(function(row) {
+        var rowStatus = row.dataset.status || '';
+        var rowText = row.textContent.toLowerCase();
+
+        var show = true;
+        if (status !== 'all' && rowStatus !== status) show = false;
+        if (search && !rowText.includes(search)) show = false;
+
+        row.style.display = show ? '' : 'none';
+      });
+    }
+
+    filterStatus.addEventListener('change', filterTransactions);
+    searchInput.addEventListener('input', filterTransactions);
+
+    sortBy.addEventListener('change', function() {
+      var tbody = document.getElementById('transactionsBody');
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+
+      rows.sort(function(a, b) {
+        var valA = a.dataset[this.value.replace('_', '')] || '';
+        var valB = b.dataset[this.value.replace('_', '')] || '';
+
+        if (this.value === 'newest') return new Date(valB) - new Date(valA);
+        if (this.value === 'oldest') return new Date(valA) - new Date(valB);
+        if (this.value === 'amount_high') return parseFloat(valB) - parseFloat(valA);
+        if (this.value === 'amount_low') return parseFloat(valA) - parseFloat(valB);
+        return 0;
+      });
+
+      rows.forEach(function(row) {
+        tbody.appendChild(row);
+      });
+    });
+
+    window.downloadReceipt = function(reference) {
+      alert('Downloading receipt for transaction: ' + reference + '\n\n(Receipt generation would happen here)');
+    };
+
+  })();
+</script>
+{% endblock %}

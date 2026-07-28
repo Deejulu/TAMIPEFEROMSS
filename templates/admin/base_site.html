@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block branding %}
+<div class="d-flex align-items-center" style="gap: 12px; padding: 8px 0;">
+  <img src="{% static 'accounts/images/logo.svg' %}"
+       alt="TAMIPEE"
+       width="32"
+       height="32"
+       style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+  <span style="font-size: 20px; font-weight: 700; letter-spacing: 1px; color: #1B5E20;">
+    TAMIPEE
+  </span>
+  <span style="font-size: 14px; color: #6c757d; font-weight: 300; margin-left: 4px;">Admin</span>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  #header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%) !important;
+    padding: 12px 20px !important;
+  }
+  #branding {
+    float: none !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  #branding h1 {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+  }
+  #branding h1 img {
+    filter: brightness(0) invert(1);
+  }
+  #user-tools {
+    color: rgba(255,255,255,0.8) !important;
+  }
+  #user-tools a {
+    color: #D4AF37 !important;
+  }
+  #user-tools a:hover {
+    color: #FFFFFF !important;
+  }
+  .module h2, .module caption {
+    background: #2E7D32 !important;
+  }
+  .button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: #1B5E20 !important;
+  }
+  .button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+    background: #2E7D32 !important;
+  }
+  .selector-chosen h2 {
+    background: #1B5E20 !important;
+  }
+</style>
+{% endblock %}

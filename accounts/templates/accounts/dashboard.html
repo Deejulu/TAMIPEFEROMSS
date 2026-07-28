@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard" %}{% endblock %}
+
+{% block content %}
+<div class="container dashboard-container py-4 py-md-5">
+<div class="row">
+    <!-- Welcome Header -->
+    <div class="col-12 mb-4">
+        <div class="card dashboard-header text-white shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle dashboard-avatar dashboard-avatar-ring flex-shrink-0">
+                    {% else %}
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center dashboard-avatar dashboard-avatar-placeholder dashboard-avatar-ring flex-shrink-0">
+                            {{ user.full_name|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <h1 class="h3 mb-1 text-truncate">{% trans "Welcome" %}, {{ user.full_name }}!</h1>
+                        <p class="mb-0 opacity-75">{% trans "Dashboard" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Information Card -->
+    <div class="col-lg-8 col-xl-7 mx-auto">
+        <div class="card dashboard-card shadow-sm border-0 mb-4">
+            <div class="card-header">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dashboard-section-icon"><i class="bi bi-info-circle"></i></span>{% trans "Account Information" %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="info-list mb-0">
+                    <div class="info-row">
+                        <dt><i class="bi bi-person me-2"></i>{% trans "Full Name" %}</dt>
+                        <dd class="fw-bold">{{ user.full_name }}</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt><i class="bi bi-envelope me-2"></i>{% trans "Email" %}</dt>
+                        <dd class="text-break">
+                            {{ user.email }}
+                            {% if user.email_verified %}
+                                <span class="badge bg-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
+                                <a href="{% url 'accounts:resend_verification' %}" class="ms-2 small">{% trans "Resend verification" %}</a>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="info-row">
+                        <dt><i class="bi bi-telephone me-2"></i>{% trans "Phone" %}</dt>
+                        <dd>{{ user.phone_number|default:"Not provided" }}</dd>
+                    </div>
+                    <div class="info-row">
+                        <dt><i class="bi bi-shield-check me-2"></i>{% trans "Role" %}</dt>
+                        <dd>
+                            {% if user.role == 'SUPER_ADMIN' %}
+                                <span class="badge bg-danger">{{ user.get_role_display }}</span>
+                            {% elif user.role == 'FARM_MANAGER' %}
+                                <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
+                            {% elif user.role == 'STAFF' %}
+                                <span class="badge bg-info text-dark">{{ user.get_role_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="info-row">
+                        <dt><i class="bi bi-calendar me-2"></i>{% trans "Member Since" %}</dt>
+                        <dd>{{ user.date_joined|date:"F j, Y" }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card dashboard-card shadow-sm border-0 mb-4">
+            <div class="card-header">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dashboard-section-icon"><i class="bi bi-gear"></i></span>{% trans "Quick Actions" %}
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'accounts:profile_edit' %}" class="quick-action-link">
+                    <i class="bi bi-pencil-square"></i>{% trans "Edit Profile" %}
+                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+                </a>
+                <a href="{% url 'accounts:password_change' %}" class="quick-action-link">
+                    <i class="bi bi-shield-lock"></i>{% trans "Change Password" %}
+                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+                </a>
+                <a href="{% url 'accounts:change_security_questions' %}" class="quick-action-link">
+                    <i class="bi bi-question-circle"></i>{% trans "Update Security Questions" %}
+                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+                </a>
+                <hr class="my-1">
+                <form method="post" action="{% url 'accounts:logout' %}" class="border-0 bg-transparent">
+                    {% csrf_token %}
+                    <button type="submit" class="quick-action-link quick-action-danger btn btn-link border-0 text-decoration-none w-100 text-start">
+                        <i class="bi bi-box-arrow-right"></i>{% trans "Logout" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

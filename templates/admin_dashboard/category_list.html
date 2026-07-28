@@ -1,0 +1,70 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="category-management">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-folder"></i> Manage Categories</h2>
+            <p class="text-muted mb-0">Organize your products with categories</p>
+        </div>
+        <a href="{% url 'admin_dashboard:product_category_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Category
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if categories %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Products</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr class="{% if category.is_sample_data %}table-warning{% endif %}">
+                            <td>
+                                <strong>{{ category.name }}</strong>
+                                {% if category.is_sample_data %}
+                                <span class="badge bg-warning text-dark ms-1" style="font-size: 10px;">Sample</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ category.description|truncatewords:15 }}</td>
+                            <td>
+                                <span class="badge bg-info text-dark">{{ category.product_count }}</span>
+                            </td>
+                            <td>{{ category.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'admin_dashboard:product_category_edit' category.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'admin_dashboard:product_category_delete' category.pk %}" 
+                                       class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-folder" style="font-size: 48px; color: #ccc;"></i>
+                <p class="text-muted mt-3">No categories yet. Create your first category to organize products.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

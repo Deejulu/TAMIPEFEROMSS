@@ -1,0 +1,87 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static notification_tags %}
+
+{% block admin_content %}
+<div class="notifications-container">
+    <div class="notifications-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="h3 mb-1">Notifications</h1>
+                <p class="text-muted small mb-0">Stay updated with system alerts and activities</p>
+            </div>
+            {% if notifications %}
+            <button class="btn btn-primary btn-sm" id="markAllReadBtn">
+                <i class="bi bi-check2-all"></i> Mark all as read
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="notification-filters mt-3">
+            <a href="?type=all" class="filter-btn {% if filter_type == 'all' %}active{% endif %}">All</a>
+            {% for type_value, type_label in notification_types %}
+            <a href="?type={{ type_value }}" class="filter-btn {% if filter_type == type_value %}active{% endif %}">
+                {{ type_label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="notifications-list mt-3">
+        {% if notifications %}
+            {% for notification in notifications %}
+            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.pk }}">
+                <div class="notification-icon">
+                    {% if notification.notification_type == 'order' %}
+                        <i class="bi bi-bag-check text-primary"></i>
+                    {% elif notification.notification_type == 'payment' %}
+                        <i class="bi bi-credit-card text-success"></i>
+                    {% elif notification.notification_type == 'low_stock' %}
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                    {% elif notification.notification_type == 'user' %}
+                        <i class="bi bi-person text-info"></i>
+                    {% elif notification.notification_type == 'system' %}
+                        <i class="bi bi-info-circle text-secondary"></i>
+                    {% endif %}
+                </div>
+                <div class="notification-body">
+                    <p class="notification-message mb-0 {% if not notification.is_read %}fw-semibold{% endif %}">
+                        {{ notification.message }}
+                    </p>
+                    <small class="text-muted">{{ notification.created_at|time_ago }}</small>
+                </div>
+                {% if not notification.is_read %}
+                <button class="mark-read-btn" data-id="{{ notification.pk }}" title="Mark as read">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-3">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?type={{ filter_type }}&page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?type={{ filter_type }}&page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state text-center py-5">
+                <i class="bi bi-bell-slash display-4 text-muted"></i>
+                <p class="text-muted mt-2">No notifications yet</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

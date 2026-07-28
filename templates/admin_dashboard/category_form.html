@@ -1,0 +1,60 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="category-form-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ page_title }}</h2>
+        <a href="{% url 'admin_dashboard:product_categories' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Categories
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">Category Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.name.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div class="text-danger mt-1">
+                        {% for error in form.description.errors %}
+                        <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Category
+                    </button>
+                    <a href="{% url 'admin_dashboard:product_categories' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

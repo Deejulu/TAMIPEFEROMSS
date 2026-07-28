@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Lighter, vibrant green gradient background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Bright sun gradient -->
+    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA000;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Warm barn gradient -->
+    <linearGradient id="barnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8D6E63;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6D4C41;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Plant gradient -->
+    <linearGradient id="plantGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#66BB6A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- ==========================================
+       BACKGROUND - Vibrant Green Circle
+       ========================================== -->
+  <circle cx="100" cy="100" r="95" fill="url(#bgGrad)" />
+  
+  <!-- Outer accent ring - Bright Gold -->
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#FFD700" stroke-width="3.5" />
+  
+  <!-- Inner accent ring - Lighter Gold -->
+  <circle cx="100" cy="100" r="75" fill="none" stroke="#FFE082" stroke-width="1.5" opacity="0.4" />
+
+  <!-- ==========================================
+       BARN - Warm Brown Filled Shape
+       ========================================== -->
+  <!-- Barn Body (main rectangle) -->
+  <rect x="55" y="85" width="90" height="70" rx="3" fill="url(#barnGrad)" />
+  
+  <!-- Barn Roof (triangle) -->
+  <path d="M50 85 L100 45 L150 85 Z" fill="#5D4037" />
+  
+  <!-- Barn Roof Trim (gold accent) -->
+  <path d="M50 85 L100 45 L150 85" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Barn Door (large) -->
+  <rect x="80" y="105" width="40" height="50" rx="2" fill="#4E342E" />
+  
+  <!-- Barn Door Arch -->
+  <path d="M80 105 Q100 95 120 105" fill="none" stroke="#FFD700" stroke-width="2" />
+  
+  <!-- Barn Door Handle -->
+  <circle cx="105" cy="130" r="3" fill="#FFD700" />
+  
+  <!-- Barn Windows (left and right) -->
+  <rect x="62" y="95" width="14" height="14" rx="1" fill="#FFD700" opacity="0.8" />
+  <rect x="124" y="95" width="14" height="14" rx="1" fill="#FFD700" opacity="0.8" />
+  
+  <!-- Window details (crosses) -->
+  <line x1="69" y1="95" x2="69" y2="109" stroke="#6D4C41" stroke-width="2" />
+  <line x1="62" y1="102" x2="76" y2="102" stroke="#6D4C41" stroke-width="2" />
+  <line x1="131" y1="95" x2="131" y2="109" stroke="#6D4C41" stroke-width="2" />
+  <line x1="124" y1="102" x2="138" y2="102" stroke="#6D4C41" stroke-width="2" />
+
+  <!-- ==========================================
+       SUN - Bright Yellow/Gold Filled
+       ========================================== -->
+  <!-- Sun Body -->
+  <circle cx="130" cy="45" r="22" fill="url(#sunGrad)" />
+  
+  <!-- Sun Rays (bold) -->
+  <!-- Top -->
+  <line x1="130" y1="15" x2="130" y2="25" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+  <!-- Bottom -->
+  <line x1="130" y1="65" x2="130" y2="55" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+  <!-- Left -->
+  <line x1="100" y1="45" x2="110" y2="45" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+  <!-- Right -->
+  <line x1="160" y1="45" x2="150" y2="45" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Diagonal Rays -->
+  <line x1="110" y1="25" x2="117" y2="32" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="150" y1="25" x2="143" y2="32" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="110" y1="65" x2="117" y2="58" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="150" y1="65" x2="143" y2="58" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
+  
+  <!-- Sun Face (simple smile) -->
+  <!-- Eyes -->
+  <circle cx="124" cy="42" r="3" fill="#E65100" />
+  <circle cx="136" cy="42" r="3" fill="#E65100" />
+  <!-- Smile -->
+  <path d="M125 50 Q130 55 135 50" fill="none" stroke="#E65100" stroke-width="2" stroke-linecap="round" />
+
+  <!-- ==========================================
+       PLANT - Bright Green Filled
+       ========================================== -->
+  <!-- Stem -->
+  <line x1="85" y1="155" x2="85" y2="130" stroke="url(#plantGrad)" stroke-width="6" stroke-linecap="round" />
+  
+  <!-- Left Leaf -->
+  <path d="M85 140 C70 130 65 140 75 145 C80 147 85 143 85 140" fill="url(#plantGrad)" />
+  
+  <!-- Right Leaf -->
+  <path d="M85 135 C100 125 105 135 95 140 C90 142 85 138 85 135" fill="url(#plantGrad)" />
+  
+  <!-- Top Leaf/Bud -->
+  <path d="M85 125 C80 115 75 120 82 122 C85 123 88 121 88 118 C88 115 85 120 85 125" fill="#66BB6A" />
+
+  <!-- ==========================================
+       GROUND - Subtle Base
+       ========================================== -->
+  <path d="M45 160 C60 155 80 157 100 160 C120 163 140 157 155 160" fill="none" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.6" />
+  
+  <!-- Small grass details -->
+  <path d="M55 158 L58 152 L61 158" fill="none" stroke="#66BB6A" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+  <path d="M140 158 L143 152 L146 158" fill="none" stroke="#66BB6A" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+
+  <!-- ==========================================
+       DECORATIVE SPARKLES
+       ========================================== -->
+  <circle cx="160" cy="80" r="2.5" fill="#FFD700" opacity="0.6" />
+  <circle cx="40" cy="70" r="2" fill="#FFD700" opacity="0.5" />
+  <circle cx="50" cy="120" r="1.5" fill="#FFD700" opacity="0.4" />
+  <circle cx="150" cy="130" r="1.5" fill="#FFD700" opacity="0.4" />
+</svg>

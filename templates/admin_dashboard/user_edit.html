@@ -1,0 +1,359 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+/* Page Background */
+body {
+    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+}
+
+/* User Edit Page Styles */
+.edit-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+}
+
+.form-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    padding: 2rem 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+}
+
+.form-header h2 {
+    position: relative;
+    z-index: 1;
+}
+
+.form-header h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.form-body {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+    transform: none;
+}
+
+.form-group {
+    transition: all 0.2s ease;
+}
+
+.form-group:focus-within {
+    transform: none;
+}
+
+.form-check {
+    padding: 1rem;
+    background-color: #f8fdf8;
+    border-radius: 8px;
+    border: 1px solid #E8F5E9;
+}
+
+.form-check-input:checked {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.alert-custom {
+    border-radius: 8px;
+    border-left: 4px solid;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-info-custom {
+    background-color: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E40AF;
+}
+
+.alert-warning-custom {
+    background-color: #FFFBEB;
+    border-left-color: #F59E0B;
+    color: #92400E;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #E8F5E9;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #2E7D32, #388E3C, #43A047);
+    border: none;
+    color: white;
+    padding: 0.875rem 2.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.btn-submit:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.3);
+    color: white;
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-cancel {
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Fix button text visibility */
+.btn-outline-secondary {
+    color: #374151 !important;
+    border-color: #d1d5db;
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.errorlist li {
+    color: #DC2626;
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    background-color: #FEE2E2;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-header {
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .form-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .form-body {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-body {
+        padding: 1rem;
+    }
+    
+    .form-control, .form-select {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9375rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="edit-form-container">
+    <div class="mb-4">
+        <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to User List
+        </a>
+    </div>
+
+    <div class="card form-card">
+        <div class="form-header">
+            <h2>
+                <i class="bi bi-pencil-square"></i>
+                Edit User - {{ viewed_user.full_name }}
+            </h2>
+        </div>
+        
+        <div class="form-body">
+            {% if viewed_user.pk == request.user.pk %}
+            <div class="alert-custom alert-warning-custom">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Warning:</strong> You are editing your own account. Be careful not to lock yourself out.
+            </div>
+            {% endif %}
+            
+            <form method="post" class="user-edit-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                        Full Name <span class="text-danger">*</span>
+                    </label>
+                    {{ form.full_name }}
+                    {{ form.full_name.errors }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                        Email Address <span class="text-danger">*</span>
+                    </label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                        Phone Number
+                    </label>
+                    {{ form.phone_number }}
+                    {{ form.phone_number.errors }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.role.id_for_label }}" class="form-label">
+                        Role <span class="text-danger">*</span>
+                    </label>
+                    {{ form.role }}
+                    <div class="help-text">
+                        <i class="bi bi-info-circle"></i> Super Admins have full system access. Be careful when assigning this role.
+                    </div>
+                    {{ form.role.errors }}
+                </div>
+                
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            <strong>Active Account</strong>
+                            <div class="help-text mt-1">
+                                Inactive users cannot log in. Use this to temporarily disable an account.
+                            </div>
+                        </label>
+                        {{ form.is_active.errors }}
+                    </div>
+                </div>
+                
+                <div class="alert-custom alert-info-custom">
+                    <i class="bi bi-shield-lock"></i>
+                    <strong>Note:</strong> To change the user's password, they must use the password reset feature or contact an administrator.
+                </div>
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                    <a href="{% url 'admin_dashboard:user_detail' viewed_user.pk %}" class="btn btn-outline-secondary btn-cancel">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

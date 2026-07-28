@@ -1,0 +1,66 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="supplier-list-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-truck"></i> Suppliers</h2>
+            <p class="text-muted mb-0">Manage feed suppliers</p>
+        </div>
+        <a href="{% url 'farm_management:supplier_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Supplier
+        </a>
+    </div>
+
+    {% if suppliers %}
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Feed Items</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td><strong>{{ supplier.name }}</strong></td>
+                            <td>{{ supplier.phone|default:"-" }}</td>
+                            <td>{{ supplier.email|default:"-" }}</td>
+                            <td>{{ supplier.feed_inventory_count }}</td>
+                            <td>{{ supplier.notes|truncatewords:10|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'farm_management:supplier_edit' supplier.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'farm_management:supplier_delete' supplier.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-truck" style="font-size: 48px; color: #ccc;"></i>
+            <p class="text-muted mt-3">No suppliers yet. Add a supplier to get started.</p>
+            <a href="{% url 'farm_management:supplier_add' %}" class="btn btn-primary">Add Supplier</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

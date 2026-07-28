@@ -1,0 +1,827 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+/* Page Background */
+body {
+    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+}
+
+/* User Detail Page Specific Styles */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.user-detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.profile-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.profile-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 28px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+}
+
+.profile-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.profile-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    object-fit: cover;
+    margin: 0 auto;
+}
+
+.profile-avatar-placeholder-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 4px solid white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 0 auto;
+}
+
+.profile-name {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1rem 0 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.profile-email {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.profile-info-section {
+    padding: 1.5rem;
+}
+
+.info-item {
+    padding: 0.875rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 700;
+    color: #4B5563;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+}
+
+.info-value {
+    color: #1f2937;
+    font-weight: 500;
+    text-align: right;
+}
+
+.stat-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.6s ease-out 0.1s both;
+    background: white;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+}
+
+.stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 16px 32px rgba(0, 0, 0, 0.12);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.75rem;
+}
+
+.stat-icon.orders {
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    color: white;
+}
+
+.stat-icon.spent {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: white;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.025em;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+    font-weight: 600;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, #2E7D32, #43A047, transparent) 1;
+    position: relative;
+}
+
+.section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #FFC107, #FFB300);
+    border-radius: 2px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.section-title i {
+    font-size: 1.25rem;
+    color: #43A047;
+}
+
+.history-table-container {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+}
+
+.history-table {
+    margin-bottom: 0;
+}
+
+.history-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+}
+
+.history-table thead th {
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.075em;
+    padding: 1rem 0.75rem;
+    border: none;
+}
+
+.history-table tbody tr {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateX(4px);
+    box-shadow: inset 3px 0 0 #2E7D32;
+}
+
+.history-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    position: relative;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-buttons .btn:hover i {
+    transform: scale(1.1);
+}
+
+.action-buttons .btn i {
+    transition: transform 0.15s ease;
+    display: inline-block;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Empty State */
+.empty-history {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+}
+
+.empty-history i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Mobile History Cards */
+.mobile-history-cards {
+    display: none; /* Hidden by default, shown on mobile */
+}
+
+.history-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    transform: translateY(-4px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.history-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fdf8, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.history-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.0125em;
+}
+
+.history-card-title i {
+    color: #2E7D32;
+    font-size: 1.125rem;
+}
+
+.history-card-badge {
+    flex-shrink: 0;
+}
+
+.history-card-body {
+    padding: 1rem;
+}
+
+.history-card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid #2E7D32;
+}
+
+.history-card-item:last-child {
+    margin-bottom: 0;
+}
+
+.history-item-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.history-item-label i {
+    font-size: 1rem;
+    color: #2E7D32;
+}
+
+.history-item-value {
+    font-size: 0.875rem;
+    color: #1f2937;
+    font-weight: 600;
+    text-align: right;
+}
+
+.history-item-value code {
+    font-size: 0.75rem;
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    color: #1f2937;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .profile-name {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        padding: 1.5rem;
+    }
+    
+    .profile-avatar-large,
+    .profile-avatar-placeholder-large {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+    
+    .profile-name {
+        font-size: 1.25rem;
+    }
+    
+    .profile-email {
+        font-size: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+    
+    /* Hide less important columns on tablet */
+    .history-table thead th:nth-child(3),
+    .history-table tbody td:nth-child(3) {
+        display: none;
+    }
+    
+    .history-table thead th:nth-child(6),
+    .history-table tbody td:nth-child(6) {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .info-value {
+        text-align: left;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    /* Hide desktop tables, show mobile cards */
+    .desktop-history-table {
+        display: none !important;
+    }
+    
+    .mobile-history-cards {
+        display: block !important;
+    }
+}
+
+/* Fix button text visibility */
+.btn-outline-secondary {
+    color: #374151 !important;
+    border-color: #d1d5db;
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="user-detail-container">
+    <div class="mb-4">
+        <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to User List
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Card -->
+        <div class="col-lg-4">
+            <div class="card profile-card">
+                <div class="profile-header">
+                    {% if viewed_user.profile_picture %}
+                    <img src="{{ viewed_user.profile_picture.url }}" alt="{{ viewed_user.full_name }}" class="profile-avatar-large">
+                    {% else %}
+                    <div class="profile-avatar-placeholder-large">
+                        {{ viewed_user.full_name.0|upper }}
+                    </div>
+                    {% endif %}
+                    <h2 class="profile-name">{{ viewed_user.full_name }}</h2>
+                    <p class="profile-email">{{ viewed_user.email }}</p>
+                </div>
+                
+                <div class="profile-info-section">
+                    <div class="info-item">
+                        <span class="info-label">Role</span>
+                        <span class="info-value">
+                            {% if viewed_user.role == 'SUPER_ADMIN' %}
+                            <span class="badge bg-danger">{{ viewed_user.get_role_display }}</span>
+                            {% elif viewed_user.role == 'FARM_MANAGER' %}
+                            <span class="badge bg-warning text-dark">{{ viewed_user.get_role_display }}</span>
+                            {% elif viewed_user.role == 'STAFF' %}
+                            <span class="badge bg-info">{{ viewed_user.get_role_display }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ viewed_user.get_role_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        <span class="info-value">
+                            {% if viewed_user.is_active %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactive</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Username</span>
+                        <span class="info-value">{{ viewed_user.username|default:"N/A" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ viewed_user.phone_number|default:"Not provided" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Email Verified</span>
+                        <span class="info-value">
+                            {% if viewed_user.email_verified %}
+                            <i class="bi bi-check-circle text-success"></i> Yes
+                            {% else %}
+                            <i class="bi bi-x-circle text-danger"></i> No
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Date Joined</span>
+                        <span class="info-value">{{ viewed_user.date_joined|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <span class="info-label">Last Login</span>
+                        <span class="info-value">{{ viewed_user.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-light">
+                    <div class="action-buttons">
+                        <a href="{% url 'admin_dashboard:user_edit' viewed_user.pk %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit User
+                        </a>
+                        {% if viewed_user.pk != request.user.pk %}
+                        {% if can_delete %}
+                        <a href="{% url 'admin_dashboard:user_delete' viewed_user.pk %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete User
+                        </a>
+                        {% else %}
+                        <button class="btn btn-danger" disabled title="Cannot delete user with order history">
+                            <i class="bi bi-trash"></i> Delete User (Has Orders)
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Statistics and History -->
+        <div class="col-lg-8">
+            <!-- Statistics Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i class="bi bi-cart"></i>
+                        </div>
+                        <div class="stat-value">{{ total_orders }}</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon spent">
+                            <i class="bi bi-currency-exchange"></i>
+                        </div>
+                        <div class="stat-value">₦{{ total_spent|floatformat:0 }}</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order History -->
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="bi bi-cart"></i> Order History
+                </h3>
+            </div>
+            
+            <div class="history-table-container">
+                {% if orders %}
+                <!-- Desktop Table View -->
+                <div class="table-responsive desktop-history-table">
+                    <table class="table history-table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td><strong>#{{ order.pk }}</strong></td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'paid' %}
+                                    <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'shipped' %}
+                                    <span class="badge bg-info">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'delivered' %}
+                                    <span class="badge bg-primary">{{ order.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>₦{{ order.total|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mobile Card View -->
+                <div class="mobile-history-cards">
+                    {% for order in orders %}
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <div class="history-card-title">
+                                <i class="bi bi-cart"></i>
+                                <strong>Order #{{ order.pk }}</strong>
+                            </div>
+                            <div class="history-card-badge">
+                                {% if order.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'paid' %}
+                                <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'shipped' %}
+                                <span class="badge bg-info">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'delivered' %}
+                                <span class="badge bg-primary">{{ order.get_status_display }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="history-card-body">
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-calendar3"></i> Date</span>
+                                <span class="history-item-value">{{ order.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-currency-exchange"></i> Total</span>
+                                <span class="history-item-value">₦{{ order.total|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-history">
+                    <i class="bi bi-cart-x"></i>
+                    <p>No orders found for this user.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Payment History -->
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="bi bi-credit-card"></i> Payment History
+                </h3>
+            </div>
+            
+            <div class="history-table-container">
+                {% if payments %}
+                <!-- Desktop Table View -->
+                <div class="table-responsive desktop-history-table">
+                    <table class="table history-table">
+                        <thead>
+                            <tr>
+                                <th>Payment #</th>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td><strong>#{{ payment.pk }}</strong></td>
+                                <td>#{{ payment.order.pk }}</td>
+                                <td>{{ payment.created_at|date:"M d, Y H:i" }}</td>
+                                <td>₦{{ payment.amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if payment.status == 'success' %}
+                                    <span class="badge bg-success">{{ payment.get_status_display }}</span>
+                                    {% elif payment.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">{{ payment.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{{ payment.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><code>{{ payment.reference }}</code></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mobile Card View -->
+                <div class="mobile-history-cards">
+                    {% for payment in payments %}
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <div class="history-card-title">
+                                <i class="bi bi-credit-card"></i>
+                                <strong>Payment #{{ payment.pk }}</strong>
+                            </div>
+                            <div class="history-card-badge">
+                                {% if payment.status == 'success' %}
+                                <span class="badge bg-success">{{ payment.get_status_display }}</span>
+                                {% elif payment.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ payment.get_status_display }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ payment.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="history-card-body">
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-cart"></i> Order</span>
+                                <span class="history-item-value">#{{ payment.order.pk }}</span>
+                            </div>
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-calendar3"></i> Date</span>
+                                <span class="history-item-value">{{ payment.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-currency-exchange"></i> Amount</span>
+                                <span class="history-item-value">₦{{ payment.amount|floatformat:2 }}</span>
+                            </div>
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-hash"></i> Reference</span>
+                                <span class="history-item-value"><code>{{ payment.reference }}</code></span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-history">
+                    <i class="bi bi-credit-card-2-back"></i>
+                    <p>No payments found for this user.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

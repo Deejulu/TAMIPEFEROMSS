@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+    <div class="card-header">
+        <h2 class="mt-2">Create Your Account</h2>
+        <p>Join us today</p>
+    </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Personal Information Section -->
+                <h6 class="text-success fw-semibold mb-3">
+                    <i class="bi bi-person me-1"></i> Personal Information
+                </h6>
+
+                <!-- First Name Field -->
+                <div class="mb-3">
+                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                        {{ form.first_name.label }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        {{ form.first_name }}
+                    </div>
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.first_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Last Name Field -->
+                <div class="mb-3">
+                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                        {{ form.last_name.label }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        {{ form.last_name }}
+                    </div>
+                    {% if form.last_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.last_name.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Email Field -->
+                <div class="mb-3">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                        <i class="bi bi-envelope me-1"></i>{{ form.email.label }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        {{ form.email }}
+                    </div>
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if form.email.help_text %}
+                        <div class="form-text">{{ form.email.help_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Phone Number Field -->
+                <div class="mb-4">
+                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                        <i class="bi bi-telephone me-1"></i>{{ form.phone_number.label }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                        {{ form.phone_number }}
+                    </div>
+                    {% if form.phone_number.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.phone_number.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Section -->
+                <h6 class="text-success fw-semibold mb-3">
+                    <i class="bi bi-lock me-1"></i> Password
+                </h6>
+
+                <!-- Password Field -->
+                <div class="mb-3">
+                    <label for="{{ form.password1.id_for_label }}" class="form-label">
+                        {{ form.password1.label }}
+                    </label>
+                    <div class="input-group password-toggle-wrapper">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        {{ form.password1 }}
+                        <span class="input-group-text password-toggle-addon" data-target="id_password1" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if form.password1.help_text %}
+                        <div class="form-text">{{ form.password1.help_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Requirements -->
+                <ul class="password-requirements" id="passwordRequirements">
+                    <li id="req-length" data-requirement="length">
+                        <i class="bi bi-circle-fill"></i> Minimum 8 characters
+                    </li>
+                    <li id="req-uppercase" data-requirement="uppercase">
+                        <i class="bi bi-circle-fill"></i> One uppercase letter
+                    </li>
+                    <li id="req-lowercase" data-requirement="lowercase">
+                        <i class="bi bi-circle-fill"></i> One lowercase letter
+                    </li>
+                    <li id="req-number" data-requirement="number">
+                        <i class="bi bi-circle-fill"></i> One number
+                    </li>
+                </ul>
+
+                <!-- Confirm Password Field -->
+                <div class="mb-4">
+                    <label for="{{ form.password2.id_for_label }}" class="form-label">
+                        {{ form.password2.label }}
+                    </label>
+                    <div class="input-group password-toggle-wrapper">
+                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                        {{ form.password2 }}
+                        <span class="input-group-text password-toggle-addon" data-target="id_password2" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if form.password2.help_text %}
+                        <div class="form-text">{{ form.password2.help_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Security Questions Section -->
+                <h6 class="text-success fw-semibold mb-3">
+                    <i class="bi bi-shield-lock me-1"></i> Security Recovery Setup
+                </h6>
+                <p class="text-muted small mb-3">
+                    Please select and answer three security questions. These will be used to verify your identity if you forget your password.
+                </p>
+
+                <!-- Security Question 1 -->
+                <div class="security-card mb-3">
+                    <div class="card-title mb-2">{{ form.security_question_1.label }}</div>
+                    <div class="mb-3">
+                        {{ form.security_question_1 }}
+                        {% if form.security_question_1.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_question_1.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label small">{{ form.security_answer_1.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
+                            {{ form.security_answer_1 }}
+                        </div>
+                        {% if form.security_answer_1.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_answer_1.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Security Question 2 -->
+                <div class="security-card mb-3">
+                    <div class="card-title mb-2">{{ form.security_question_2.label }}</div>
+                    <div class="mb-3">
+                        {{ form.security_question_2 }}
+                        {% if form.security_question_2.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_question_2.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label small">{{ form.security_answer_2.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
+                            {{ form.security_answer_2 }}
+                        </div>
+                        {% if form.security_answer_2.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_answer_2.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Security Question 3 -->
+                <div class="security-card mb-4">
+                    <div class="card-title mb-2">{{ form.security_question_3.label }}</div>
+                    <div class="mb-3">
+                        {{ form.security_question_3 }}
+                        {% if form.security_question_3.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_question_3.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label small">{{ form.security_answer_3.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
+                            {{ form.security_answer_3 }}
+                        </div>
+                        {% if form.security_answer_3.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.security_answer_3.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-person-check me-2"></i> Create Account
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer">
+            <p class="mb-0">
+                Already have an account?
+                <a href="{% url 'accounts:login' %}" class="text-success fw-bold">
+                    Log in here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var passwordInput = document.getElementById('id_password1');
+    var requirements = {
+        length: document.getElementById('req-length'),
+        uppercase: document.getElementById('req-uppercase'),
+        lowercase: document.getElementById('req-lowercase'),
+        number: document.getElementById('req-number')
+    };
+
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            var val = passwordInput.value;
+            var checks = {
+                length: val.length >= 8,
+                uppercase: /[A-Z]/.test(val),
+                lowercase: /[a-z]/.test(val),
+                number: /[0-9]/.test(val)
+            };
+
+            Object.keys(requirements).forEach(function(key) {
+                if (checks[key]) {
+                    requirements[key].classList.add('met');
+                    requirements[key].querySelector('i').className = 'bi bi-check-circle-fill';
+                } else {
+                    requirements[key].classList.remove('met');
+                    requirements[key].querySelector('i').className = 'bi bi-circle-fill';
+                }
+            });
+        });
+    }
+
+    document.querySelectorAll('.password-toggle-addon').forEach(function(addon) {
+        addon.addEventListener('click', function() {
+            var targetId = addon.getAttribute('data-target');
+            var input = document.getElementById(targetId);
+            if (input) {
+                var icon = addon.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye';
+                }
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

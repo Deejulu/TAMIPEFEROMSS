@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About Us - TAMIPEE{% endblock %}
+
+{% block extra_head %}
+<style>
+    .about-wrapper {
+        min-height: calc(100vh - 140px);
+        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+        padding: 48px 0;
+    }
+
+    .about-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .about-header {
+        text-align: center;
+        margin-bottom: 48px;
+    }
+
+    .about-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .about-header .subtitle {
+        font-size: 1.125rem;
+        color: #6B7280;
+        font-weight: 400;
+    }
+
+    .about-content-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .about-content-card h2 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 24px;
+    }
+
+    .about-content-card .content {
+        font-size: 1.0625rem;
+        line-height: 1.8;
+        color: #374151;
+    }
+
+    .about-content-card .content p {
+        margin-bottom: 16px;
+    }
+
+    .about-content-card .content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .about-content-card .content ul,
+    .about-content-card .content ol {
+        margin: 16px 0;
+        padding-left: 28px;
+    }
+
+    .about-content-card .content li {
+        margin-bottom: 8px;
+    }
+
+    .about-content-card .content h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 28px;
+        margin-bottom: 16px;
+    }
+
+    .about-content-card .content h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state {
+        text-align: center;
+        padding: 64px 32px;
+    }
+
+    .fallback-state i {
+        font-size: 64px;
+        color: #D1D5DB;
+        margin-bottom: 24px;
+        display: block;
+    }
+
+    .fallback-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state p {
+        font-size: 1rem;
+        color: #9CA3AF;
+        line-height: 1.6;
+    }
+
+    .updated-info {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+        font-size: 0.875rem;
+        color: #9CA3AF;
+    }
+
+    @media (max-width: 768px) {
+        .about-wrapper {
+            padding: 32px 0;
+        }
+
+        .about-header h1 {
+            font-size: 2rem;
+        }
+
+        .about-header .subtitle {
+            font-size: 1rem;
+        }
+
+        .about-content-card {
+            padding: 32px 24px;
+        }
+
+        .about-content-card h2 {
+            font-size: 1.5rem;
+        }
+
+        .fallback-state {
+            padding: 48px 20px;
+        }
+
+        .fallback-state i {
+            font-size: 48px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-wrapper">
+    <div class="about-container">
+        
+        {% if about_content %}
+        <!-- Header -->
+        <div class="about-header">
+            <h1>{{ about_content.title }}</h1>
+            <p class="subtitle">Learn more about TAMIPEE Farm Management</p>
+        </div>
+
+        <!-- Content Card -->
+        <div class="about-content-card">
+            <div class="content">
+                {{ about_content.content|safe }}
+            </div>
+
+            {% if about_content.updated_at %}
+            <div class="updated-info">
+                Last updated: {{ about_content.updated_at|date:"F j, Y" }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Fallback State -->
+        <div class="about-header">
+            <h1>About Us</h1>
+        </div>
+
+        <div class="about-content-card">
+            <div class="fallback-state">
+                <i class="bi bi-info-circle"></i>
+                <h3>About TAMIPEE</h3>
+                <p>
+                    TAMIPEE is a comprehensive farm management platform designed to help agricultural businesses 
+                    streamline their operations, manage inventory, track sales, and grow their business efficiently.
+                    <br><br>
+                    Our platform offers tools for product management, order tracking, customer management, 
+                    and detailed analytics to help you make informed decisions for your farm.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

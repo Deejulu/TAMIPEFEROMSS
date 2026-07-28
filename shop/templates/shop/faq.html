@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FAQ - TAMIPEE{% endblock %}
+
+{% block extra_head %}
+<style>
+    .faq-wrapper {
+        min-height: calc(100vh - 140px);
+        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+        padding: 48px 0;
+    }
+
+    .faq-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .faq-header {
+        text-align: center;
+        margin-bottom: 48px;
+    }
+
+    .faq-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .faq-header .subtitle {
+        font-size: 1.125rem;
+        color: #6B7280;
+        font-weight: 400;
+    }
+
+    .faq-content-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .faq-content-card .content {
+        font-size: 1.0625rem;
+        line-height: 1.8;
+        color: #374151;
+    }
+
+    .faq-content-card .content p {
+        margin-bottom: 16px;
+    }
+
+    .faq-content-card .content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .faq-content-card .content ul,
+    .faq-content-card .content ol {
+        margin: 16px 0;
+        padding-left: 28px;
+    }
+
+    .faq-content-card .content li {
+        margin-bottom: 8px;
+    }
+
+    .faq-content-card .content h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 28px;
+        margin-bottom: 16px;
+    }
+
+    .faq-content-card .content h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state {
+        text-align: center;
+        padding: 64px 32px;
+    }
+
+    .fallback-state i {
+        font-size: 64px;
+        color: #D1D5DB;
+        margin-bottom: 24px;
+        display: block;
+    }
+
+    .fallback-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state p {
+        font-size: 1rem;
+        color: #9CA3AF;
+        line-height: 1.6;
+    }
+
+    .updated-info {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+        font-size: 0.875rem;
+        color: #9CA3AF;
+    }
+
+    @media (max-width: 768px) {
+        .faq-wrapper {
+            padding: 32px 0;
+        }
+
+        .faq-header h1 {
+            font-size: 2rem;
+        }
+
+        .faq-header .subtitle {
+            font-size: 1rem;
+        }
+
+        .faq-content-card {
+            padding: 32px 24px;
+        }
+
+        .fallback-state {
+            padding: 48px 20px;
+        }
+
+        .fallback-state i {
+            font-size: 48px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-wrapper">
+    <div class="faq-container">
+        
+        {% if faq_content %}
+        <!-- Header -->
+        <div class="faq-header">
+            <h1>{{ faq_content.title }}</h1>
+            <p class="subtitle">Frequently Asked Questions</p>
+        </div>
+
+        <!-- Content Card -->
+        <div class="faq-content-card">
+            <div class="content">
+                {{ faq_content.content|safe }}
+            </div>
+
+            {% if faq_content.updated_at %}
+            <div class="updated-info">
+                Last updated: {{ faq_content.updated_at|date:"F j, Y" }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Fallback State -->
+        <div class="faq-header">
+            <h1>FAQ</h1>
+        </div>
+
+        <div class="faq-content-card">
+            <div class="fallback-state">
+                <i class="bi bi-question-circle"></i>
+                <h3>No FAQ Content Available</h3>
+                <p>
+                    FAQ content has not been added yet. Please check back later or contact us if you have any questions.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Shop - TAMIPEE{% endblock %}
+
+{% block content %}
+<div class="shop-wrapper">
+  <div class="shop-container">
+    
+    <!-- Homepage Hero Section (conditional) -->
+    {% if homepage_hero %}
+    <div class="homepage-hero">
+      <div class="hero-content">
+        <h2>{{ homepage_hero.title }}</h2>
+        <div class="hero-text">{{ homepage_hero.content|safe }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Shop Header -->
+    <div class="shop-header">
+      <div class="shop-header-content">
+        <h1>Farm Shop</h1>
+        <p>Fresh from our farm to your table — explore our premium agricultural products.</p>
+      </div>
+      <div class="shop-header-actions">
+        <a href="{% url 'shop:cart' %}" class="cart-btn">
+          <i class="bi bi-cart3"></i>
+          <span class="cart-badge" id="cartBadge">{{ cart.item_count }}</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="category-tabs-wrapper mb-4">
+      <div class="category-tabs">
+        <button class="category-tab active" data-category="all">
+          All Products
+        </button>
+        {% for category in categories %}
+        <button class="category-tab" data-category="{{ category.slug }}">
+          {{ category.name }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Shop Banner (conditional) -->
+    {% if shop_banner %}
+    <div class="shop-banner">
+      <div class="banner-icon">
+        <i class="bi bi-megaphone"></i>
+      </div>
+      <div class="banner-content">
+        <strong>{{ shop_banner.title }}</strong>
+        <span>{{ shop_banner.content|safe }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Products Grid -->
+    <div class="products-grid" id="productsGrid">
+      {% for product in products %}
+      <div class="product-card category-{{ product.category.slug|default:'uncategorized' }} {% if not product.in_stock %}out-of-stock{% endif %}">
+        <div class="product-image-wrapper">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+          {% else %}
+            <div class="product-image-placeholder">
+              <i class="bi bi-box-seam"></i>
+            </div>
+          {% endif %}
+          {% if not product.in_stock %}
+            <div class="out-of-stock-badge">
+              <i class="bi bi-x-circle"></i> Out of Stock
+            </div>
+          {% elif product.stock_quantity <= 5 %}
+            <div class="low-stock-badge">
+              <i class="bi bi-exclamation-triangle"></i> Only {{ product.stock_quantity }} left
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="product-info">
+          <h3 class="product-name">{{ product.name }}</h3>
+          {% if product.category %}
+          <span class="product-category-badge">{{ product.category.name }}</span>
+          {% endif %}
+          <p class="product-description">{{ product.description|truncatewords:20 }}</p>
+          <div class="product-footer">
+            <span class="product-price">₦{{ product.price|floatformat:2 }}</span>
+            {% if product.in_stock %}
+              <form method="post" action="{% url 'shop:add_to_cart' product.pk %}" class="add-to-cart-form">
+                {% csrf_token %}
+                <button type="submit" class="btn-add-cart" {% if product.pk in cart_item_ids %}disabled{% endif %}>
+                  {% if product.pk in cart_item_ids %}
+                    <i class="bi bi-check-circle"></i> In Cart
+                  {% else %}
+                    <i class="bi bi-cart-plus"></i> Add to Cart
+                  {% endif %}
+                </button>
+              </form>
+            {% else %}
+              <button class="btn-add-cart disabled" disabled>
+                <i class="bi bi-x-circle"></i> Unavailable
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="empty-shop">
+        <i class="bi bi-basket"></i>
+        <h3>No Products Yet</h3>
+        <p>Our farm shop is being stocked. Check back soon for fresh products!</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .shop-wrapper {
+    background: #F5F7F2;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .shop-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .shop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+    padding: 32px 40px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shop-header-content h1 {
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0;
+  }
+
+  .shop-header-content p {
+    color: rgba(255,255,255,0.85);
+    font-size: 14px;
+    margin: 6px 0 0 0;
+  }
+
+  /* Homepage Hero Section */
+  .homepage-hero {
+    background: linear-gradient(135deg, #F8F9FA, #E8EDE8);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 24px;
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+
+  .homepage-hero .hero-content h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .homepage-hero .hero-text {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: #374151;
+  }
+
+  .homepage-hero .hero-text p {
+    margin: 12px 0;
+  }
+
+  /* Shop Banner */
+  .shop-banner {
+    background: linear-gradient(90deg, #FFC107, #FFB300);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+  }
+
+  .shop-banner .banner-icon {
+    font-size: 28px;
+    color: #1B5E20;
+  }
+
+  .shop-banner .banner-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .shop-banner .banner-content strong {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1B5E20;
+  }
+
+  .shop-banner .banner-content span {
+    font-size: 0.9375rem;
+    color: #374151;
+    line-height: 1.5;
+  }
+
+  .cart-btn {
+    background: #D4AF37;
+    color: #1B5E20;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    text-decoration: none;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+  }
+
+  .cart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212,175,55,0.4);
+    color: #1B5E20;
+  }
+
+  .cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #FFFFFF;
+    color: #1B5E20;
+    font-size: 11px;
+    font-weight: 700;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  .category-tabs-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-tabs {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .category-tab {
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1B5E20;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+
+  .category-tab:hover {
+    background: #E8EDE8;
+  }
+
+  .category-tab.active {
+    background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
+    color: #1B5E20;
+    border-color: #D4AF37;
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .product-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+  }
+
+  .product-image-wrapper {
+    position: relative;
+    height: 220px;
+    background: #F8FAF8;
+    overflow: hidden;
+  }
+
+  .product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #C8D6C8;
+    font-size: 64px;
+  }
+
+  .out-of-stock-badge,
+  .low-stock-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .out-of-stock-badge {
+    background: rgba(198,40,40,0.9);
+    color: #FFFFFF;
+  }
+
+  .low-stock-badge {
+    background: rgba(212,175,55,0.9);
+    color: #1B5E20;
+  }
+
+  .product-info {
+    padding: 20px;
+  }
+
+  .product-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #1B5E20;
+    margin: 0 0 8px 0;
+  }
+
+  .product-category-badge {
+    display: inline-block;
+    background: rgba(27,94,32,0.1);
+    color: #1B5E20;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+
+  .product-description {
+    font-size: 13px;
+    color: #6B7A6B;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+  }
+
+  .product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .product-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1B5E20;
+  }
+
+  .btn-add-cart {
+    background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
+    color: #1B5E20;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-add-cart:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+  }
+
+  .btn-add-cart:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #E8EDE8;
+    color: #6B7A6B;
+  }
+
+  .product-card.out-of-stock {
+    opacity: 0.75;
+  }
+
+  .empty-shop {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    background: #FFFFFF;
+    border-radius: 16px;
+  }
+
+  .empty-shop i {
+    font-size: 64px;
+    color: #C8D6C8;
+    margin-bottom: 16px;
+  }
+
+  .empty-shop h3 {
+    color: #1B5E20;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+  }
+
+  .empty-shop p {
+    color: #6B7A6B;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .shop-wrapper {
+      padding: 16px;
+    }
+
+    .homepage-hero {
+      padding: 24px 20px;
+    }
+
+    .homepage-hero .hero-content h2 {
+      font-size: 1.5rem;
+    }
+
+    .homepage-hero .hero-text {
+      font-size: 1rem;
+    }
+
+    .shop-banner {
+      flex-direction: column;
+      text-align: center;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .shop-banner .banner-icon {
+      font-size: 24px;
+    }
+
+    .shop-banner .banner-content {
+      text-align: center;
+    }
+
+    .shop-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 16px;
+      padding: 24px 20px;
+    }
+
+    .shop-header-content h1 {
+      font-size: 22px;
+    }
+
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.category-tab');
+    const productCards = document.querySelectorAll('.product-card');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const category = this.dataset.category;
+            productCards.forEach(card => {
+                if (category === 'all') {
+                    card.style.display = '';
+                } else {
+                    if (card.classList.contains('category-' + category)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,478 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark" style="
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+  padding: 0;
+  box-shadow: 0 2px 20px rgba(27, 94, 32, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+">
+  <div class="container-fluid px-3 px-md-4">
+
+    <!-- ==========================================
+         LEFT SECTION - Brand
+         ========================================== -->
+    <div class="d-flex align-items-center" style="flex-shrink: 0;">
+
+      <!-- Brand -->
+<a class="navbar-brand d-flex align-items-center" 
+          href="{% url 'home' %}" 
+          style="
+           padding: 8px 0;
+           gap: 10px;
+           text-decoration: none;
+           transition: all 0.3s ease;
+         ">
+        <!-- Logo -->
+        <img src="{% static 'accounts/images/logo.svg' %}" 
+             alt="TAMIPEE" 
+             width="32" 
+             height="32"
+             style="
+               filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+               transition: transform 0.3s ease;
+             ">
+        
+        <!-- Brand Name -->
+        <span style="
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          color: #FFFFFF;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          line-height: 1.2;
+        ">
+          TAMIPEE
+        </span>
+        
+        <!-- Farm Tag (hidden on mobile) -->
+        <span class="d-none d-lg-inline" style="
+          font-size: 10px;
+          color: #D4AF37;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          background: rgba(212, 175, 55, 0.12);
+          padding: 2px 10px;
+          border-radius: 50px;
+          border: 1px solid rgba(212, 175, 55, 0.15);
+          margin-left: 4px;
+        ">
+          Farm Management
+        </span>
+      </a>
+    </div>
+
+    <!-- ==========================================
+         TOGGLER (Mobile)
+         ========================================== -->
+    <button class="navbar-toggler border-0" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#navbarMain"
+            aria-label="Toggle navigation"
+            style="
+              padding: 8px 10px;
+              border: 2px solid rgba(255, 255, 255, 0.15);
+              border-radius: 10px;
+              transition: all 0.3s ease;
+            ">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- ==========================================
+         NAVBAR COLLAPSE
+         ========================================== -->
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav ms-auto align-items-center" style="gap: 2px;">
+
+        <!-- Shop Link -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'shop:product_list' %}"
+             style="
+               color: rgba(255, 255, 255, 0.75);
+               padding: 8px 16px;
+               border-radius: 10px;
+               transition: all 0.3s ease;
+               font-weight: 500;
+               font-size: 14px;
+               gap: 6px;
+             ">
+            <i class="bi bi-shop"></i>
+            <span>Shop</span>
+          </a>
+        </li>
+
+        <!-- About Link -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'shop:about' %}"
+             style="
+               color: rgba(255, 255, 255, 0.75);
+               padding: 8px 16px;
+               border-radius: 10px;
+               transition: all 0.3s ease;
+               font-weight: 500;
+               font-size: 14px;
+               gap: 6px;
+             ">
+            <i class="bi bi-info-circle"></i>
+            <span>About</span>
+          </a>
+        </li>
+
+        <!-- Contact Link -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'shop:contact' %}"
+             style="
+               color: rgba(255, 255, 255, 0.75);
+               padding: 8px 16px;
+               border-radius: 10px;
+               transition: all 0.3s ease;
+               font-weight: 500;
+               font-size: 14px;
+               gap: 6px;
+             ">
+            <i class="bi bi-envelope"></i>
+            <span>Contact</span>
+          </a>
+        </li>
+
+        <!-- Dashboard Link -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'accounts:dashboard' %}"
+             style="
+               color: rgba(255, 255, 255, 0.75);
+               padding: 8px 16px;
+               border-radius: 10px;
+               transition: all 0.3s ease;
+               font-weight: 500;
+               font-size: 14px;
+               gap: 6px;
+             ">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        {% if user.is_authenticated %}
+        <!-- User Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center" 
+             href="#"
+             id="userDropdown"
+             role="button"
+             data-bs-toggle="dropdown"
+             aria-expanded="false"
+             style="
+               padding: 4px 12px 4px 4px;
+               border-radius: 50px;
+               background: rgba(255, 255, 255, 0.06);
+               color: #FFFFFF;
+               transition: all 0.3s ease;
+               gap: 10px;
+               border: 1px solid rgba(255, 255, 255, 0.06);
+             ">
+            
+            <!-- Avatar -->
+            <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                 style="
+                   width: 34px;
+                   height: 34px;
+                   background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
+                   color: #1B5E20;
+                   font-weight: 700;
+                   font-size: 14px;
+                   flex-shrink: 0;
+                   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
+                 ">
+              {{ user.full_name|slice:":1"|upper }}
+            </div>
+            
+            <!-- User Name (hidden on mobile) -->
+            <span class="d-none d-md-inline" style="font-weight: 500; font-size: 14px;">
+              {{ user.full_name }}
+            </span>
+            
+            <!-- Dropdown Arrow -->
+            <i class="bi bi-chevron-down d-none d-md-inline" style="font-size: 12px; color: rgba(255,255,255,0.5);"></i>
+          </a>
+          
+          <!-- Dropdown Menu -->
+          <ul class="dropdown-menu dropdown-menu-end" 
+              style="
+                border-radius: 16px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                border: 1px solid rgba(0,0,0,0.04);
+                padding: 8px;
+                min-width: 200px;
+                margin-top: 8px;
+              ">
+            <li>
+              <a class="dropdown-item" href="{% url 'accounts:profile' %}" 
+                 style="
+                   border-radius: 10px;
+                   padding: 10px 16px;
+                   transition: all 0.2s ease;
+                   display: flex;
+                   align-items: center;
+                   gap: 10px;
+                 ">
+                <i class="bi bi-person" style="font-size: 16px; width: 20px; color: #6B7A6B;"></i>
+                <span>Profile</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'accounts:password_change' %}" 
+                 style="
+                   border-radius: 10px;
+                   padding: 10px 16px;
+                   transition: all 0.2s ease;
+                   display: flex;
+                   align-items: center;
+                   gap: 10px;
+                 ">
+                <i class="bi bi-key" style="font-size: 16px; width: 20px; color: #6B7A6B;"></i>
+                <span>Change Password</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider" style="margin: 6px 0;"></li>
+            <li>
+              <form method="post" action="{% url 'accounts:logout' %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger" 
+                        style="
+                          border-radius: 10px;
+                          padding: 10px 16px;
+                          transition: all 0.2s ease;
+                          display: flex;
+                          align-items: center;
+                          gap: 10px;
+                          width: 100%;
+                          border: none;
+                          background: none;
+                          font-weight: 500;
+                        ">
+                  <i class="bi bi-box-arrow-right" style="font-size: 16px; width: 20px;"></i>
+                  <span>Logout</span>
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
+
+        {% else %}
+        <!-- Login Button -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'accounts:login' %}"
+             style="
+               color: rgba(255, 255, 255, 0.75);
+               padding: 8px 16px;
+               border-radius: 10px;
+               transition: all 0.3s ease;
+               font-weight: 500;
+               gap: 6px;
+             ">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Login</span>
+          </a>
+        </li>
+        
+        <!-- Sign Up Button (styled) -->
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center" 
+             href="{% url 'accounts:signup' %}"
+             style="
+               background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
+               color: #1B5E20;
+               padding: 8px 18px;
+               border-radius: 50px;
+               transition: all 0.3s ease;
+               font-weight: 600;
+               gap: 6px;
+               box-shadow: 0 2px 12px rgba(212, 175, 55, 0.25);
+             ">
+            <i class="bi bi-person-plus"></i>
+            <span>Sign Up</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+
+  </div>
+</nav>
+
+<!-- ==========================================
+     STYLES
+     ========================================== -->
+<style>
+  /* ===== Brand Hover ===== */
+  .navbar-brand:hover {
+    transform: scale(1.02);
+  }
+  
+  .navbar-brand:hover img {
+    transform: rotate(-5deg) scale(1.05);
+  }
+
+  /* ===== Nav Links ===== */
+  .nav-link:hover {
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* ===== Dropdown Items ===== */
+  .dropdown-item:hover {
+    background: #F5F5F5;
+    transform: translateX(4px);
+  }
+
+  .dropdown-item:active {
+    transform: translateX(0px);
+  }
+
+  /* ===== User Dropdown Toggle ===== */
+  .dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .dropdown-toggle::after {
+    display: none; /* Remove default caret */
+  }
+
+  /* ===== Mobile Toggler Hover ===== */
+  .navbar-toggler:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25) !important;
+  }
+
+  /* ==========================================
+     RESPONSIVE BREAKPOINTS
+     ========================================== */
+
+  /* Tablet (768px - 1024px) */
+  @media (max-width: 1024px) {
+    .navbar-brand span {
+      font-size: 18px !important;
+      letter-spacing: 1px !important;
+    }
+    
+    .navbar-brand img {
+      width: 28px !important;
+      height: 28px !important;
+    }
+  }
+
+  /* Mobile (480px - 768px) */
+  @media (max-width: 768px) {
+    /* Brand */
+    .navbar-brand span {
+      font-size: 16px !important;
+    }
+    
+    .navbar-brand img {
+      width: 24px !important;
+      height: 24px !important;
+    }
+
+    /* User Menu */
+    .dropdown-toggle {
+      padding: 4px 8px 4px 4px !important;
+    }
+    
+    .dropdown-toggle .rounded-circle {
+      width: 28px !important;
+      height: 28px !important;
+      font-size: 12px !important;
+    }
+
+    /* Nav Items */
+    .nav-link {
+      padding: 6px 12px !important;
+      font-size: 13px !important;
+    }
+
+    /* Sign Up Button */
+    .nav-link[style*="background: linear-gradient"] {
+      padding: 6px 14px !important;
+      font-size: 13px !important;
+    }
+  }
+
+  /* Small Mobile (320px - 480px) */
+  @media (max-width: 480px) {
+    .container-fluid {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+
+    /* Brand */
+    .navbar-brand span {
+      font-size: 14px !important;
+      letter-spacing: 0.5px !important;
+    }
+    
+    .navbar-brand img {
+      width: 20px !important;
+      height: 20px !important;
+    }
+
+    /* Toggler */
+    .navbar-toggler {
+      padding: 6px 8px !important;
+    }
+    
+    .navbar-toggler-icon {
+      width: 20px !important;
+      height: 20px !important;
+    }
+
+    /* User Avatar */
+    .dropdown-toggle .rounded-circle {
+      width: 24px !important;
+      height: 24px !important;
+      font-size: 10px !important;
+    }
+
+    /* Nav Links */
+    .nav-link {
+      padding: 4px 10px !important;
+      font-size: 12px !important;
+    }
+
+    /* Sign Up Button */
+    .nav-link[style*="background: linear-gradient"] {
+      padding: 4px 12px !important;
+      font-size: 12px !important;
+    }
+
+    /* Dropdown */
+    .dropdown-menu {
+      min-width: 160px !important;
+      padding: 6px !important;
+    }
+    
+    .dropdown-item {
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
+  }
+
+  /* Extra Small (below 360px) */
+  @media (max-width: 360px) {
+    .navbar-brand span {
+      font-size: 12px !important;
+    }
+    
+    .navbar-brand img {
+      width: 18px !important;
+      height: 18px !important;
+    }
+  }
+</style>

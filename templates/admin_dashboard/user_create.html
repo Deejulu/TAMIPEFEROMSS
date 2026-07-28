@@ -1,0 +1,517 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block title %}Create User | Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+/* Page Background */
+body {
+    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+}
+
+/* User Create Form Specific Styles */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.create-container {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: slideInRight 0.4s ease-out;
+}
+
+.form-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.form-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    transform: translateY(-2px);
+}
+
+.form-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    padding: 2rem 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.form-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+}
+
+.form-header h2 {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-body {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+    display: block;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2E7D32;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(46, 125, 50, 0.15);
+    outline: none;
+}
+
+.form-check {
+    padding: 1rem;
+    background-color: rgba(67, 160, 71, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(67, 160, 71, 0.15);
+}
+
+.form-check-input:checked {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.help-text, .form-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.alert-custom {
+    border-radius: 8px;
+    border-left: 4px solid;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.alert-info-custom {
+    background-color: rgba(59, 130, 246, 0.08);
+    border-left-color: #3B82F6;
+    color: #1E40AF;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.alert-success-custom {
+    background-color: rgba(34, 197, 94, 0.08);
+    border-left-color: #22C55E;
+    color: #166534;
+    border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(67, 160, 71, 0.15);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #2E7D32, #388E3C, #43A047);
+    border: none;
+    color: white;
+    padding: 0.875rem 2.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(27, 94, 32, 0.15);
+}
+
+.btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-submit:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-submit:hover {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.25);
+    color: white;
+}
+
+.btn-submit:hover i {
+    transform: scale(1.1);
+}
+
+.btn-submit:active {
+    transform: translateY(-1px);
+}
+
+.btn-submit i {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-cancel {
+    padding: 0.875rem 2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-cancel:hover i {
+    transform: scale(1.1);
+}
+
+.btn-cancel i {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fix button text visibility */
+.btn-outline-secondary {
+    color: #374151 !important;
+    border-color: #d1d5db;
+    background-color: transparent;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.errorlist li {
+    color: #dc2626;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.password-strength.weak {
+    background-color: rgba(220, 38, 38, 0.08);
+    color: #991B1B;
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    display: block;
+}
+
+.password-strength.medium {
+    background-color: rgba(250, 204, 21, 0.08);
+    color: #92400E;
+    border: 1px solid rgba(250, 204, 21, 0.15);
+    display: block;
+}
+
+.password-strength.strong {
+    background-color: rgba(34, 197, 94, 0.08);
+    color: #065F46;
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-body {
+        padding: 1.5rem;
+    }
+    
+    .form-header {
+        padding: 1.5rem 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-submit, .btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-body {
+        padding: 1rem;
+    }
+    
+    .form-header h2 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:overview' %}"><i class="bi bi-house-door"></i></a></li>
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard:users' %}">User Management</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Create User</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="create-container">
+    <!-- Back to List -->
+    <div class="mb-4">
+        <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to User List
+        </a>
+    </div>
+    
+    <!-- Create User Form -->
+    <div class="form-card">
+        <div class="form-header">
+            <h2>
+                <i class="bi bi-person-plus"></i>
+                Create New User
+            </h2>
+        </div>
+        
+        <div class="form-body">
+            <div class="alert-info-custom alert-custom">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Creating a new user:</strong> A temporary password will be created. The user should change their password upon first login.
+            </div>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="id_full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                    {{ form.full_name }}
+                    {% if form.full_name.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.full_name.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="id_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                    {{ form.email }}
+                    {% if form.email.help_text %}
+                    <div class="form-text">{{ form.email.help_text }}</div>
+                    {% endif %}
+                    {% if form.email.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.email.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Phone Number -->
+                <div class="form-group">
+                    <label for="id_phone_number" class="form-label">Phone Number</label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.phone_number.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="id_password1" class="form-label">Password <span class="text-danger">*</span></label>
+                    {{ form.password1 }}
+                    {% if form.password1.help_text %}
+                    <div class="form-text">{{ form.password1.help_text }}</div>
+                    {% endif %}
+                    <div id="password-strength" class="password-strength"></div>
+                    {% if form.password1.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password1.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Confirm Password -->
+                <div class="form-group">
+                    <label for="id_password2" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                    {{ form.password2 }}
+                    {% if form.password2.help_text %}
+                    <div class="form-text">{{ form.password2.help_text }}</div>
+                    {% endif %}
+                    {% if form.password2.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password2.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Role -->
+                <div class="form-group">
+                    <label for="id_role" class="form-label">Role <span class="text-danger">*</span></label>
+                    {{ form.role }}
+                    {% if form.role.help_text %}
+                    <div class="form-text">{{ form.role.help_text }}</div>
+                    {% endif %}
+                    {% if form.role.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.role.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Is Active -->
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="id_is_active">
+                        Active User
+                    </label>
+                    {% if form.is_active.help_text %}
+                    <div class="form-text">{{ form.is_active.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-submit">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Create User
+                    </button>
+                    <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary btn-cancel">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password strength indicator
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.getElementById('id_password1');
+    const strengthIndicator = document.getElementById('password-strength');
+    
+    if (password1) {
+        password1.addEventListener('input', function() {
+            const password = this.value;
+            const length = password.length;
+            
+            if (length === 0) {
+                strengthIndicator.className = 'password-strength';
+                strengthIndicator.textContent = '';
+                return;
+            }
+            
+            let strength = 0;
+            
+            // Length check
+            if (length >= 8) strength++;
+            if (length >= 12) strength++;
+            
+            // Character variety checks
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            // Update indicator
+            if (strength <= 2) {
+                strengthIndicator.className = 'password-strength weak';
+                strengthIndicator.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Weak password';
+            } else if (strength <= 4) {
+                strengthIndicator.className = 'password-strength medium';
+                strengthIndicator.innerHTML = '<i class="bi bi-shield-check me-1"></i> Medium password';
+            } else {
+                strengthIndicator.className = 'password-strength strong';
+                strengthIndicator.innerHTML = '<i class="bi bi-shield-fill-check me-1"></i> Strong password';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

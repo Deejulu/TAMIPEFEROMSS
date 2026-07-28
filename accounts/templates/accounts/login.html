@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Sign In" %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+    <div class="card-header">
+        <h2 class="mt-2">{% trans "Welcome Back" %}</h2>
+        <p>{% trans "Sign in to your account" %}</p>
+    </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Email Field -->
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">
+                        <i class="bi bi-envelope me-1"></i>{{ form.username.label }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-3">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">
+                        <i class="bi bi-lock me-1"></i>{{ form.password.label }}
+                    </label>
+                    <div class="input-group password-toggle-wrapper">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        {{ form.password }}
+                        <span class="input-group-text password-toggle-addon" data-target="id_password" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Forgot Password & Actions -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                        <label class="form-check-label" for="rememberMe">
+                            {% trans "Remember me" %}
+                        </label>
+                    </div>
+                    <a href="{% url 'accounts:security_recovery' %}" class="text-decoration-none small">
+                        <i class="bi bi-question-circle me-1"></i>{% trans "Forgot Password?" %}
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>{% trans "Sign In" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer">
+            <p class="mb-0">
+                {% trans "Don't have an account?" %}
+                <a href="{% url 'accounts:signup' %}" class="text-success fw-bold text-decoration-none">
+                    {% trans "Sign Up" %}
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    document.querySelectorAll('.password-toggle-addon').forEach(function(addon) {
+        addon.addEventListener('click', function() {
+            var targetId = addon.getAttribute('data-target');
+            var input = document.getElementById(targetId);
+            if (input) {
+                var icon = addon.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'bi bi-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'bi bi-eye';
+                }
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

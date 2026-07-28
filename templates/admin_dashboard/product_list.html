@@ -1,0 +1,270 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="inventory-management">
+    <!-- Header with Sample Data Actions -->
+    <div class="inventory-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-box-seam"></i> Products / Inventory</h2>
+                <p class="text-muted mb-0">Manage product catalog, categories, stock levels, and pricing</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{% url 'admin_dashboard:product_add' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add Product
+                </a>
+                <a href="{% url 'admin_dashboard:product_categories' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-folder"></i> Manage Categories
+                </a>
+                {% if is_super_admin %}
+                <button type="button" class="btn btn-outline-success" id="populateSampleBtn">
+                    <i class="bi bi-database-add"></i> Populate Sample Data
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="deleteSampleBtn">
+                    <i class="bi bi-database-dash"></i> Delete Sample Data
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-box"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Total Products</h6>
+                            <h4 class="mb-0">{{ total_products }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success text-white rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-folder"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Categories</h6>
+                            <h4 class="mb-0">{{ total_categories }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Low Stock</h6>
+                            <h4 class="mb-0">{{ low_stock_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="category" class="form-label">Filter by Category</label>
+                    <select class="form-select" id="category" name="category" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
+                            {{ category.name }} ({{ category.product_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <a href="{% url 'admin_dashboard:product_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if products %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr class="{% if not product.is_active %}table-secondary{% endif %} {% if product.is_sample_data %}table-warning{% endif %}">
+                            <td>
+                                {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                     class="rounded" style="width: 48px; height: 48px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="width: 48px; height: 48px;">
+                                    <i class="bi bi-box-seam text-muted"></i>
+                                </div>
+                                {% endif %}
+                                {% if product.is_sample_data %}
+                                <span class="badge bg-warning text-dark ms-1" style="font-size: 10px;">Sample</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td>
+                                {% if product.category %}
+                                <span class="badge bg-info text-dark">{{ product.category.name }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Uncategorized</span>
+                                {% endif %}
+                            </td>
+                            <td>₦{{ product.price|floatformat:2 }}</td>
+                            <td>
+                                {% if product.stock_quantity == 0 %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                                {% elif product.stock_quantity <= 10 %}
+                                <span class="badge bg-warning text-dark">{{ product.stock_quantity }} left</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ product.stock_quantity }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'admin_dashboard:product_edit' product.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'admin_dashboard:product_delete' product.pk %}" 
+                                       class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-box-seam" style="font-size: 48px; color: #ccc;"></i>
+                <p class="text-muted mt-3">No products found. Add your first product or populate sample data.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.inventory-header {
+    margin-bottom: 24px;
+}
+.inventory-header h2 {
+    margin: 0;
+    color: #1B5E20;
+}
+.stats-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease;
+}
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                      document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+
+    document.getElementById('populateSampleBtn')?.addEventListener('click', function() {
+        if (!confirm('This will create sample categories and products. Continue?')) {
+            return;
+        }
+        fetch('{% url 'admin_dashboard:populate_sample_data' %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    });
+
+    document.getElementById('deleteSampleBtn')?.addEventListener('click', function() {
+        if (!confirm('This will permanently delete ALL sample data (categories and products flagged as sample data). Real data will NOT be affected. Continue?')) {
+            return;
+        }
+        fetch('{% url 'admin_dashboard:delete_sample_data' %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    });
+});
+</script>
+{% endblock %}

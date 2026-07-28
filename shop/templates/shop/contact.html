@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact Us - TAMIPEE{% endblock %}
+
+{% block extra_head %}
+<style>
+    .contact-wrapper {
+        min-height: calc(100vh - 140px);
+        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+        padding: 48px 0;
+    }
+
+    .contact-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .contact-header {
+        text-align: center;
+        margin-bottom: 48px;
+    }
+
+    .contact-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .contact-header .subtitle {
+        font-size: 1.125rem;
+        color: #6B7280;
+        font-weight: 400;
+    }
+
+    .contact-content-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .contact-content-card h2 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 24px;
+    }
+
+    .contact-content-card .content {
+        font-size: 1.0625rem;
+        line-height: 1.8;
+        color: #374151;
+    }
+
+    .contact-content-card .content p {
+        margin-bottom: 16px;
+    }
+
+    .contact-content-card .content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .contact-content-card .content ul,
+    .contact-content-card .content ol {
+        margin: 16px 0;
+        padding-left: 28px;
+    }
+
+    .contact-content-card .content li {
+        margin-bottom: 8px;
+    }
+
+    .contact-content-card .content h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 28px;
+        margin-bottom: 16px;
+    }
+
+    .contact-content-card .content h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .contact-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 24px;
+        margin-top: 32px;
+    }
+
+    .contact-info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
+        background: #F9FAFB;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+    }
+
+    .contact-info-item i {
+        font-size: 24px;
+        color: #2E7D32;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .contact-info-item .info-content h4 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0 0 4px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .contact-info-item .info-content p {
+        font-size: 1rem;
+        color: #6B7280;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .fallback-state {
+        text-align: center;
+        padding: 64px 32px;
+    }
+
+    .fallback-state i {
+        font-size: 64px;
+        color: #D1D5DB;
+        margin-bottom: 24px;
+        display: block;
+    }
+
+    .fallback-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state p {
+        font-size: 1rem;
+        color: #9CA3AF;
+        line-height: 1.6;
+    }
+
+    .updated-info {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+        font-size: 0.875rem;
+        color: #9CA3AF;
+    }
+
+    @media (max-width: 768px) {
+        .contact-wrapper {
+            padding: 32px 0;
+        }
+
+        .contact-header h1 {
+            font-size: 2rem;
+        }
+
+        .contact-header .subtitle {
+            font-size: 1rem;
+        }
+
+        .contact-content-card {
+            padding: 32px 24px;
+        }
+
+        .contact-content-card h2 {
+            font-size: 1.5rem;
+        }
+
+        .contact-info-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .contact-info-item {
+            padding: 16px;
+        }
+
+        .fallback-state {
+            padding: 48px 20px;
+        }
+
+        .fallback-state i {
+            font-size: 48px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-wrapper">
+    <div class="contact-container">
+        
+        {% if contact_content %}
+        <!-- Header -->
+        <div class="contact-header">
+            <h1>{{ contact_content.title }}</h1>
+            <p class="subtitle">Get in touch with the TAMIPEE team</p>
+        </div>
+
+        <!-- Content Card -->
+        <div class="contact-content-card">
+            <div class="content">
+                {{ contact_content.content|safe }}
+            </div>
+
+            {% if contact_content.updated_at %}
+            <div class="updated-info">
+                Last updated: {{ contact_content.updated_at|date:"F j, Y" }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Fallback State -->
+        <div class="contact-header">
+            <h1>Contact Us</h1>
+            <p class="subtitle">Get in touch with the TAMIPEE team</p>
+        </div>
+
+        <div class="contact-content-card">
+            <div class="fallback-state">
+                <i class="bi bi-envelope"></i>
+                <h3>We'd Love to Hear From You</h3>
+                <p>
+                    Have questions about our farm products or services? Want to learn more about TAMIPEE?
+                    <br><br>
+                    Please check back soon for detailed contact information, or you can reach out through your customer dashboard.
+                </p>
+            </div>
+
+            <!-- Default Contact Info -->
+            <div class="contact-info-grid">
+                <div class="contact-info-item">
+                    <i class="bi bi-envelope-fill"></i>
+                    <div class="info-content">
+                        <h4>Email</h4>
+                        <p>info@tamipee.com</p>
+                    </div>
+                </div>
+
+                <div class="contact-info-item">
+                    <i class="bi bi-telephone-fill"></i>
+                    <div class="info-content">
+                        <h4>Phone</h4>
+                        <p>Available Monday - Friday<br>9:00 AM - 5:00 PM</p>
+                    </div>
+                </div>
+
+                <div class="contact-info-item">
+                    <i class="bi bi-clock-fill"></i>
+                    <div class="info-content">
+                        <h4>Business Hours</h4>
+                        <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

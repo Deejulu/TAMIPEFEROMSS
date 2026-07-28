@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Return & Refund Policy - TAMIPEE{% endblock %}
+
+{% block extra_head %}
+<style>
+    .return-wrapper {
+        min-height: calc(100vh - 140px);
+        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+        padding: 48px 0;
+    }
+
+    .return-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .return-header {
+        text-align: center;
+        margin-bottom: 48px;
+    }
+
+    .return-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .return-header .subtitle {
+        font-size: 1.125rem;
+        color: #6B7280;
+        font-weight: 400;
+    }
+
+    .return-content-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 48px;
+        box-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .return-content-card .content {
+        font-size: 1.0625rem;
+        line-height: 1.8;
+        color: #374151;
+    }
+
+    .return-content-card .content p {
+        margin-bottom: 16px;
+    }
+
+    .return-content-card .content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .return-content-card .content ul,
+    .return-content-card .content ol {
+        margin: 16px 0;
+        padding-left: 28px;
+    }
+
+    .return-content-card .content li {
+        margin-bottom: 8px;
+    }
+
+    .return-content-card .content h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 28px;
+        margin-bottom: 16px;
+    }
+
+    .return-content-card .content h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 24px;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state {
+        text-align: center;
+        padding: 64px 32px;
+    }
+
+    .fallback-state i {
+        font-size: 64px;
+        color: #D1D5DB;
+        margin-bottom: 24px;
+        display: block;
+    }
+
+    .fallback-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #6B7280;
+        margin-bottom: 12px;
+    }
+
+    .fallback-state p {
+        font-size: 1rem;
+        color: #9CA3AF;
+        line-height: 1.6;
+    }
+
+    .updated-info {
+        text-align: center;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+        font-size: 0.875rem;
+        color: #9CA3AF;
+    }
+
+    @media (max-width: 768px) {
+        .return-wrapper {
+            padding: 32px 0;
+        }
+
+        .return-header h1 {
+            font-size: 2rem;
+        }
+
+        .return-header .subtitle {
+            font-size: 1rem;
+        }
+
+        .return-content-card {
+            padding: 32px 24px;
+        }
+
+        .fallback-state {
+            padding: 48px 20px;
+        }
+
+        .fallback-state i {
+            font-size: 48px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="return-wrapper">
+    <div class="return-container">
+        
+        {% if return_content %}
+        <!-- Header -->
+        <div class="return-header">
+            <h1>{{ return_content.title }}</h1>
+            <p class="subtitle">Our Return & Refund Procedures</p>
+        </div>
+
+        <!-- Content Card -->
+        <div class="return-content-card">
+            <div class="content">
+                {{ return_content.content|safe }}
+            </div>
+
+            {% if return_content.updated_at %}
+            <div class="updated-info">
+                Last updated: {{ return_content.updated_at|date:"F j, Y" }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Fallback State -->
+        <div class="return-header">
+            <h1>Return & Refund Policy</h1>
+        </div>
+
+        <div class="return-content-card">
+            <div class="fallback-state">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <h3>No Return Policy Available</h3>
+                <p>
+                    Return and refund policy information has not been added yet. Please contact us if you have questions about returns or refunds.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

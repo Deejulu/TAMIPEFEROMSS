@@ -1,0 +1,78 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="feed-inventory-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-box-seam"></i> Feed Inventory</h2>
+            <p class="text-muted mb-0">Track feed stock levels and reorder points</p>
+        </div>
+        <a href="{% url 'farm_management:feed_inventory_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Feed Item
+        </a>
+    </div>
+
+    {% if low_stock_count > 0 %}
+    <div class="alert alert-warning mb-4">
+        <i class="bi bi-exclamation-triangle"></i> 
+        <strong>{{ low_stock_count }} item(s)</strong> are at or below their reorder point.
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            {% if inventory_items %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Feed Type</th>
+                            <th>Supplier</th>
+                            <th>Qty on Hand (kg)</th>
+                            <th>Cost/kg (₦)</th>
+                            <th>Reorder Point</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory_items %}
+                        <tr class="{% if item.needs_reorder %}table-warning{% endif %}">
+                            <td><strong>{{ item.feed_type }}</strong></td>
+                            <td>{{ item.supplier|default:"-" }}</td>
+                            <td>{{ item.quantity_on_hand_kg }}</td>
+                            <td>₦{{ item.cost_per_kg|floatformat:2 }}</td>
+                            <td>{{ item.reorder_point_kg }}</td>
+                            <td>
+                                {% if item.needs_reorder %}
+                                <span class="badge bg-danger">Reorder</span>
+                                {% else %}
+                                <span class="badge bg-success">OK</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'farm_management:feed_inventory_edit' item.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'farm_management:feed_inventory_delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-box-seam" style="font-size: 48px; color: #ccc;"></i>
+                <p class="text-muted mt-3">No feed inventory items yet. Add your first feed type.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

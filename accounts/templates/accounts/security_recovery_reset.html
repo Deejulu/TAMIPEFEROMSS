@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Reset Password" %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="card-header">
+            <i class="bi bi-key" style="font-size: 2rem;"></i>
+            <h2 class="mt-2">{% trans "Reset Password" %}</h2>
+            <p>{% trans "Set a new password for your account" %}</p>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- New Password Field -->
+                <div class="mb-3">
+                    <label for="{{ form.new_password1.id_for_label }}" class="form-label">
+                        <i class="bi bi-lock me-1"></i>{{ form.new_password1.label }}
+                    </label>
+                    {{ form.new_password1 }}
+                    {% if form.new_password1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.new_password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if form.new_password1.help_text %}
+                        <div class="form-text">{{ form.new_password1.help_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Confirm New Password Field -->
+                <div class="mb-4">
+                    <label for="{{ form.new_password2.id_for_label }}" class="form-label">
+                        <i class="bi bi-lock-fill me-1"></i>{{ form.new_password2.label }}
+                    </label>
+                    {{ form.new_password2 }}
+                    {% if form.new_password2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.new_password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if form.new_password2.help_text %}
+                        <div class="form-text">{{ form.new_password2.help_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle me-2"></i>{% trans "Reset Password" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer">
+            <p class="mb-0">
+                {% trans "Changed your mind?" %}
+                <a href="{% url 'accounts:login' %}" class="text-success fw-bold text-decoration-none">
+                    {% trans "Back to Login" %}
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

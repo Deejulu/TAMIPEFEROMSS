@@ -1,0 +1,129 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="farm-dashboard">
+    <h2 class="mb-4"><i class="bi bi-basket"></i> Farm Management</h2>
+    <p class="text-muted mb-4">Track batches, feed, growth, mortality, and profitability across your farm.</p>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Batches</h6>
+                    <h3>{{ total_batches }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Active</h6>
+                    <h3 class="text-success">{{ active_batches }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Closed</h6>
+                    <h3 class="text-secondary">{{ closed_batches }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Feed Inventory</h6>
+                    <h3 class="{% if low_stock_count > 0 %}text-danger{% else %}text-primary{% endif %}">{{ feed_inventory_count }}</h3>
+                    {% if low_stock_count > 0 %}
+                    <small class="text-danger">{{ low_stock_count }} below reorder</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>Recent Batches</strong>
+                    <a href="{% url 'farm_management:batch_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_batches %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Batch</th>
+                                    <th>Species</th>
+                                    <th>Status</th>
+                                    <th>Stock</th>
+                                    <th>Start Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for batch in recent_batches %}
+                                <tr>
+                                    <td><a href="{% url 'farm_management:batch_detail' batch.pk %}">{{ batch.name }}</a></td>
+                                    <td>{{ batch.get_species_display }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if batch.status == 'active' %}success{% else %}secondary{% endif %}">
+                                            {{ batch.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ batch.current_stock }}</td>
+                                    <td>{{ batch.start_date|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <p>No batches yet. <a href="{% url 'farm_management:batch_add' %}">Create your first batch</a>.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Recent Mortality</strong>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_mortality %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Batch</th>
+                                    <th>Count</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_mortality %}
+                                <tr>
+                                    <td><a href="{% url 'farm_management:batch_detail' log.batch.pk %}">{{ log.batch.name }}</a></td>
+                                    <td class="text-danger">{{ log.count }}</td>
+                                    <td>{{ log.date|date:"M d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <p>No mortality records yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
