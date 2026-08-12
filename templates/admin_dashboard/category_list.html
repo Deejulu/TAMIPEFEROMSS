@@ -1,24 +1,294 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+.category-list-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.category-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.category-list-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.category-list-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.category-list-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.category-table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    overflow: hidden;
+}
+
+.category-table-card .table-responsive {
+    border-radius: 0;
+}
+
+.design-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    position: relative;
+}
+
+.design-table thead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.design-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.design-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.design-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.12);
+    border-left: 3px solid #2E7D32;
+}
+
+.design-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #374151;
+}
+
+.category-mobile-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.category-mobile-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    transform: translateY(-4px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.category-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fdf8, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.category-mobile-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.0125em;
+}
+
+.category-mobile-body {
+    padding: 1rem;
+}
+
+.category-mobile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.category-mobile-row:last-child {
+    border-bottom: none;
+}
+
+.category-mobile-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.category-mobile-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: right;
+}
+
+.category-mobile-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.category-mobile-actions .design-btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.design-empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.design-empty-state i {
+    font-size: 4rem;
+    color: #D1D5DB;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.design-empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+}
+
+.design-empty-state p {
+    color: #9CA3AF;
+    margin-bottom: 1.5rem;
+}
+
+.design-pagination {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+.design-pagination .page-link {
+    color: #2E7D32;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.design-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border-color: #1B5E20;
+}
+
+.design-pagination .page-link:hover {
+    background-color: #E8F5E9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+}
+
+@media (max-width: 768px) {
+    .category-list-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .category-list-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .category-table-card .card-body {
+        padding: 1rem;
+    }
+    
+    .desktop-table-view {
+        display: none !important;
+    }
+    
+    .mobile-card-view {
+        display: block !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .category-list-header {
+        margin-bottom: 1rem;
+    }
+    
+    .category-list-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .design-pagination .page-link {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.875rem;
+        margin: 0 0.125rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
-<div class="category-management">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+<div class="category-list-container">
+    <div class="category-list-header">
         <div>
             <h2><i class="bi bi-folder"></i> Manage Categories</h2>
-            <p class="text-muted mb-0">Organize your products with categories</p>
+            <p class="category-list-subtitle mb-0">Organize your products with categories</p>
         </div>
-        <a href="{% url 'admin_dashboard:product_category_add' %}" class="btn btn-primary">
+        <a href="{% url 'admin_dashboard:product_category_add' %}" class="design-btn design-btn-primary">
             <i class="bi bi-plus-circle"></i> Add Category
         </a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
+    <div class="category-table-card">
+        <div class="table-responsive">
             {% if categories %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+            <!-- Desktop/Tablet Table View -->
+            <div class="desktop-table-view">
+                <table class="table design-table mb-0">
+                    <thead>
                         <tr>
                             <th>Name</th>
                             <th>Description</th>
@@ -33,22 +303,22 @@
                             <td>
                                 <strong>{{ category.name }}</strong>
                                 {% if category.is_sample_data %}
-                                <span class="badge bg-warning text-dark ms-1" style="font-size: 10px;">Sample</span>
+                                <span class="badge design-badge-warning ms-1" style="font-size: 10px;">Sample</span>
                                 {% endif %}
                             </td>
                             <td>{{ category.description|truncatewords:15 }}</td>
                             <td>
-                                <span class="badge bg-info text-dark">{{ category.product_count }}</span>
+                                <span class="badge design-badge-info">{{ category.product_count }}</span>
                             </td>
                             <td>{{ category.created_at|date:"M d, Y" }}</td>
                             <td>
-                                <div class="btn-group" role="group">
+                                <div class="design-btn-group">
                                     <a href="{% url 'admin_dashboard:product_category_edit' category.pk %}" 
-                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                       class="design-btn design-btn-primary design-btn-sm" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <a href="{% url 'admin_dashboard:product_category_delete' category.pk %}" 
-                                       class="btn btn-sm btn-outline-danger" title="Delete">
+                                       class="design-btn design-btn-sm" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(220,38,38,0.2);" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -58,13 +328,70 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="bi bi-folder" style="font-size: 48px; color: #ccc;"></i>
-                <p class="text-muted mt-3">No categories yet. Create your first category to organize products.</p>
+
+            <!-- Mobile Card View -->
+            <div class="mobile-card-view">
+                {% for category in categories %}
+                <div class="category-mobile-card">
+                    <div class="category-mobile-header">
+                        <div class="category-mobile-title">
+                            {{ category.name }}
+                            {% if category.is_sample_data %}
+                            <span class="badge design-badge-warning ms-1" style="font-size: 10px;">Sample</span>
+                            {% endif %}
+                        </div>
+                        <span class="badge design-badge-info">{{ category.product_count }}</span>
+                    </div>
+                    <div class="category-mobile-body">
+                        <div class="category-mobile-row">
+                            <span class="category-mobile-label">Description</span>
+                            <span class="category-mobile-value">{{ category.description|truncatewords:15 }}</span>
+                        </div>
+                        <div class="category-mobile-row">
+                            <span class="category-mobile-label">Created</span>
+                            <span class="category-mobile-value">{{ category.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="category-mobile-actions">
+                        <a href="{% url 'admin_dashboard:product_category_edit' category.pk %}" class="design-btn design-btn-primary design-btn-sm">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a href="{% url 'admin_dashboard:product_category_delete' category.pk %}" class="design-btn design-btn-sm" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white;">
+                            <i class="bi bi-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="design-empty-state">
+                    <i class="bi bi-folder"></i>
+                    <h3>No categories yet</h3>
+                    <p>Create your first category to organize products.</p>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Category pagination">
+        <ul class="pagination design-pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock %}

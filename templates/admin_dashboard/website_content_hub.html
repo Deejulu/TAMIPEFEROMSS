@@ -1,0 +1,199 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.website-hub-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.website-hub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.website-hub-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.website-hub-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.website-hub-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.hub-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.hub-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+}
+
+.hub-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.hub-card-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 2rem;
+    background: rgba(46, 125, 50, 0.1);
+    color: #2E7D32;
+}
+
+.hub-card h4 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 0.75rem;
+}
+
+.hub-card p {
+    font-family: "Inter", sans-serif;
+    color: #6b7280;
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+}
+
+.design-btn-primary {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.design-btn-primary:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.3);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .website-hub-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .hub-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hub-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .website-hub-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .hub-card {
+        padding: 1.25rem;
+    }
+    
+    .hub-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+    }
+    
+    .hub-card h4 {
+        font-size: 1.1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="website-hub-container">
+    <div class="website-hub-header">
+        <div>
+            <h2><i class="bi bi-window-stack"></i> Website Content</h2>
+            <p class="website-hub-subtitle mb-0">Manage pages, payment settings, and order rules.</p>
+        </div>
+    </div>
+
+    <div class="hub-grid">
+        <div class="hub-card">
+            <div class="hub-card-icon">
+                <i class="bi bi-file-text hub-card-icon"></i>
+            </div>
+            <h4>Content Pages</h4>
+            <p class="text-muted">Edit homepage, about, contact, and other static pages.</p>
+            <a href="{% url 'admin_dashboard:content' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> Manage Content
+            </a>
+        </div>
+        <div class="hub-card">
+            <div class="hub-card-icon">
+                <i class="bi bi-wallet2 hub-card-icon"></i>
+            </div>
+            <h4>Payment Methods</h4>
+            <p class="text-muted">Enable or disable available payment options.</p>
+            <a href="{% url 'admin_dashboard:payment_methods' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> Manage Payments
+            </a>
+        </div>
+        <div class="hub-card">
+            <div class="hub-card-icon">
+                <i class="bi bi-cart-check hub-card-icon"></i>
+            </div>
+            <h4>Minimum Order Amount</h4>
+            <p class="text-muted">Set and update the minimum order threshold.</p>
+            <a href="{% url 'admin_dashboard:minimum_order_amount' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> Manage Minimum
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

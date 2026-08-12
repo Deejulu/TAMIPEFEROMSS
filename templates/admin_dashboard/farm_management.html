@@ -1,71 +1,237 @@
 {% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+<style>
+.farm-management-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.farm-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.farm-management-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.farm-management-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.farm-management-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.farm-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.farm-nav-card {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #fbfdf9 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(27, 94, 32, 0.08), 0 10px 24px rgba(27, 94, 32, 0.08);
+    border: 1px solid rgba(27, 94, 32, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+.farm-nav-card::before {
+    content: '';
+    position: absolute;
+    inset: 16px auto 16px 0;
+    width: 4px;
+    background: linear-gradient(180deg, #D4AF37, #F5D06B);
+    border-radius: 0 4px 4px 0;
+}
+
+.farm-nav-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(27, 94, 32, 0.12), 0 18px 36px rgba(27, 94, 32, 0.12);
+    text-decoration: none;
+    color: inherit;
+}
+
+.farm-nav-card .nav-icon {
+    font-size: 2rem;
+    color: #1B5E20;
+    margin-bottom: 0.75rem;
+}
+
+.farm-nav-card h4 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #163B19;
+    margin: 0 0 0.5rem 0;
+}
+
+.farm-nav-card p {
+    color: #6b7280;
+    font-size: 0.9375rem;
+    margin-bottom: 1rem;
+    flex: 1 1 auto;
+}
+
+.farm-nav-card .btn {
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.farm-nav-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.15);
+}
+
+.farm-btn-green {
+    background-color: #1B5E20;
+    border-color: #1B5E20;
+    color: white;
+}
+
+.farm-btn-green:hover {
+    background-color: #2E7D32;
+    border-color: #2E7D32;
+    color: white;
+}
+
+@media (max-width: 1200px) {
+    .farm-nav-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .farm-nav-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .farm-management-header h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 375px) {
+    .farm-nav-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .farm-management-header h2 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
 
 {% block admin_content %}
-<div class="farm-management-page">
-    <h2>Farm Management</h2>
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-basket" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Batches</h4>
-                    <p class="text-muted">View and manage all farm batches.</p>
-                    <a href="{% url 'farm_management:batch_list' %}" class="btn btn-primary">View Batches</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-bar-chart-line" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Analytics</h4>
-                    <p class="text-muted">Compare batches with key performance metrics.</p>
-                    <a href="{% url 'farm_management:analytics' %}" class="btn btn-primary">View Analytics</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-truck" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Suppliers</h4>
-                    <p class="text-muted">Manage feed suppliers and inventory links.</p>
-                    <a href="{% url 'farm_management:supplier_list' %}" class="btn btn-primary">View Suppliers</a>
-                </div>
-            </div>
+<div class="farm-management-container">
+    <div class="farm-management-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-basket"></i> Farm Management</h2>
+            <p class="farm-management-subtitle mb-0">Manage your farm operations</p>
         </div>
     </div>
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-box-seam" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Feed Inventory</h4>
-                    <p class="text-muted">Track feed stock and reorder levels.</p>
-                    <a href="{% url 'farm_management:feed_inventory_list' %}" class="btn btn-primary">View Inventory</a>
-                </div>
+
+    <div class="farm-nav-grid">
+        <a href="{% url 'farm_management:dashboard' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-speedometer2 nav-icon"></i>
+                <h4>Dashboard</h4>
+                <p class="text-muted">View farm analytics and KPIs</p>
+                <span class="btn farm-btn-green">View Dashboard</span>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-heart-pulse" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Health Records</h4>
-                    <p class="text-muted">View health, vaccination, and water quality logs.</p>
-                    <a href="{% url 'farm_management:batch_list' %}" class="btn btn-primary">View Records</a>
-                </div>
+        </a>
+        <a href="{% url 'farm_management:batch_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-layer-group nav-icon"></i>
+                <h4>Batches</h4>
+                <p class="text-muted">Manage your fish and livestock batches</p>
+                <span class="btn farm-btn-green">View Batches</span>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body text-center">
-                    <i class="bi bi-activity" style="font-size: 48px; color: #1B5E20;"></i>
-                    <h4 class="mt-3">Daily Activities</h4>
-                    <p class="text-muted">Track daily farm activities and observations.</p>
-                    <a href="{% url 'farm_management:batch_list' %}" class="btn btn-primary">View Activities</a>
-                </div>
+        </a>
+        <a href="{% url 'farm_management:analytics' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-chart-line nav-icon"></i>
+                <h4>Analytics</h4>
+                <p class="text-muted">Track growth, feed, and mortality</p>
+                <span class="btn farm-btn-green">View Analytics</span>
             </div>
-        </div>
+        </a>
+        <a href="{% url 'farm_management:supplier_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-truck nav-icon"></i>
+                <h4>Suppliers</h4>
+                <p class="text-muted">Manage feed and equipment suppliers</p>
+                <span class="btn farm-btn-green">View Suppliers</span>
+            </div>
+        </a>
+        <a href="{% url 'farm_management:feed_inventory_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-warehouse nav-icon"></i>
+                <h4>Feed Inventory</h4>
+                <p class="text-muted">Track feed stock and usage</p>
+                <span class="btn farm-btn-green">View Inventory</span>
+            </div>
+        </a>
+        <a href="{% url 'farm_management:health_records_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-heart-pulse nav-icon"></i>
+                <h4>Health Records</h4>
+                <p class="text-muted">Log vaccinations and treatments</p>
+                <span class="btn farm-btn-green">View Records</span>
+            </div>
+        </a>
+        <a href="{% url 'farm_management:daily_activities_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-clipboard-list nav-icon"></i>
+                <h4>Daily Activities</h4>
+                <p class="text-muted">Record daily farm tasks</p>
+                <span class="btn farm-btn-green">View Activities</span>
+            </div>
+        </a>
+        <a href="{% url 'farm_management:species_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-fish nav-icon"></i>
+                <h4>Species</h4>
+                <p class="text-muted">Manage fish and livestock species</p>
+                <span class="btn farm-btn-green">View Species</span>
+            </div>
+        </a>
+        <a href="{% url 'farm_management:category_list' %}" class="card farm-nav-card">
+            <div class="card-body">
+                <i class="bi bi-tags nav-icon"></i>
+                <h4>Categories</h4>
+                <p class="text-muted">Organize products by category</p>
+                <span class="btn farm-btn-green">View Categories</span>
+            </div>
+        </a>
     </div>
 </div>
 {% endblock %}

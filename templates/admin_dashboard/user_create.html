@@ -31,17 +31,26 @@ body {
 
 .form-card {
     border: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 2rem;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    position: relative;
+}
+
+.form-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+    z-index: 1;
 }
 
 .form-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
 }
 
@@ -443,6 +452,92 @@ body {
                     {% endif %}
                 </div>
                 
+                <!-- Email (required for admin/staff, optional for customer) -->
+                <div class="form-group" id="email-group">
+                    <label for="id_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                    {{ form.email }}
+                    {% if form.email.help_text %}
+                    <div class="form-text">{{ form.email.help_text }}</div>
+                    {% endif %}
+                    {% if form.email.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.email.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+                
+                <!-- Security Questions (required for Customer) -->
+                <div id="security-questions-section" style="display: none;">
+                    <div class="form-group">
+                        <label for="id_security_question_1" class="form-label">Security Question 1 <span class="text-danger">*</span></label>
+                        {{ form.security_question_1 }}
+                        {% if form.security_question_1.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_question_1.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_security_answer_1" class="form-label">Answer 1 <span class="text-danger">*</span></label>
+                        {{ form.security_answer_1 }}
+                        {% if form.security_answer_1.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_answer_1.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_security_question_2" class="form-label">Security Question 2 <span class="text-danger">*</span></label>
+                        {{ form.security_question_2 }}
+                        {% if form.security_question_2.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_question_2.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_security_answer_2" class="form-label">Answer 2 <span class="text-danger">*</span></label>
+                        {{ form.security_answer_2 }}
+                        {% if form.security_answer_2.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_answer_2.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_security_question_3" class="form-label">Security Question 3 <span class="text-danger">*</span></label>
+                        {{ form.security_question_3 }}
+                        {% if form.security_question_3.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_question_3.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_security_answer_3" class="form-label">Answer 3 <span class="text-danger">*</span></label>
+                        {{ form.security_answer_3 }}
+                        {% if form.security_answer_3.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.security_answer_3.errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
                 <!-- Is Active -->
                 <div class="form-check">
                     {{ form.is_active }}
@@ -475,6 +570,26 @@ body {
 document.addEventListener('DOMContentLoaded', function() {
     const password1 = document.getElementById('id_password1');
     const strengthIndicator = document.getElementById('password-strength');
+    const roleSelect = document.getElementById('id_role');
+    const emailGroup = document.getElementById('email-group');
+    const securitySection = document.getElementById('security-questions-section');
+    
+    function updateFormFields() {
+        const selectedRole = roleSelect.value;
+        if (selectedRole === 'CUSTOMER') {
+            emailGroup.style.display = 'none';
+            securitySection.style.display = 'block';
+        } else {
+            emailGroup.style.display = 'block';
+            securitySection.style.display = 'none';
+        }
+    }
+    
+    // Initial check
+    if (roleSelect) {
+        updateFormFields();
+        roleSelect.addEventListener('change', updateFormFields);
+    }
     
     if (password1) {
         password1.addEventListener('input', function() {

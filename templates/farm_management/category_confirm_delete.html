@@ -1,0 +1,55 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="farm-management-page category-delete-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>{{ page_title }}</h2>
+        </div>
+    </div>
+
+    <div class="card farm-form-card">
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>Are you sure you want to delete this category?</strong>
+            </div>
+
+            <div class="mb-3">
+                <p><strong>Category:</strong> {{ category.name }}</p>
+                <p><strong>Species using this category:</strong> {{ species_count }}</p>
+            </div>
+
+            {% if species_count > 0 %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill"></i>
+                This category is used by {{ species_count }} species. Instead of deleting, it will be <strong>deactivated</strong> to preserve existing species and batch data.
+                Deactivated categories won't appear in the species creation form, but existing species and batches will retain their category information.
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill"></i>
+                This category is not used by any species and will be permanently deleted.
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    {% if species_count > 0 %}
+                    <button type="submit" class="btn btn-warning">Deactivate Category</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-danger">Delete Category</button>
+                    {% endif %}
+                    <a href="{% url 'farm_management:category_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

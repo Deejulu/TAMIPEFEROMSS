@@ -1,82 +1,127 @@
-document.addEventListener('DOMContentLoaded', function() {
+(function () {
     function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        var cookieValue = null;
+        if (document.cookie) {
+            document.cookie.split(';').some(function (cookie) {
+                var trimmedCookie = cookie.trim();
+                if (trimmedCookie.substring(0, name.length + 1) === name + '=') {
+                    cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+                    return true;
                 }
-            }
+                return false;
+            });
         }
         return cookieValue;
     }
 
-    const csrftoken = getCookie('csrftoken');
+    function updateUnreadBadge(unreadCount) {
+        var bell = document.querySelector('.admin-notification-bell');
+        if (!bell) {
+            return;
+        }
 
-    function markAsRead(id) {
+        var badge = bell.querySelector('.admin-notification-badge');
+        if (unreadCount > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'admin-notification-badge';
+                bell.appendChild(badge);
+            }
+            badge.textContent = unreadCount;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    function markNotificationRead(id, csrfToken) {
         fetch('/admin-dashboard/notifications/' + id + '/mark-read/', {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrftoken,
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const item = document.querySelector('.notification-item[data-id="' + id + '"]');
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                if (!data.success) {
+                    return;
+                }
+
+                updateUnreadBadge(data.unread_count);
+                var item = document.querySelector('.notification-item[data-id="' + id + '"]');
                 if (item) {
                     item.classList.remove('unread');
-                    const msg = item.querySelector('.notification-message');
-                    if (msg) msg.classList.remove('fw-semibold');
-                    const btn = item.querySelector('.mark-read-btn');
-                    if (btn) btn.remove();
+                    var message = item.querySelector('.notification-message');
+                    if (message) {
+                        message.classList.remove('fw-semibold');
+                    }
+                    var button = item.querySelector('.mark-read-btn');
+                    if (button) {
+                        button.remove();
+                    }
                 }
-            }
-        })
-        .catch(() => {});
+            });
     }
 
-    function markAllRead() {
+    function markAllNotificationsRead(csrfToken) {
         fetch('/admin-dashboard/notifications/mark-all-read/', {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrftoken,
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.querySelectorAll('.notification-item.unread').forEach(item => {
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                if (!data.success) {
+                    return;
+                }
+
+                updateUnreadBadge(data.unread_count);
+                document.querySelectorAll('.notification-item.unread').forEach(function (item) {
                     item.classList.remove('unread');
-                    const msg = item.querySelector('.notification-message');
-                    if (msg) msg.classList.remove('fw-semibold');
-                    const btn = item.querySelector('.mark-read-btn');
-                    if (btn) btn.remove();
+                    var message = item.querySelector('.notification-message');
+                    if (message) {
+                        message.classList.remove('fw-semibold');
+                    }
+                    var button = item.querySelector('.mark-read-btn');
+                    if (button) {
+                        button.remove();
+                    }
                 });
-                const btn = document.getElementById('markAllReadBtn');
-                if (btn) btn.disabled = true;
-            }
-        })
-        .catch(() => {});
+
+                var markAllButton = document.getElementById('markAllReadBtn');
+                if (markAllButton) {
+                    markAllButton.disabled = true;
+                }
+            });
     }
 
-    document.querySelectorAll('.mark-read-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            markAsRead(this.dataset.id);
+    function initializeNotificationControls() {
+        var csrfToken = getCookie('csrftoken');
+        document.querySelectorAll('.mark-read-btn').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                markNotificationRead(this.dataset.id, csrfToken);
+            });
         });
-    });
 
-    const markAllBtn = document.getElementById('markAllReadBtn');
-    if (markAllBtn) {
-        markAllBtn.addEventListener('click', function() {
-            markAllRead();
-        });
+        var markAllButton = document.getElementById('markAllReadBtn');
+        if (markAllButton) {
+            markAllButton.addEventListener('click', function () {
+                markAllNotificationsRead(csrfToken);
+            });
+        }
     }
-});
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeNotificationControls);
+    } else {
+        initializeNotificationControls();
+    }
+}());

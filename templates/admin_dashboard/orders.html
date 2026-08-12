@@ -1,11 +1,549 @@
 {% extends "admin_dashboard/base_admin.html" %}
 
+{% block title %}Orders & Delivery | Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.orders-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.orders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.orders-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.orders-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.orders-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.order-stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.order-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.order-stat-value {
+    font-family: "Poppins", sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1B5E20;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.order-stat-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.orders-filter-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    margin-bottom: 1.5rem;
+}
+
+.orders-table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    overflow: hidden;
+}
+
+.orders-table-card .table-responsive {
+    border-radius: 0;
+}
+
+.design-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    position: relative;
+}
+
+.design-table thead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.design-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.design-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.design-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.12);
+    border-left: 3px solid #2E7D32;
+}
+
+.design-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #374151;
+}
+
+.order-id {
+    color: #1B5E20;
+    font-weight: 700;
+}
+
+.order-mobile-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.order-mobile-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    transform: translateY(-2px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.order-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fdf8, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.order-mobile-id {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.order-mobile-body {
+    padding: 1rem;
+}
+
+.order-mobile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.order-mobile-row:last-child {
+    border-bottom: none;
+}
+
+.order-mobile-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.order-mobile-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: right;
+}
+
+.order-mobile-value.order-total {
+    color: #1B5E20;
+}
+
+.order-mobile-actions {
+    padding: 1rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.order-mobile-actions .design-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+.design-pagination {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+.design-pagination .page-link {
+    color: #2E7D32;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.design-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border-color: #1B5E20;
+}
+
+.design-pagination .page-link:hover {
+    background-color: #E8F5E9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+}
+
+.design-empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.design-empty-state i {
+    font-size: 4rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.design-empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+}
+
+.design-empty-state p {
+    color: #9CA3AF;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .design-table thead th {
+        font-size: 0.7rem;
+        padding: 0.875rem 0.625rem;
+    }
+    
+    .design-table tbody td {
+        padding: 0.875rem 0.625rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .design-table thead th:nth-child(6),
+    .design-table tbody td:nth-child(6) {
+        display: none;
+    }
+    
+    .design-table thead th:nth-child(7),
+    .design-table tbody td:nth-child(7) {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .orders-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .orders-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .orders-table-card .card-body {
+        padding: 1rem;
+    }
+    
+    .design-table thead th:nth-child(5),
+    .design-table tbody td:nth-child(5) {
+        display: none;
+    }
+    
+    .desktop-table-view {
+        display: none !important;
+    }
+    
+    .mobile-card-view {
+        display: block !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .orders-header {
+        margin-bottom: 1rem;
+    }
+    
+    .orders-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .order-stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .orders-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .order-stat-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 375px) {
+    .orders-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .orders-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
-<div class="coming-soon-card">
-    <div class="icon-circle">
-        <i class="bi bi-truck"></i>
+<div class="orders-container">
+    <div class="orders-header">
+        <h2><i class="bi bi-cart-check"></i> Orders & Delivery</h2>
     </div>
-    <h2>Orders & Delivery</h2>
-    <p>Track orders, manage delivery schedules, and view shipping status will be available here soon.</p>
+
+    <!-- Stats Cards -->
+    <div class="orders-stats-grid">
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ total_orders }}</div>
+            <div class="order-stat-label">Total Orders</div>
+        </div>
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ pending_count }}</div>
+            <div class="order-stat-label">Pending</div>
+        </div>
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ confirmed_count }}</div>
+            <div class="order-stat-label">Confirmed</div>
+        </div>
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ processing_count }}</div>
+            <div class="order-stat-label">Processing</div>
+        </div>
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ shipped_count }}</div>
+            <div class="order-stat-label">Shipped</div>
+        </div>
+        <div class="order-stat-card">
+            <div class="order-stat-value">{{ delivered_count }}</div>
+            <div class="order-stat-label">Delivered</div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="orders-filter-card">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="statusFilter" class="design-form-label">Filter by Status</label>
+                <select id="statusFilter" class="design-form-select" name="status" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'admin_dashboard:orders' %}" class="design-btn design-btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table Card -->
+    <div class="orders-table-card">
+        <div class="table-responsive">
+            {% if orders %}
+            <!-- Desktop/Tablet Table View -->
+            <div class="desktop-table-view">
+                <table class="table design-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Date Placed</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><strong class="order-id">#{{ order.pk }}</strong></td>
+                            <td>{{ order.user.full_name|default:"Deleted User" }}</td>
+                            <td>₦{{ order.total }}</td>
+                            <td>
+                                <span class="badge design-badge-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% elif order.status == 'processing' %}primary{% elif order.status == 'shipped' %}secondary{% elif order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% endif %}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'admin_dashboard:order_detail' order.pk %}" class="design-btn design-btn-primary design-btn-sm">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="design-empty-state">
+                                    <i class="bi bi-receipt"></i>
+                                    <h3>No orders found</h3>
+                                    <p>Orders will appear here when customers make purchases.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="mobile-card-view">
+                {% for order in orders %}
+                <div class="order-mobile-card">
+                    <div class="order-mobile-header">
+                        <div class="order-mobile-id">#{{ order.pk }}</div>
+                        <div class="order-mobile-status">
+                            <span class="badge design-badge-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% elif order.status == 'processing' %}primary{% elif order.status == 'shipped' %}secondary{% elif order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="order-mobile-body">
+                        <div class="order-mobile-row">
+                            <span class="order-mobile-label">Customer</span>
+                            <span class="order-mobile-value">{{ order.user.full_name|default:"Deleted User" }}</span>
+                        </div>
+                        <div class="order-mobile-row">
+                            <span class="order-mobile-label">Date</span>
+                            <span class="order-mobile-value">{{ order.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="order-mobile-row">
+                            <span class="order-mobile-label">Total</span>
+                            <span class="order-mobile-value order-total">₦{{ order.total }}</span>
+                        </div>
+                    </div>
+                    <div class="order-mobile-actions">
+                        <a href="{% url 'admin_dashboard:order_detail' order.pk %}" class="design-btn design-btn-primary design-btn-sm">
+                            <i class="bi bi-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="design-empty-state">
+                    <i class="bi bi-receipt"></i>
+                    <h3>No orders found</h3>
+                    <p>Orders will appear here when customers make purchases.</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Orders pagination">
+        <ul class="pagination design-pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByStatus() {
+    const status = document.getElementById('statusFilter').value;
+    const url = new window.location.href.split('?')[0];
+    const params = new URLSearchParams();
+    if (status) {
+        params.set('status', status);
+    }
+    window.location.href = url + (params.toString() ? '?' + params.toString() : '');
+}
+</script>
 {% endblock %}

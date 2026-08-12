@@ -1,0 +1,269 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="staff-form-container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card staff-form-card">
+                <div class="card-header">
+                    <h3><i class="bi bi-person-badge"></i> {{ page_title }}</h3>
+                    <p class="text-muted mb-0">{% if is_super_admin %}Full staff account management{% else %}Manage regular staff accounts{% endif %}</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <h6 class="text-primary fw-semibold mb-3">
+                            <i class="bi bi-person me-1"></i> Account Information
+                        </h6>
+
+                        <!-- Full Name Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                {{ form.full_name.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                {{ form.full_name }}
+                            </div>
+                            {% if form.full_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.full_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>{{ form.email.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                {{ form.email }}
+                            </div>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.email.help_text %}
+                                <div class="form-text">{{ form.email.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Phone Number Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                <i class="bi bi-telephone me-1"></i>{{ form.phone_number.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                {{ form.phone_number }}
+                            </div>
+                            {% if form.phone_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.phone_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Role Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">
+                                <i class="bi bi-shield me-1"></i>{{ form.role.label }}
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.role.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.role.help_text %}
+                                <div class="form-text">{{ form.role.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.help_text %}
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.password1 %}
+                        <h6 class="text-primary fw-semibold mb-3">
+                            <i class="bi bi-lock me-1"></i> Password
+                        </h6>
+
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                {{ form.password1.label }}
+                            </label>
+                            <div class="input-group password-toggle-wrapper">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                {{ form.password1 }}
+                                <span class="input-group-text password-toggle-addon" data-target="{{ form.password1.id_for_label }}" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </span>
+                            </div>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password1.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.password1.help_text %}
+                                <div class="form-text">{{ form.password1.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                {{ form.password2.label }}
+                            </label>
+                            <div class="input-group password-toggle-wrapper">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                {{ form.password2 }}
+                                <span class="input-group-text password-toggle-addon" data-target="{{ form.password2.id_for_label }}" aria-label="Toggle password visibility">
+                                    <i class="bi bi-eye"></i>
+                                </span>
+                            </div>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password2.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle me-1"></i> {% if viewed_user %}Update Staff{% else %}Create Staff{% endif %}
+                            </button>
+                            <a href="{% url 'admin_dashboard:staff_management' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Staff Form Card */
+.staff-form-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    animation: slideInUp 0.5s ease-out;
+}
+
+.staff-form-card .card-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0 !important;
+}
+
+.staff-form-card .card-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.staff-form-card .card-header p {
+    opacity: 0.9;
+    margin: 0.25rem 0 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .staff-form-card .card-header h3 {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .staff-form-container {
+        padding: 0;
+    }
+    
+    .staff-form-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+}
+
+/* Password Toggle */
+.password-toggle-addon {
+    cursor: pointer;
+    user-select: none;
+}
+
+.password-toggle-addon:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock extra_css %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var passwordInputs = document.querySelectorAll('.password-toggle-wrapper input[type="password"]');
+    passwordInputs.forEach(function(input) {
+        var toggle = input.closest('.password-toggle-wrapper').querySelector('.password-toggle-addon');
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    toggle.querySelector('i').className = 'bi bi-eye-slash';
+                } else {
+                    input.type = 'password';
+                    toggle.querySelector('i').className = 'bi bi-eye';
+                }
+            });
+        }
+    });
+})();
+</script>
+{% endblock extra_js %}

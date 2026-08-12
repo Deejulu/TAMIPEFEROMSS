@@ -4,26 +4,27 @@
 {% block title %}Payment Cancelled - TAMIPEE{% endblock %}
 
 {% block content %}
-<div class="container py-5 text-center">
-  <div class="card shadow-lg border-0 mx-auto" style="max-width: 500px; border-radius: 24px;">
-    <div class="card-body p-5">
-      <div class="mb-4">
-        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto" 
-             style="width: 80px; height: 80px;">
-          <i class="bi bi-x-lg text-white" style="font-size: 40px;"></i>
+<div class="container-custom page-wrapper">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card shadow-lg border-0 mx-auto rounded-xl">
+        <div class="card-body p-5 text-center">
+          <div class="mb-4">
+            <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center mx-auto dashboard-avatar-ring" style="width: 80px; height: 80px;">
+              <i class="bi bi-x-lg text-white"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold">Payment Cancelled</h3>
+          <p class="text-muted">Your payment was not processed. You can try again anytime.</p>
+          <div class="d-flex gap-3 justify-content-center mt-4">
+            <a href="{% url 'accounts:payment' %}" class="btn btn-primary">
+              <i class="bi bi-credit-card me-2"></i> Try Again
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline">
+              <i class="bi bi-house me-2"></i> Dashboard
+            </a>
+          </div>
         </div>
-      </div>
-      <h3 class="fw-bold">Payment Cancelled</h3>
-      <p class="text-muted">Your payment was not processed. You can try again anytime.</p>
-      <div class="d-flex gap-3 justify-content-center mt-4">
-        <a href="{% url 'accounts:payment' %}" class="btn btn-success" 
-           style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); border: none; border-radius: 12px; padding: 12px 32px;">
-          <i class="bi bi-credit-card me-2"></i> Try Again
-        </a>
-        <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary" 
-           style="border-radius: 12px; padding: 12px 32px;">
-          <i class="bi bi-house me-2"></i> Dashboard
-        </a>
       </div>
     </div>
   </div>

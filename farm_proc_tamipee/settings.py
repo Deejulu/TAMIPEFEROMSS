@@ -10,7 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv(override=False)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$-8qaknda#xwcs#qg$l(p2wi_po4uw!hi212u&-^151*lqqr%$'
+# Load from environment variable; no default so it fails loudly if missing in production.
+# Set DJANGO_SECRET_KEY in your environment (e.g. Render dashboard) before deploying.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-secret-key-not-for-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -48,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,14 +87,24 @@ WSGI_APPLICATION = 'farm_proc_tamipee.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# https://docs.djangoproject.com/en/6.0/topics/databases/
+# Use DATABASE_URL for Supabase PostgreSQL (recommended for production).
+# Falls back to local SQLite when DATABASE_URL is not set or is empty.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -140,9 +158,14 @@ STATICFILES_DIRS = [
     BASE_DIR / 'accounts' / 'static',
     BASE_DIR / 'static',
 ]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+if os.environ.get('SUPABASE_URL') and os.environ.get('SUPABASE_SERVICE_ROLE_KEY'):
+    DEFAULT_FILE_STORAGE = 'farm_proc_tamipee.storage_backends.SupabaseStorage'
 
 # Email configuration (console backend for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -159,10 +182,19 @@ LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
-# Paystack configuration
-PAYSTACK_SECRET_KEY = 'sk_test_placeholder_replace_with_real_key'
-PAYSTACK_PUBLIC_KEY = 'pk_test_placeholder_replace_with_real_key'
-PAYSTACK_CALLBACK_URL = 'http://127.0.0.1:8000/shop/paystack-callback/'
+# Paystack configuration. Set test or live keys through the environment; never commit them.
+PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "")
+PAYSTACK_WEBHOOK_SECRET = os.environ.get("PAYSTACK_WEBHOOK_SECRET", "")
+PAYSTACK_CALLBACK_URL = os.environ.get(
+    "PAYSTACK_CALLBACK_URL",
+    "http://127.0.0.1:8000/shop/paystack-callback/",
+)
+
+# Supabase configuration
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_BUCKET_NAME = os.environ.get("SUPABASE_BUCKET_NAME", "product-images")
 
 # Test mode detection - disables notification signals and other unnecessary operations during testing
 import sys

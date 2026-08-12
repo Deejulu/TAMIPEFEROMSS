@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Payment Failed - TAMIPEE{% endblock %}
+{% block content %}
+<main class="container py-5 text-center">
+  <div class="card mx-auto shadow-sm" style="max-width: 560px;">
+    <div class="card-body p-5">
+      <i class="bi bi-x-circle-fill text-danger display-3"></i>
+      <h1 class="mt-3">Payment Failed</h1>
+      <p>Your order #{{ order.pk }} remains pending. You can try payment again or contact support.</p>
+      <a class="btn btn-primary" href="{% url 'shop:checkout' %}">Try Again</a>
+      <a class="btn btn-outline-secondary" href="{% url 'shop:contact' %}">Contact Support</a>
+    </div>
+  </div>
+</main>
+{% endblock %}

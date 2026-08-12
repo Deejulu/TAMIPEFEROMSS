@@ -4,23 +4,26 @@
 {% block title %}{% trans "Dashboard" %}{% endblock %}
 
 {% block content %}
-<div class="container dashboard-container py-4 py-md-5">
+<div class="container-custom page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%);">
 <div class="row">
     <!-- Welcome Header -->
     <div class="col-12 mb-4">
-        <div class="card dashboard-header text-white shadow-sm border-0">
-            <div class="card-body p-4">
+        <div class="card dashboard-header text-white border-0 animate-fade-in-up" style="background: linear-gradient(135deg, var(--farm-forest) 0%, var(--farm-primary-dark) 40%, var(--farm-primary) 100%); border-radius: var(--radius-xl); overflow: hidden; position: relative; box-shadow: var(--shadow-lg);">
+            <div style="position: absolute; top: -50%; right: -10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 0%, transparent 70%); border-radius: 50%;"></div>
+            <div style="position: absolute; bottom: -40%; left: -5%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(46, 125, 50, 0.15) 0%, transparent 70%); border-radius: 50%;"></div>
+            <div class="card-body p-4" style="position: relative; z-index: 1;">
                 <div class="d-flex flex-wrap align-items-center gap-3">
                     {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle dashboard-avatar dashboard-avatar-ring flex-shrink-0">
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle dashboard-avatar dashboard-avatar-ring flex-shrink-0" style="width: 56px; height: 56px; border: 3px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                     {% else %}
-                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center dashboard-avatar dashboard-avatar-placeholder dashboard-avatar-ring flex-shrink-0">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center dashboard-avatar dashboard-avatar-placeholder dashboard-avatar-ring flex-shrink-0" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.3); color: white; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                             {{ user.full_name|first|upper }}
                         </div>
                     {% endif %}
                     <div class="min-w-0">
-                        <h1 class="h3 mb-1 text-truncate">{% trans "Welcome" %}, {{ user.full_name }}!</h1>
-                        <p class="mb-0 opacity-75">{% trans "Dashboard" %}</p>
+                        <span class="eyebrow" style="color: var(--farm-accent);">Welcome back</span>
+                        <h1 class="mb-1 text-truncate" style="font-weight: 800; letter-spacing: -0.02em; font-size: 1.75rem;">{% trans "Welcome" %}, {{ user.full_name }}!</h1>
+                        <p class="mb-0" style="color: rgba(255,255,255,0.85); font-size: 0.9375rem;">{% trans "Dashboard" %}</p>
                     </div>
                 </div>
             </div>
@@ -29,86 +32,172 @@
 
     <!-- User Information Card -->
     <div class="col-lg-8 col-xl-7 mx-auto">
-        <div class="card dashboard-card shadow-sm border-0 mb-4">
-            <div class="card-header">
-                <h5 class="mb-0 d-flex align-items-center">
-                    <span class="dashboard-section-icon"><i class="bi bi-info-circle"></i></span>{% trans "Account Information" %}
-                </h5>
-            </div>
-            <div class="card-body">
-                <dl class="info-list mb-0">
-                    <div class="info-row">
-                        <dt><i class="bi bi-person me-2"></i>{% trans "Full Name" %}</dt>
-                        <dd class="fw-bold">{{ user.full_name }}</dd>
+        <div class="row g-4">
+            <!-- Account Information Card -->
+            <div class="col-12 animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="design-card" style="background: var(--farm-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--farm-border-light); overflow: hidden;">
+                    <div class="card-gold-bar-top"></div>
+                    <div class="card-header card-header-accent" style="background: linear-gradient(135deg, rgba(27,94,32,0.04) 0%, rgba(46,125,50,0.08) 100%); border-bottom: 1px solid var(--farm-border-light);">
+                        <h5 class="mb-0 d-flex align-items-center" style="font-weight: 700; color: var(--farm-forest);">
+                            <span class="dashboard-section-icon" style="width: 36px; height: 36px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--farm-primary) 0%, var(--farm-secondary) 100%); color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 1rem;"><i class="bi bi-info-circle"></i></span>{% trans "Account Information" %}
+                        </h5>
                     </div>
-                    <div class="info-row">
-                        <dt><i class="bi bi-envelope me-2"></i>{% trans "Email" %}</dt>
-                        <dd class="text-break">
+                    <div class="card-body">
+                <dl class="info-list-improved mb-0">
+                    <div class="info-row-improved" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.25rem; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; transition: all 0.2s;">
+                        <dt style="color: var(--farm-text-muted); font-weight: 500; font-size: 0.875rem;"><i class="bi bi-person me-2" style="color: var(--farm-primary);"></i>{% trans "Full Name" %}</dt>
+                        <dd class="fw-bold" style="color: var(--farm-forest); font-weight: 700; text-align: right;">{{ user.full_name }}</dd>
+                    </div>
+                    <div class="info-row-improved" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.25rem; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; transition: all 0.2s;">
+                        <dt style="color: var(--farm-text-muted); font-weight: 500; font-size: 0.875rem;"><i class="bi bi-envelope me-2" style="color: var(--farm-primary);"></i>{% trans "Email" %}</dt>
+                        <dd class="text-break" style="color: var(--farm-forest); text-align: right;">
                             {{ user.email }}
                             {% if user.email_verified %}
-                                <span class="badge bg-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
+                                <span class="design-badge design-badge-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
                             {% else %}
-                                <span class="badge bg-warning text-dark ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
-                                <a href="{% url 'accounts:resend_verification' %}" class="ms-2 small">{% trans "Resend verification" %}</a>
+                                <span class="design-badge design-badge-warning ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
+                                <a href="{% url 'accounts:resend_verification' %}" class="ms-2 small" style="color: var(--farm-terracotta);">{% trans "Resend verification" %}</a>
                             {% endif %}
                         </dd>
                     </div>
-                    <div class="info-row">
-                        <dt><i class="bi bi-telephone me-2"></i>{% trans "Phone" %}</dt>
-                        <dd>{{ user.phone_number|default:"Not provided" }}</dd>
+                    <div class="info-row-improved" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.25rem; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; transition: all 0.2s;">
+                        <dt style="color: var(--farm-text-muted); font-weight: 500; font-size: 0.875rem;"><i class="bi bi-telephone me-2" style="color: var(--farm-primary);"></i>{% trans "Phone" %}</dt>
+                        <dd style="color: var(--farm-forest); text-align: right;">{{ user.phone_number|default:"Not provided" }}</dd>
                     </div>
-                    <div class="info-row">
-                        <dt><i class="bi bi-shield-check me-2"></i>{% trans "Role" %}</dt>
-                        <dd>
+                    <div class="info-row-improved" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.25rem; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; transition: all 0.2s;">
+                        <dt style="color: var(--farm-text-muted); font-weight: 500; font-size: 0.875rem;"><i class="bi bi-shield-check me-2" style="color: var(--farm-primary);"></i>{% trans "Role" %}</dt>
+                        <dd style="text-align: right;">
                             {% if user.role == 'SUPER_ADMIN' %}
-                                <span class="badge bg-danger">{{ user.get_role_display }}</span>
+                                <span class="design-badge design-badge-danger">{{ user.get_role_display }}</span>
+                            {% elif user.role == 'SUPER_STAFF' %}
+                                <span class="design-badge design-badge-dark">{{ user.get_role_display }}</span>
                             {% elif user.role == 'FARM_MANAGER' %}
-                                <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
+                                <span class="design-badge design-badge-warning">{{ user.get_role_display }}</span>
                             {% elif user.role == 'STAFF' %}
-                                <span class="badge bg-info text-dark">{{ user.get_role_display }}</span>
+                                <span class="design-badge design-badge-info">{{ user.get_role_display }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                                <span class="design-badge design-badge-secondary">{{ user.get_role_display }}</span>
                             {% endif %}
                         </dd>
                     </div>
-                    <div class="info-row">
-                        <dt><i class="bi bi-calendar me-2"></i>{% trans "Member Since" %}</dt>
-                        <dd>{{ user.date_joined|date:"F j, Y" }}</dd>
+                    <div class="info-row-improved" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.25rem; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0; transition: all 0.2s;">
+                        <dt style="color: var(--farm-text-muted); font-weight: 500; font-size: 0.875rem;"><i class="bi bi-calendar me-2" style="color: var(--farm-primary);"></i>{% trans "Member Since" %}</dt>
+                        <dd style="color: var(--farm-forest); text-align: right;">{{ user.date_joined|date:"F d, Y" }}</dd>
                     </div>
                 </dl>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="card dashboard-card shadow-sm border-0 mb-4">
-            <div class="card-header">
+        <div class="col-12 animate-fade-in-up" style="animation-delay: 0.2s;">
+            <div class="design-card" style="background: var(--farm-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--farm-border-light); overflow: hidden;">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent" style="background: linear-gradient(135deg, rgba(27,94,32,0.04) 0%, rgba(46,125,50,0.08) 100%); border-bottom: 1px solid var(--farm-border-light);">
+                    <h5 class="mb-0 d-flex align-items-center" style="font-weight: 700; color: var(--farm-forest);">
+                        <span class="dashboard-section-icon" style="width: 36px; height: 36px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%); color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 1rem;"><i class="bi bi-gear"></i></span>{% trans "Quick Actions" %}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                    <a href="{% url 'accounts:profile_edit' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                        <i class="bi bi-pencil-square" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Edit Profile" %}
+                        <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
+                    </a>
+                    <a href="{% url 'accounts:password_change' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                        <i class="bi bi-shield-lock" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Change Password" %}
+                        <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
+                    </a>
+                    <a href="{% url 'accounts:change_security_questions' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0; margin-bottom: 0.75rem;">
+                        <i class="bi bi-question-circle" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Update Security Questions" %}
+                        <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
+                    </a>
+                    <hr class="my-1" style="border-color: var(--farm-border-light); margin: 0.5rem 1.25rem;">
+                    <form method="post" action="{% url 'accounts:logout' %}" class="border-0 bg-transparent" style="padding: 0 1.25rem 1.25rem;">
+                        {% csrf_token %}
+                        <button type="submit" class="quick-action-link quick-action-danger btn btn-link border-0 text-decoration-none w-100 text-start" style="display: flex; align-items: center; gap: 12px; padding: 1rem 0; color: var(--farm-danger); transition: all 0.2s; background: transparent;">
+                            <i class="bi bi-box-arrow-right" style="font-size: 1.1rem;"></i>{% trans "Logout" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="design-card">
+            <div class="card-gold-bar-top"></div>
+            <div class="card-header card-header-accent">
                 <h5 class="mb-0 d-flex align-items-center">
-                    <span class="dashboard-section-icon"><i class="bi bi-gear"></i></span>{% trans "Quick Actions" %}
+                    <span class="dashboard-section-icon"><i class="bi bi-bag-check"></i></span>{% trans "Shopping" %}
                 </h5>
             </div>
-            <div class="list-group list-group-flush">
-                <a href="{% url 'accounts:profile_edit' %}" class="quick-action-link">
-                    <i class="bi bi-pencil-square"></i>{% trans "Edit Profile" %}
-                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+            <div class="card-body d-flex flex-wrap gap-2">
+                <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                    <i class="bi bi-shop me-1"></i>{% trans "Visit Shop" %}
                 </a>
-                <a href="{% url 'accounts:password_change' %}" class="quick-action-link">
-                    <i class="bi bi-shield-lock"></i>{% trans "Change Password" %}
-                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+                <a href="{% url 'accounts:order_list' %}" class="btn btn-outline">
+                    <i class="bi bi-receipt me-1"></i>{% trans "My Orders" %}
                 </a>
-                <a href="{% url 'accounts:change_security_questions' %}" class="quick-action-link">
-                    <i class="bi bi-question-circle"></i>{% trans "Update Security Questions" %}
-                    <i class="bi bi-chevron-right ms-auto quick-action-chevron"></i>
+                <a href="{% url 'accounts:payment_history' %}" class="btn btn-outline">
+                    <i class="bi bi-credit-card me-1"></i>{% trans "Payment History" %}
                 </a>
-                <hr class="my-1">
-                <form method="post" action="{% url 'accounts:logout' %}" class="border-0 bg-transparent">
-                    {% csrf_token %}
-                    <button type="submit" class="quick-action-link quick-action-danger btn btn-link border-0 text-decoration-none w-100 text-start">
-                        <i class="bi bi-box-arrow-right"></i>{% trans "Logout" %}
-                    </button>
-                </form>
+            </div>
+        </div>
+
+        <div class="col-12 animate-fade-in-up" style="animation-delay: 0.3s;">
+            <div class="design-card" style="background: var(--farm-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--farm-border-light); overflow: hidden;">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent" style="background: linear-gradient(135deg, rgba(27,94,32,0.04) 0%, rgba(46,125,50,0.08) 100%); border-bottom: 1px solid var(--farm-border-light);">
+                    <h5 class="mb-0 d-flex align-items-center" style="font-weight: 700; color: var(--farm-forest);">
+                        <span class="dashboard-section-icon" style="width: 36px; height: 36px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%); color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 1rem;"><i class="bi bi-bag-check"></i></span>{% trans "Shopping" %}
+                    </h5>
+                </div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a href="{% url 'shop:product_list' %}" class="btn btn-primary btn-shimmer">
+                        <i class="bi bi-shop me-1"></i>{% trans "Visit Shop" %}
+                    </a>
+                    <a href="{% url 'accounts:order_list' %}" class="btn btn-outline">
+                        <i class="bi bi-receipt me-1"></i>{% trans "My Orders" %}
+                    </a>
+                    <a href="{% url 'accounts:payment_history' %}" class="btn btn-outline">
+                        <i class="bi bi-credit-card me-1"></i>{% trans "Payment History" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 animate-fade-in-up" style="animation-delay: 0.4s;">
+            <div class="design-card" style="background: var(--farm-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--farm-border-light); overflow: hidden;">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(27,94,32,0.04) 0%, rgba(46,125,50,0.08) 100%); border-bottom: 1px solid var(--farm-border-light);">
+                    <h5 class="mb-0 d-flex align-items-center" style="font-weight: 700; color: var(--farm-forest);">
+                        <span class="dashboard-section-icon" style="width: 36px; height: 36px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%); color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 1rem;"><i class="bi bi-clock-history"></i></span>{% trans "Recent Orders" %}
+                    </h5>
+                    <a href="{% url 'accounts:order_list' %}" class="small text-decoration-none" style="color: var(--farm-terracotta); font-weight: 600;">{% trans "View all" %}</a>
+                </div>
+                {% if recent_orders %}
+                    <div class="list-group list-group-flush">
+                        {% for order in recent_orders %}
+                            <a href="{% url 'accounts:order_detail' order.pk %}" class="order-card-improved" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--farm-border-light); text-decoration: none; transition: all 0.2s; background: #FAFBFC;">
+                                <div class="order-main">
+                                    <strong style="color: var(--farm-forest); font-weight: 700;">{% trans "Order" %} #{{ order.pk }}</strong>
+                                    <span class="d-block small text-muted" style="font-size: 0.8rem;">{{ order.created_at|date:"M j, Y" }} &middot; {{ order.items.count }} {% trans "item" %}{{ order.items.count|pluralize }}</span>
+                                </div>
+                                <div class="order-meta" style="text-align: right;">
+                                    <span class="order-status-badge order-status-{{ order.status }}" style="font-size: 0.75rem; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 600;">{{ order.get_status_display }}</span>
+                                    <span class="d-block small fw-semibold mt-1" style="color: var(--farm-forest); font-weight: 700;">₦{{ order.total|floatformat:2 }}</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="design-empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+                        <i class="bi bi-bag-x" style="font-size: 3rem; color: #C8D6C8; margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--farm-forest); font-weight: 700; margin-bottom: 0.5rem;">{% trans "No orders yet" %}</h3>
+                        <p style="color: var(--farm-text-muted); margin-bottom: 1.25rem;">{% trans "When you place an order, it will appear here." %}</p>
+                        <a href="{% url 'shop:product_list' %}" class="btn btn-primary btn-shimmer">{% trans "Start shopping" %}</a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
-</div>
 </div>
 {% endblock %}

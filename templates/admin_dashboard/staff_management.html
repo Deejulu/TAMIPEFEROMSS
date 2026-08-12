@@ -1,0 +1,470 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block admin_content %}
+<div class="staff-management-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-person-badge"></i> Staff Management</h2>
+            <p class="text-muted mb-0">Manage staff and super-staff accounts</p>
+        </div>
+        {% if is_super_admin or request.user.role == 'SUPER_STAFF' %}
+        <div class="d-flex gap-3 align-items-center">
+            <a href="{% url 'admin_dashboard:staff_create' %}" class="btn btn-success">
+                <i class="bi bi-person-plus"></i> Add Staff Member
+            </a>
+            <div class="stats-pills">
+                <span class="badge bg-success">{{ active_staff }} Active</span>
+                <span class="badge bg-secondary">{{ inactive_staff }} Inactive</span>
+                <span class="badge bg-primary">{{ total_staff }} Total</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search and Filter Controls -->
+<div class="card search-filter-card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       placeholder="Search by name, email, or username" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <label for="role" class="form-label">Role</label>
+                <select class="form-select" id="role" name="role">
+                    <option value="">All Roles</option>
+                    <option value="STAFF" {% if request.GET.role == 'STAFF' %}selected{% endif %}>Staff</option>
+                    {% if is_super_admin %}
+                    <option value="SUPER_STAFF" {% if request.GET.role == 'SUPER_STAFF' %}selected{% endif %}>Super Staff</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Search</button>
+                <a href="{% url 'admin_dashboard:staff_management' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Staff Table -->
+<div class="card staff-table-card">
+    <div class="card-body">
+        {% if staff_members %}
+        <!-- Desktop/Tablet Table View -->
+        <div class="table-responsive desktop-table-view">
+            <table class="table table-hover staff-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Date Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in staff_members %}
+                    <tr class="{% if not user.is_active %}table-secondary{% endif %}">
+                        <td>
+                            <div class="user-name-cell">
+                                {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="user-avatar">
+                                {% else %}
+                                <div class="user-avatar-placeholder">
+                                    {{ user.full_name.0|upper }}
+                                </div>
+                                {% endif %}
+                                <span class="user-name">{{ user.full_name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ user.username }}</td>
+                        <td>
+                            {% if user.role == 'SUPER_STAFF' %}
+                            <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
+                            {% elif user.role == 'STAFF' %}
+                            <span class="badge bg-info">{{ user.get_role_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'admin_dashboard:user_detail' user.pk %}" 
+                                   class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if is_super_admin or user.role == 'STAFF' %}
+                                <a href="{% url 'admin_dashboard:staff_edit' user.pk %}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="You cannot edit Super Staff">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                {% endif %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %} toggle-active-btn"
+                                        data-user-id="{{ user.pk }}"
+                                        data-user-name="{{ user.full_name }}"
+                                        data-is-active="{{ user.is_active|lower }}"
+                                        {% if user.pk == request.user.pk %}disabled title="Cannot deactivate yourself"{% else %}title="{% if user.is_active %}Deactivate{% else %}Activate{% endif %}"{% endif %}>
+                                    <i class="bi bi-{% if user.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="mobile-card-view">
+            {% for user in staff_members %}
+            <div class="user-card {% if not user.is_active %}user-card-inactive{% endif %}">
+                <div class="user-card-header">
+                    <div class="user-card-avatar-section">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="user-card-avatar">
+                        {% else %}
+                        <div class="user-card-avatar-placeholder">
+                            {{ user.full_name.0|upper }}
+                        </div>
+                        {% endif %}
+                        <div class="user-card-main-info">
+                            <h5 class="user-card-name">{{ user.full_name }}</h5>
+                            <p class="user-card-email">{{ user.email }}</p>
+                            <p class="user-card-username">@{{ user.username }}</p>
+                        </div>
+                    </div>
+                    <div class="user-card-badges">
+                        {% if user.role == 'SUPER_STAFF' %}
+                        <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
+                        {% elif user.role == 'STAFF' %}
+                        <span class="badge bg-info">{{ user.get_role_display }}</span>
+                        {% endif %}
+                        {% if user.is_active %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="user-card-body">
+                    <div class="user-card-stats">
+                        <div class="stat-item">
+                            <i class="bi bi-calendar-event"></i>
+                            <div>
+                                <span class="stat-label">Joined</span>
+                                <span class="stat-value">{{ user.date_joined|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-card-actions">
+                    <a href="{% url 'admin_dashboard:user_detail' user.pk %}" 
+                       class="btn btn-sm btn-outline-primary flex-fill">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if is_super_admin or user.role == 'STAFF' %}
+                    <a href="{% url 'admin_dashboard:staff_edit' user.pk %}" 
+                       class="btn btn-sm btn-outline-secondary flex-fill">
+                        <i class="bi bi-pencil-square"></i> Edit
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" disabled>
+                        <i class="bi bi-pencil-square"></i> Edit
+                    </button>
+                    {% endif %}
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-{% if user.is_active %}warning{% else %}success{% endif %} toggle-active-btn flex-fill"
+                            data-user-id="{{ user.pk }}"
+                            data-user-name="{{ user.full_name }}"
+                            data-is-active="{{ user.is_active|lower }}"
+                            {% if user.pk == request.user.pk %}disabled{% endif %}>
+                        <i class="bi bi-{% if user.is_active %}pause-circle{% else %}play-circle{% endif %}"></i>
+                        {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Staff pagination">
+            <ul class="pagination justify-content-center mt-4">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-person-badge"></i>
+            <p class="text-muted">No staff accounts found matching your criteria.</p>
+            {% if is_super_admin or request.user.role == 'SUPER_STAFF' %}
+            <a href="{% url 'admin_dashboard:staff_create' %}" class="btn btn-outline-primary mt-2">
+                <i class="bi bi-person-plus"></i> Add First Staff Member
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+/* Staff Management Specific Styles */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.staff-management-header {
+    margin-bottom: 2rem;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.staff-management-header h2 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.staff-management-header p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0.25rem 0 0;
+}
+
+/* Search/Filter Card */
+.search-filter-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    animation: slideInUp 0.5s ease-out 0.1s both;
+}
+
+/* Staff Table Card */
+.staff-table-card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    animation: slideInUp 0.5s ease-out 0.2s both;
+}
+
+/* Table Styles */
+.staff-table {
+    margin-bottom: 0;
+}
+
+.staff-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+}
+
+.staff-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.075em;
+    padding: 1rem 0.75rem;
+    border: none;
+}
+
+.staff-table tbody tr {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.staff-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateX(4px);
+    box-shadow: inset 3px 0 0 #2E7D32;
+}
+
+.staff-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+/* User Avatar */
+.user-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.user-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Stats Pills */
+.stats-pills {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.stats-pills .badge {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: #D4AF37;
+}
+
+/* Action Buttons */
+.btn-group .btn {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-group .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-group .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .staff-management-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .stats-pills {
+        flex-wrap: wrap;
+    }
+    
+    .search-filter-card .card-body {
+        padding: 1rem;
+    }
+    
+    .staff-table thead th:nth-child(2),
+    .staff-table tbody td:nth-child(2) {
+        display: none;
+    }
+    
+    .staff-table thead th:nth-child(5),
+    .staff-table tbody td:nth-child(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .desktop-table-view {
+        display: none !important;
+    }
+    
+    .mobile-card-view {
+        display: block !important;
+    }
+}
+
+@media (min-width: 577px) {
+    .mobile-card-view {
+        display: none !important;
+    }
+}
+</style>
+{% endblock extra_css %}
+{% endblock admin_content %}

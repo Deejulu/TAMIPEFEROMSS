@@ -1,11 +1,124 @@
 {% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.coming-soon-container {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 4rem 2rem;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.coming-soon-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.1), rgba(76, 175, 80, 0.15));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 3rem;
+    color: #2E7D32;
+    border: 4px solid rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 20px rgba(27, 94, 32, 0.1);
+}
+
+.coming-soon-container h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 1rem;
+    letter-spacing: -0.025em;
+}
+
+.coming-soon-container p {
+    font-family: "Inter", sans-serif;
+    color: #6b7280;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.coming-soon-card {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    position: relative;
+    overflow: hidden;
+}
+
+.coming-soon-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+}
+
+@media (max-width: 768px) {
+    .coming-soon-container {
+        padding: 3rem 1.5rem;
+    }
+    
+    .coming-soon-icon {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+    
+    .coming-soon-container h2 {
+        font-size: 1.5rem;
+    }
+    
+    .coming-soon-container p {
+        font-size: 1rem;
+    }
+    
+    .coming-soon-card {
+        padding: 2rem 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .coming-soon-container {
+        padding: 2rem 1rem;
+    }
+    
+    .coming-soon-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .coming-soon-container h2 {
+        font-size: 1.25rem;
+    }
+    
+    .coming-soon-card {
+        padding: 1.5rem 1rem;
+    }
+}
+</style>
+{% endblock %}
 
 {% block admin_content %}
-<div class="coming-soon-card">
-    <div class="icon-circle">
-        <i class="bi bi-box-seam"></i>
+<div class="coming-soon-container">
+    <div class="coming-soon-card">
+        <div class="coming-soon-icon">
+            <i class="bi bi-box-seam"></i>
+        </div>
+        <h2>Products / Inventory</h2>
+        <p>Product catalog management, stock levels, pricing, and inventory adjustments coming soon.</p>
     </div>
-    <h2>Products / Inventory</h2>
-    <p>Product catalog management, stock levels, pricing, and inventory adjustments coming soon.</p>
 </div>
 {% endblock %}

@@ -8,7 +8,7 @@
        width="32"
        height="32"
        style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
-  <span style="font-size: 20px; font-weight: 700; letter-spacing: 1px; color: #1B5E20;">
+  <span class="brand-wordmark admin-wordmark">
     TAMIPEE
   </span>
   <span style="font-size: 14px; color: #6c757d; font-weight: 300; margin-left: 4px;">Admin</span>
@@ -18,6 +18,8 @@
 {% block extrastyle %}
 {{ block.super }}
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
+
   #header {
     background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%) !important;
     padding: 12px 20px !important;
@@ -37,6 +39,13 @@
   }
   #branding h1 img {
     filter: brightness(0) invert(1);
+  }
+  #branding .brand-wordmark {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
   }
   #user-tools {
     color: rgba(255,255,255,0.8) !important;

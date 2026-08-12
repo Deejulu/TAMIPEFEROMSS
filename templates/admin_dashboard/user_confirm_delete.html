@@ -4,393 +4,107 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
-/* Page Background */
-body {
-    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
-}
-
-/* User Delete Confirmation Page Styles */
-.delete-confirmation-container {
+.user-delete-container {
     max-width: 700px;
     margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
 }
 
-.delete-card {
+.user-delete-card {
     border: none;
-    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1), 0 4px 12px rgba(220, 38, 38, 0.15);
-    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
     overflow: hidden;
-    border-top: 4px solid #DC2626;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.delete-header {
-    background: linear-gradient(135deg, #dc3545, #c82333, #bd2130);
-    padding: 2rem 2rem;
-    color: white;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+.user-delete-card .card-gold-bar-top {
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
 }
 
-.delete-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at top right, rgba(255,255,255,0.15), transparent);
-    pointer-events: none;
-}
-
-.delete-header i {
-    animation: shake 0.5s ease-in-out infinite;
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
-    display: inline-block;
-}
-
-.delete-header h2 {
-    margin: 0;
-    font-size: 1.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    letter-spacing: -0.025em;
-}
-
-.delete-body {
+.user-delete-card .card-body {
     padding: 2rem;
 }
 
-.danger-alert {
-    background-color: #FEE2E2;
-    border-left: 4px solid #DC2626;
-    padding: 1rem 1.25rem;
+.user-delete-card .alert {
     border-radius: 8px;
+    border-left: 4px solid;
+    padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.danger-alert strong {
+.user-delete-card .alert-danger {
+    background-color: rgba(220, 38, 38, 0.08);
+    border-left-color: #dc3545;
     color: #991B1B;
+    border: 1px solid rgba(220, 38, 38, 0.15);
 }
 
-.user-info-card {
-    background: #F9FAFB;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    border: 1px solid #E5E7EB;
-}
-
-.user-info-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.user-delete-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.user-delete-avatar-placeholder {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6B7280, #4B5563);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    font-weight: 700;
-    border: 3px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.user-info-details h4 {
-    margin: 0 0 0.25rem 0;
-    color: #1f2937;
-    font-weight: 600;
-}
-
-.user-info-details p {
-    margin: 0;
-    color: #6b7280;
-    font-size: 0.9375rem;
-}
-
-.user-meta {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    padding-top: 1rem;
-    border-top: 1px solid #E5E7EB;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.meta-label {
-    font-weight: 700;
-    color: #4B5563;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.075em;
-}
-
-.meta-value {
-    color: #1f2937;
-}
-
-.consequences-list {
-    background: #FFFBEB;
-    border-left: 4px solid #F59E0B;
-    padding: 1rem 1.25rem;
-    border-radius: 8px;
-    margin: 1.5rem 0;
-}
-
-.consequences-list h5 {
-    color: #92400E;
-    font-weight: 600;
-    margin: 0 0 0.75rem 0;
-}
-
-.consequences-list ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    color: #78350F;
-}
-
-.consequences-list li {
-    margin-bottom: 0.5rem;
-}
-
-.info-note {
-    background: #EFF6FF;
-    border-left: 4px solid #3B82F6;
-    padding: 1rem 1.25rem;
-    border-radius: 8px;
-    margin: 1.5rem 0;
-    color: #1E40AF;
-}
-
-.delete-form-actions {
+.user-delete-actions {
     display: flex;
     gap: 1rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #E5E7EB;
+    border-top: 1px solid #E8F5E9;
 }
 
-.btn-delete-confirm {
-    background: linear-gradient(135deg, #dc3545, #c82333, #bd2130);
-    border: none;
-    color: white;
-    padding: 0.875rem 2.5rem;
-    border-radius: 8px;
-    font-weight: 700;
-    letter-spacing: 0.025em;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+.user-delete-actions .design-btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    justify-content: center;
 }
 
-.btn-delete-confirm::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn-delete-confirm:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.btn-delete-confirm:hover {
-    background: linear-gradient(135deg, #c82333, #bd2130, #a71d2a);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(220, 53, 69, 0.5);
-    color: white;
-}
-
-.btn-delete-confirm:active {
-    transform: translateY(-1px);
-    animation: shake 0.3s ease-in-out;
-}
-
-.btn-cancel-delete {
-    padding: 0.75rem 2rem;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-/* Fix button text visibility */
-.btn-outline-secondary {
-    color: #374151 !important;
-    border-color: #d1d5db;
-    background-color: transparent;
-}
-
-.btn-outline-secondary:hover {
-    color: #fff !important;
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-/* Responsive Design */
 @media (max-width: 768px) {
-    .delete-header {
-        padding: 1.25rem 1.5rem;
-    }
-    
-    .delete-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .delete-body {
+    .user-delete-card .card-body {
         padding: 1.5rem;
     }
     
-    .user-meta {
-        grid-template-columns: 1fr;
+    .user-delete-actions {
+        flex-direction: column;
     }
     
-    .delete-form-actions {
-        flex-direction: column-reverse;
-    }
-    
-    .delete-form-actions .btn {
+    .user-delete-actions .design-btn {
         width: 100%;
     }
 }
 
 @media (max-width: 576px) {
-    .delete-body {
+    .user-delete-card .card-body {
         padding: 1rem;
-    }
-    
-    .user-info-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .user-delete-avatar,
-    .user-delete-avatar-placeholder {
-        width: 64px;
-        height: 64px;
-        font-size: 1.75rem;
     }
 }
 </style>
 {% endblock %}
 
 {% block admin_content %}
-<div class="delete-confirmation-container">
+<div class="user-delete-container">
     <div class="mb-4">
-        <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'admin_dashboard:users' %}" class="design-btn design-btn-outline-secondary design-btn-sm">
             <i class="bi bi-arrow-left"></i> Back to User List
         </a>
     </div>
 
-    <div class="card delete-card">
-        <div class="delete-header">
-            <h2>
-                <i class="bi bi-exclamation-triangle"></i>
-                Confirm User Deletion
-            </h2>
-        </div>
-        
-        <div class="delete-body">
-            <div class="danger-alert">
-                <i class="bi bi-exclamation-octagon"></i>
-                <strong>Warning:</strong> This action cannot be undone. Please review carefully before proceeding.
+    <div class="card user-delete-card">
+        <div class="card-gold-bar-top"></div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> This will permanently delete the user <strong>"{{ viewed_user.full_name }}"</strong>. This action cannot be undone.
             </div>
-            
-            <div class="user-info-card">
-                <div class="user-info-header">
-                    {% if viewed_user.profile_picture %}
-                    <img src="{{ viewed_user.profile_picture.url }}" alt="{{ viewed_user.full_name }}" class="user-delete-avatar">
-                    {% else %}
-                    <div class="user-delete-avatar-placeholder">
-                        {{ viewed_user.full_name.0|upper }}
-                    </div>
-                    {% endif %}
-                    
-                    <div class="user-info-details">
-                        <h4>{{ viewed_user.full_name }}</h4>
-                        <p>{{ viewed_user.email }}</p>
-                    </div>
-                </div>
-                
-                <div class="user-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Username:</span>
-                        <span class="meta-value">{{ viewed_user.username }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Role:</span>
-                        <span class="meta-value">{{ viewed_user.get_role_display }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Date Joined:</span>
-                        <span class="meta-value">{{ viewed_user.date_joined|date:"M d, Y" }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Status:</span>
-                        <span class="meta-value">
-                            {% if viewed_user.is_active %}
-                            <span class="badge bg-success">Active</span>
-                            {% else %}
-                            <span class="badge bg-secondary">Inactive</span>
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="consequences-list">
-                <h5><i class="bi bi-list-check"></i> What will be deleted:</h5>
-                <ul>
-                    <li>User account and profile information</li>
-                    <li>Login credentials and access rights</li>
-                    <li>All associated user data</li>
-                </ul>
-            </div>
-            
-            <div class="info-note">
-                <i class="bi bi-info-circle"></i>
-                <strong>Note:</strong> This user has no order history. Deletion will not affect any orders.
-            </div>
-            
-            <form method="post" class="delete-form">
+
+            <form method="post">
                 {% csrf_token %}
+                <p class="mb-4" style="font-size: 1.0625rem; color: #374151;">
+                    Are you sure you want to delete <strong>"{{ viewed_user.full_name }}"</strong>?
+                </p>
                 
-                <div class="delete-form-actions">
-                    <button type="submit" class="btn btn-delete-confirm">
-                        <i class="bi bi-trash"></i> Yes, Delete This User
+                <div class="user-delete-actions">
+                    <button type="submit" class="design-btn" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(220,38,38,0.2);">
+                        <i class="bi bi-trash"></i> Yes, Delete
                     </button>
-                    <a href="{% url 'admin_dashboard:user_detail' viewed_user.pk %}" class="btn btn-outline-secondary btn-cancel-delete">
-                        <i class="bi bi-x-circle"></i> Cancel, Keep User
+                    <a href="{% url 'admin_dashboard:users' %}" class="design-btn design-btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
                     </a>
                 </div>
             </form>

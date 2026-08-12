@@ -93,6 +93,8 @@
                         <td>
                             {% if user.role == 'SUPER_ADMIN' %}
                             <span class="badge bg-danger">{{ user.get_role_display }}</span>
+                            {% elif user.role == 'SUPER_STAFF' %}
+                            <span class="badge bg-dark">{{ user.get_role_display }}</span>
                             {% elif user.role == 'FARM_MANAGER' %}
                             <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
                             {% elif user.role == 'STAFF' %}
@@ -169,6 +171,8 @@
                     <div class="user-card-badges">
                         {% if user.role == 'SUPER_ADMIN' %}
                         <span class="badge bg-danger">{{ user.get_role_display }}</span>
+                        {% elif user.role == 'SUPER_STAFF' %}
+                        <span class="badge bg-dark">{{ user.get_role_display }}</span>
                         {% elif user.role == 'FARM_MANAGER' %}
                         <span class="badge bg-warning text-dark">{{ user.get_role_display }}</span>
                         {% elif user.role == 'STAFF' %}
@@ -421,6 +425,7 @@ body {
 }
 
 .user-table thead th {
+    background: transparent;
     color: white;
     font-weight: 600;
     text-transform: uppercase;

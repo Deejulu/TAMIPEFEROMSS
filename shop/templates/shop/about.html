@@ -5,207 +5,211 @@
 
 {% block extra_head %}
 <style>
-    .about-wrapper {
-        min-height: calc(100vh - 140px);
-        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
-        padding: 48px 0;
+  .about-hero {
+    background: linear-gradient(135deg, var(--farm-forest) 0%, var(--farm-primary-dark) 40%, var(--farm-primary) 100%);
+    color: var(--farm-white);
+    padding: clamp(3rem, 8vw, 5rem) 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .about-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: heroFloat 8s ease-in-out infinite;
+  }
+
+  .about-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    left: -8%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(46, 125, 50, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: heroFloat 10s ease-in-out infinite reverse;
+  }
+
+  .about-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max-width-xl);
+    margin: 0 auto;
+    padding: 0 24px;
+    text-align: center;
+  }
+
+  .about-hero h1 {
+    color: var(--farm-white);
+    margin-bottom: 16px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .about-hero p {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    margin-top: 3rem;
+  }
+
+  .feature-card {
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--farm-border-light);
+    transition: all var(--transition-base);
+    text-align: center;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--farm-accent);
+  }
+
+  .feature-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(27,94,32,0.08) 0%, rgba(46,125,50,0.12) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 1.75rem;
+    color: var(--farm-primary);
+  }
+
+  .feature-card h3 {
+    font-weight: 700;
+    color: var(--farm-forest);
+    margin-bottom: 0.75rem;
+    font-size: 1.15rem;
+  }
+
+  .feature-card p {
+    color: var(--farm-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .content-card {
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--farm-border-light);
+  }
+
+  .content-card .content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--farm-text);
+  }
+
+  .content-card .content h2 {
+    color: var(--farm-forest);
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .content-card .content ul {
+    padding-left: 1.5rem;
+  }
+
+  .content-card .content li {
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .feature-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
     }
 
-    .about-container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 0 20px;
+    .content-card {
+      padding: 1.25rem;
     }
-
-    .about-header {
-        text-align: center;
-        margin-bottom: 48px;
-    }
-
-    .about-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1B5E20;
-        margin-bottom: 12px;
-        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .about-header .subtitle {
-        font-size: 1.125rem;
-        color: #6B7280;
-        font-weight: 400;
-    }
-
-    .about-content-card {
-        background: #FFFFFF;
-        border-radius: 16px;
-        padding: 48px;
-        box-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.05),
-            0 4px 12px rgba(0, 0, 0, 0.08);
-        margin-bottom: 32px;
-    }
-
-    .about-content-card h2 {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: #1F2937;
-        margin-bottom: 24px;
-    }
-
-    .about-content-card .content {
-        font-size: 1.0625rem;
-        line-height: 1.8;
-        color: #374151;
-    }
-
-    .about-content-card .content p {
-        margin-bottom: 16px;
-    }
-
-    .about-content-card .content p:last-child {
-        margin-bottom: 0;
-    }
-
-    .about-content-card .content ul,
-    .about-content-card .content ol {
-        margin: 16px 0;
-        padding-left: 28px;
-    }
-
-    .about-content-card .content li {
-        margin-bottom: 8px;
-    }
-
-    .about-content-card .content h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1F2937;
-        margin-top: 28px;
-        margin-bottom: 16px;
-    }
-
-    .about-content-card .content h4 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1F2937;
-        margin-top: 24px;
-        margin-bottom: 12px;
-    }
-
-    .fallback-state {
-        text-align: center;
-        padding: 64px 32px;
-    }
-
-    .fallback-state i {
-        font-size: 64px;
-        color: #D1D5DB;
-        margin-bottom: 24px;
-        display: block;
-    }
-
-    .fallback-state h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #6B7280;
-        margin-bottom: 12px;
-    }
-
-    .fallback-state p {
-        font-size: 1rem;
-        color: #9CA3AF;
-        line-height: 1.6;
-    }
-
-    .updated-info {
-        text-align: center;
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 1px solid #E5E7EB;
-        font-size: 0.875rem;
-        color: #9CA3AF;
-    }
-
-    @media (max-width: 768px) {
-        .about-wrapper {
-            padding: 32px 0;
-        }
-
-        .about-header h1 {
-            font-size: 2rem;
-        }
-
-        .about-header .subtitle {
-            font-size: 1rem;
-        }
-
-        .about-content-card {
-            padding: 32px 24px;
-        }
-
-        .about-content-card h2 {
-            font-size: 1.5rem;
-        }
-
-        .fallback-state {
-            padding: 48px 20px;
-        }
-
-        .fallback-state i {
-            font-size: 48px;
-        }
-    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="about-wrapper">
-    <div class="about-container">
-        
-        {% if about_content %}
-        <!-- Header -->
-        <div class="about-header">
-            <h1>{{ about_content.title }}</h1>
-            <p class="subtitle">Learn more about TAMIPEE Farm Management</p>
-        </div>
+<div class="about-hero animate-fade-in-up">
+  <div class="corner-accent tl"></div>
+  <div class="corner-accent br"></div>
+  <div class="about-hero-content">
+    <span class="eyebrow" style="color: var(--farm-accent);">Our Story</span>
+    <h1>{% if about_content %}{{ about_content.title }}{% else %}About TAMIPEE{% endif %}</h1>
+    <p class="subtitle">Learn more about TAMIPEE Farm Management</p>
+  </div>
+</div>
 
-        <!-- Content Card -->
-        <div class="about-content-card">
-            <div class="content">
-                {{ about_content.content|safe }}
-            </div>
-
-            {% if about_content.updated_at %}
-            <div class="updated-info">
-                Last updated: {{ about_content.updated_at|date:"F j, Y" }}
-            </div>
-            {% endif %}
-        </div>
-        {% else %}
-        <!-- Fallback State -->
-        <div class="about-header">
-            <h1>About Us</h1>
-        </div>
-
-        <div class="about-content-card">
-            <div class="fallback-state">
-                <i class="bi bi-info-circle"></i>
-                <h3>About TAMIPEE</h3>
-                <p>
-                    TAMIPEE is a comprehensive farm management platform designed to help agricultural businesses 
-                    streamline their operations, manage inventory, track sales, and grow their business efficiently.
-                    <br><br>
-                    Our platform offers tools for product management, order tracking, customer management, 
-                    and detailed analytics to help you make informed decisions for your farm.
-                </p>
-            </div>
-        </div>
-        {% endif %}
-
+<div class="page-wrapper">
+  <div class="container-custom">
+    {% if about_content %}
+    <div class="content-card animate-fade-in-up corner-accents" style="animation-delay: 0.2s;">
+      <div class="content">
+        {{ about_content.content|safe }}
+      </div>
+      {% if about_content.updated_at %}
+      <div class="text-center mt-4 pt-3 border-top text-muted small">
+        Last updated: {{ about_content.updated_at|date:"F j, Y" }}
+      </div>
+      {% endif %}
     </div>
+    {% else %}
+    <div class="feature-grid">
+      <div class="feature-card animate-fade-in-up corner-accents" style="animation-delay: 0.1s;">
+        <div class="feature-icon">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <h3>Smart Analytics</h3>
+        <p>Make data-driven decisions with our comprehensive farm analytics and reporting tools.</p>
+      </div>
+      <div class="feature-card animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="feature-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <h3>Inventory Management</h3>
+        <p>Track stock levels, manage suppliers, and automate reordering to keep operations flowing.</p>
+      </div>
+      <div class="feature-card animate-fade-in-up" style="animation-delay: 0.3s;">
+        <div class="feature-icon">
+          <i class="bi bi-people"></i>
+        </div>
+        <h3>Customer Focused</h3>
+        <p>Built for agricultural businesses that value customer relationships and seamless order management.</p>
+      </div>
+    </div>
+    <div class="content-card animate-fade-in-up" style="animation-delay: 0.4s; margin-top: 2.5rem;">
+      <div class="content">
+        <h2>About TAMIPEE</h2>
+        <p>TAMIPEE is a comprehensive farm management platform designed to help agricultural businesses streamline their operations, manage inventory, track sales, and grow their business efficiently.</p>
+        <p>Our platform offers tools for product management, order tracking, customer management, and detailed analytics to help you make informed decisions for your farm.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

@@ -32,6 +32,7 @@ class Command(BaseCommand):
                 if Notification.objects.filter(
                     notification_type='batch_alert',
                     related_object_id=batch.pk,
+                    message__icontains='feed log entry',
                     is_read=False,
                 ).exists():
                     continue

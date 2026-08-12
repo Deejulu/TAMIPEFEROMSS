@@ -16,18 +16,15 @@ class CustomAuthenticationForm(AuthenticationForm):
     """
     Custom Authentication Form for farm_proc_tamipee.
 
-    Overrides Django's default AuthenticationForm to:
-    - Label the username field as "Email" instead of "Username"
-    - Add Bootstrap 5 form-control class styling
-    - Use our CustomUser model for email-based authentication
+    Uses username-based authentication instead of email.
     """
 
-    username = forms.EmailField(
-        label=_("Email"),
-        widget=forms.EmailInput(
+    username = forms.CharField(
+        label=_("Username"),
+        widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "you@example.com",
+                "placeholder": "Enter your username",
                 "autofocus": True,
             }
         ),
@@ -46,13 +43,13 @@ class CustomAuthenticationForm(AuthenticationForm):
 
     class Meta:
         model = CustomUser
-        fields = ("email", "password")
+        fields = ("username", "password")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["username"].help_text = ""
         self.fields["username"].widget.attrs.pop("placeholder", None)
-        self.fields["username"].widget.attrs["placeholder"] = "you@example.com"
+        self.fields["username"].widget.attrs["placeholder"] = "Enter your username"
         self.fields["password"].widget.attrs["placeholder"] = "Enter your password"
 
     def confirm_login_allowed(self, user):
@@ -302,14 +299,20 @@ class ProfileEditForm(forms.ModelForm):
     """
     Form for editing user profile information.
 
-    Allows users to update their full name, phone number, username,
-    and profile picture. Email changes are intentionally excluded
+    Allows users to update their full name, phone number, default delivery
+    address, username, and profile picture. Email changes are intentionally excluded
     and require a separate re-verification flow.
     """
 
     class Meta:
         model = CustomUser
-        fields = ["full_name", "phone_number", "username", "profile_picture"]
+        fields = [
+            "full_name",
+            "phone_number",
+            "default_delivery_address",
+            "username",
+            "profile_picture",
+        ]
         widgets = {
             "full_name": forms.TextInput(attrs={
                 "class": "form-control",
@@ -318,6 +321,11 @@ class ProfileEditForm(forms.ModelForm):
             "phone_number": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "+1 (555) 123-4567",
+            }),
+            "default_delivery_address": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Enter your default delivery address",
             }),
             "username": forms.TextInput(attrs={
                 "class": "form-control",
@@ -330,6 +338,7 @@ class ProfileEditForm(forms.ModelForm):
         labels = {
             "full_name": _("Full Name"),
             "phone_number": _("Phone Number"),
+            "default_delivery_address": _("Default Delivery Address"),
             "username": _("Username"),
             "profile_picture": _("Profile Picture"),
         }

@@ -1,0 +1,228 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.payment-methods-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.payment-methods-container .page-header {
+    margin-bottom: 2rem;
+}
+
+.payment-methods-container .page-header h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.025em;
+}
+
+.payment-methods-container .page-header h1 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.payment-methods-container .page-header p {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.payment-methods-container .content-card {
+    background: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.payment-methods-container .content-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+    z-index: 1;
+}
+
+.payment-methods-container .content-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.payment-methods-container .content-card .card-body {
+    padding: 1.5rem;
+}
+
+.payment-methods-container .design-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    position: relative;
+}
+
+.payment-methods-container .design-table thead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.payment-methods-container .design-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.payment-methods-container .design-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.payment-methods-container .design-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.12);
+    border-left: 3px solid #2E7D32;
+}
+
+.payment-methods-container .design-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #374151;
+}
+
+.payment-methods-container .badge-enabled {
+    background: rgba(67, 160, 71, 0.12) !important;
+    color: #2E7D32;
+    border: 1px solid rgba(67, 160, 71, 0.25);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.payment-methods-container .badge-disabled {
+    background: rgba(107, 114, 128, 0.12) !important;
+    color: #4B5563;
+    border: 1px solid rgba(107, 114, 128, 0.25);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.payment-methods-container .btn-success {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.payment-methods-container .btn-success:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.payment-methods-container .btn-outline-secondary {
+    color: #374151 !important;
+    border-color: #d1d5db;
+    background-color: transparent;
+}
+
+.payment-methods-container .btn-outline-secondary:hover {
+    background: #f3f4f6;
+    color: #1B5E20 !important;
+    border-color: #2E7D32;
+}
+
+@media (max-width: 768px) {
+    .payment-methods-container .content-card .card-body {
+        padding: 1rem;
+    }
+
+    .payment-methods-container .design-table thead th,
+    .payment-methods-container .design-table tbody td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="payment-methods-container">
+    <div class="page-header">
+        <h1>{{ page_title }}</h1>
+        <p class="text-muted">Enable or disable payment methods available at checkout</p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-body">
+            <table class="table design-table">
+                <thead>
+                    <tr>
+                        <th>Payment Method</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for method in payment_methods %}
+                    <tr>
+                        <td>
+                            <strong>{{ method.get_payment_method_display }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge {% if method.enabled %}badge-enabled{% else %}badge-disabled{% endif %}">
+                                {% if method.enabled %}Enabled{% else %}Disabled{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ method.updated_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'admin_dashboard:toggle_payment_method' method.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if method.enabled %}btn-outline-secondary{% else %}btn-success{% endif %}">
+                                    {% if method.enabled %}Disable{% else %}Enable{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No payment methods configured</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

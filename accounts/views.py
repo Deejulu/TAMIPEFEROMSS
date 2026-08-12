@@ -1,10 +1,10 @@
 import re
-from io import StringIO
+from io import StringIO, BytesIO
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponseRedirect
@@ -15,6 +15,10 @@ from django.utils.translation import gettext_lazy as _
 from django.core.signing import SignatureExpired, BadSignature
 from django.contrib.auth.views import PasswordChangeView, LoginView
 from django.core.management import call_command
+from django.views.generic import ListView
+from django.db.models import Q
+
+from shop.models import Order, Payment
 
 from .forms import CustomSignupForm, ProfileEditForm, ChangeSecurityQuestionsForm, SecurityQuestionRecoveryForm, RecoveryPasswordResetForm
 from .tokens import verify_token, build_verification_url
@@ -28,12 +32,21 @@ class CustomLoginView(LoginView):
     Custom login view that redirects users based on their role:
     - Super Admin / Farm Manager -> admin_dashboard:overview
     - Staff / Customer -> accounts:dashboard
+    Also checks if the user must change their password.
     """
 
     def form_valid(self, form):
         response = super().form_valid(form)
         user = self.request.user
-        if user.role in (User.Role.SUPER_ADMIN, User.Role.FARM_MANAGER):
+        if user.must_change_password:
+            user.must_change_password = False
+            user.save(update_fields=['must_change_password'])
+            messages.warning(
+                self.request,
+                _("Your password has been reset by an administrator. Please change it now.")
+            )
+            return redirect('accounts:password_change')
+        if user.role in (User.Role.SUPER_ADMIN, User.Role.SUPER_STAFF, User.Role.FARM_MANAGER):
             try:
                 call_command(
                     'check_batch_alerts',
@@ -46,7 +59,7 @@ class CustomLoginView(LoginView):
 
     def get_success_url(self):
         user = self.request.user
-        if user.role in (User.Role.SUPER_ADMIN, User.Role.FARM_MANAGER):
+        if user.role in (User.Role.SUPER_ADMIN, User.Role.SUPER_STAFF, User.Role.FARM_MANAGER):
             return reverse_lazy("admin_dashboard:overview")
         return reverse_lazy("accounts:dashboard")
 
@@ -64,7 +77,7 @@ class HomeRedirectView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         if self.request.user.is_authenticated:
             user = self.request.user
-            if user.role in (User.Role.SUPER_ADMIN, User.Role.FARM_MANAGER):
+            if user.role in (User.Role.SUPER_ADMIN, User.Role.SUPER_STAFF, User.Role.FARM_MANAGER):
                 return reverse_lazy("admin_dashboard:overview")
             return reverse_lazy("accounts:dashboard")
         return reverse_lazy("accounts:login")
@@ -77,21 +90,31 @@ class SignUpView(CreateView):
     Uses the CustomUserCreationForm to handle new user signups.
     All new users are automatically assigned the CUSTOMER role.
     On successful registration, a verification email is sent and
-    the user is redirected to the login page with a success message.
+    the user is redirected to the security questions download page.
     """
     form_class = CustomSignupForm
     template_name = "accounts/signup.html"
-    success_url = reverse_lazy("accounts:login")
+    success_url = reverse_lazy("accounts:signup_download")
 
     def form_valid(self, form):
         """
         Called when the form is submitted with valid data.
-        Sends verification email and adds a success message.
+        Saves the user, stores security questions in session,
+        and redirects to the download page.
         """
         response = super().form_valid(form)
 
-        # Send verification email
         user = self.object
+
+        # Store the selected security questions in session for the download page
+        questions = [
+            form.cleaned_data.get("security_question_1", ""),
+            form.cleaned_data.get("security_question_2", ""),
+            form.cleaned_data.get("security_question_3", ""),
+        ]
+        self.request.session["signup_security_questions"] = questions
+
+        # Send verification email
         verification_url = build_verification_url(self.request, user)
         try:
             user.email_user(
@@ -110,10 +133,68 @@ class SignUpView(CreateView):
 
         messages.success(
             self.request,
-            _("Account created successfully! "
-              "Please check your email to verify your account."),
+            _(f"Account created successfully! Your username is: {user.username}. "
+              f"Please check your email to verify your account."),
         )
         return response
+
+
+class SignupDownloadView(TemplateView):
+    """
+    Intermediate page shown after signup, requiring the user to download
+    their security questions before proceeding to login.
+    """
+    template_name = "accounts/signup_download.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        questions = request.session.get("signup_security_questions")
+        if not questions:
+            messages.error(request, _("Please complete the signup form first."))
+            return redirect("accounts:signup")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        questions = self.request.session.get("signup_security_questions", [])
+        context["questions"] = questions
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("downloaded_confirmed"):
+            request.session.pop("signup_security_questions", None)
+            messages.success(request, _("You can now log in to your account."))
+            return redirect("accounts:login")
+        messages.error(request, _("Please confirm that you have downloaded your security questions."))
+        return self.get(request, *args, **kwargs)
+
+
+def download_security_questions_file(request):
+    """
+    Generate and download a plain text file containing the user's
+    security questions (questions only, never answers).
+    """
+    questions = request.session.get("signup_security_questions", [])
+    if not questions:
+        messages.error(request, _("No security questions found. Please sign up first."))
+        return redirect("accounts:signup")
+
+    content = "TAMIPEE - Your Security Questions\n"
+    content += "=" * 50 + "\n\n"
+    content += "Please keep this file in a safe place. These questions will be used\n"
+    content += "to verify your identity if you forget your password.\n\n"
+
+    for i, question in enumerate(questions, 1):
+        content += f"{i}. {question}\n"
+
+    content += "\n" + "-" * 50 + "\n"
+    content += "IMPORTANT:\n"
+    content += "- Do not share these questions with anyone.\n"
+    content += "- If you forget your answers, contact support to have your account reset.\n"
+    content += "- TAMIPEE will never ask you to reveal your answers.\n"
+
+    response = HttpResponse(content, content_type="text/plain")
+    response["Content-Disposition"] = 'attachment; filename="tamipee-security-questions.txt"'
+    return response
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -125,6 +206,61 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     profile management pages.
     """
     template_name = "accounts/dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["recent_orders"] = (
+            self.request.user.orders.prefetch_related("items").order_by("-created_at")[:3]
+        )
+        return context
+
+
+class CustomerOrderListView(LoginRequiredMixin, ListView):
+    """Display the authenticated customer's order history."""
+
+    template_name = "accounts/order_list.html"
+    context_object_name = "orders"
+
+    def get_queryset(self):
+        return self.request.user.orders.prefetch_related("items").order_by("-created_at")
+
+
+class CustomerOrderDetailView(LoginRequiredMixin, DetailView):
+    """Display one order only when it belongs to the authenticated customer."""
+
+    template_name = "accounts/order_detail.html"
+    context_object_name = "order"
+
+    def get_queryset(self):
+        return (
+            self.request.user.orders.prefetch_related("items__product", "payments")
+            .order_by("-created_at")
+        )
+
+
+class CustomerPaymentHistoryView(LoginRequiredMixin, ListView):
+    """Display the authenticated customer's payment history."""
+
+    template_name = "accounts/payment_history.html"
+    context_object_name = "payments"
+
+    def get_queryset(self):
+        return Payment.objects.filter(
+            order__user=self.request.user
+        ).select_related("order").order_by("-created_at")
+
+
+class CustomerPaymentReceiptView(LoginRequiredMixin, DetailView):
+    """Display a printable receipt for one of the customer's successful payments."""
+
+    template_name = "accounts/payment_receipt.html"
+    context_object_name = "payment"
+
+    def get_queryset(self):
+        return Payment.objects.filter(
+            order__user=self.request.user,
+            status="success",
+        ).select_related("order", "order__delivery_option").prefetch_related("order__items")
 
 
 def verify_email(request, token):

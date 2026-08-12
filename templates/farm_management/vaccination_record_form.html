@@ -1,16 +1,26 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
 {% block admin_content %}
-<div class="log-form-page">
+<div class="farm-management-page log-form-page">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h2>{{ page_title }}</h2>
+        {% if batch %}
         <a href="{% url 'farm_management:batch_detail' batch.pk %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to Batch
         </a>
+        {% else %}
+        <a href="{% url 'farm_management:health_records_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Health Records
+        </a>
+        {% endif %}
     </div>
 
-    <div class="card">
+    <div class="card farm-form-card">
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
@@ -23,7 +33,9 @@
                 </div>
                 {% endif %}
 
+                {% if not batch %}
                 {{ form.batch }}
+                {% endif %}
                 {% if form.batch.errors %}
                 <div class="text-danger mt-1">{% for error in form.batch.errors %}<small>{{ error }}</small>{% endfor %}</div>
                 {% endif %}
@@ -64,7 +76,11 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Save Vaccination Record
                     </button>
+                    {% if batch %}
                     <a href="{% url 'farm_management:batch_detail' batch.pk %}" class="btn btn-outline-secondary">Cancel</a>
+                    {% else %}
+                    <a href="{% url 'farm_management:health_records_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    {% endif %}
                 </div>
             </form>
         </div>

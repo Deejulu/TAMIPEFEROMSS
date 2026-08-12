@@ -1,114 +1,514 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+.product-list-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.product-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.product-list-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.product-list-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.product-list-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.product-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.product-stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.product-stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.product-stat-icon.bg-primary {
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    color: white;
+}
+
+.product-stat-icon.bg-success {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: white;
+}
+
+.product-stat-icon.bg-warning {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    color: white;
+}
+
+.product-stat-info h6 {
+    font-family: "Inter", sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.25rem 0;
+}
+
+.product-stat-info h4 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.product-filter-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    margin-bottom: 1.5rem;
+}
+
+.product-table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    overflow: hidden;
+}
+
+.product-table-card .table-responsive {
+    border-radius: 0;
+}
+
+.design-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    position: relative;
+}
+
+.design-table thead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.design-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 0.75rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.design-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.design-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateY(-2px) translateX(4px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.12);
+    border-left: 3px solid #2E7D32;
+}
+
+.design-table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    color: #374151;
+}
+
+.product-image-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+}
+
+.product-image-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 1.25rem;
+    border: 1px solid #e5e7eb;
+}
+
+.product-mobile-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.product-mobile-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    transform: translateY(-4px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.product-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fdf8, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.product-mobile-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: -0.0125em;
+}
+
+.product-mobile-body {
+    padding: 1rem;
+}
+
+.product-mobile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.product-mobile-row:last-child {
+    border-bottom: none;
+}
+
+.product-mobile-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.product-mobile-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: right;
+}
+
+.product-mobile-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.product-mobile-actions .design-btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.design-empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.design-empty-state i {
+    font-size: 4rem;
+    color: #D1D5DB;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.design-empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+}
+
+.design-empty-state p {
+    color: #9CA3AF;
+    margin-bottom: 1.5rem;
+}
+
+.design-pagination {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+.design-pagination .page-link {
+    color: #2E7D32;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.design-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border-color: #1B5E20;
+}
+
+.design-pagination .page-link:hover {
+    background-color: #E8F5E9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+}
+
+@media (max-width: 1200px) {
+    .design-table thead th {
+        font-size: 0.7rem;
+        padding: 0.875rem 0.625rem;
+    }
+    
+    .design-table tbody td {
+        padding: 0.875rem 0.625rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .design-table thead th:nth-child(6),
+    .design-table tbody td:nth-child(6) {
+        display: none;
+    }
+    
+    .design-table thead th:nth-child(7),
+    .design-table tbody td:nth-child(7) {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-list-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .product-list-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .product-table-card .card-body {
+        padding: 1rem;
+    }
+    
+    .design-table thead th:nth-child(5),
+    .design-table tbody td:nth-child(5) {
+        display: none;
+    }
+    
+    .desktop-table-view {
+        display: none !important;
+    }
+    
+    .mobile-card-view {
+        display: block !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .product-list-header {
+        margin-bottom: 1rem;
+    }
+    
+    .product-list-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .product-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .product-stat-card {
+        padding: 1rem;
+    }
+    
+    .product-stat-info h4 {
+        font-size: 1.5rem;
+    }
+    
+    .product-stat-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+    }
+    
+    .design-pagination .page-link {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.875rem;
+        margin: 0 0.125rem;
+    }
+}
+
+@media (max-width: 375px) {
+    .product-list-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .product-stats-grid {
+        gap: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
-<div class="inventory-management">
-    <!-- Header with Sample Data Actions -->
-    <div class="inventory-header">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h2><i class="bi bi-box-seam"></i> Products / Inventory</h2>
-                <p class="text-muted mb-0">Manage product catalog, categories, stock levels, and pricing</p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="{% url 'admin_dashboard:product_add' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Add Product
-                </a>
-                <a href="{% url 'admin_dashboard:product_categories' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-folder"></i> Manage Categories
-                </a>
-                {% if is_super_admin %}
-                <button type="button" class="btn btn-outline-success" id="populateSampleBtn">
-                    <i class="bi bi-database-add"></i> Populate Sample Data
-                </button>
-                <button type="button" class="btn btn-outline-danger" id="deleteSampleBtn">
-                    <i class="bi bi-database-dash"></i> Delete Sample Data
-                </button>
-                {% endif %}
-            </div>
+<div class="product-list-container">
+    <div class="product-list-header">
+        <div>
+            <h2><i class="bi bi-box-seam"></i> Products / Inventory</h2>
+            <p class="product-list-subtitle mb-0">Manage product catalog, categories, stock levels, and pricing</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'admin_dashboard:product_add' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Product
+            </a>
+            <a href="{% url 'admin_dashboard:product_categories' %}" class="design-btn design-btn-outline-secondary">
+                <i class="bi bi-folder"></i> Manage Categories
+            </a>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="bi bi-box"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h6 class="text-muted mb-0">Total Products</h6>
-                            <h4 class="mb-0">{{ total_products }}</h4>
-                        </div>
-                    </div>
-                </div>
+    <div class="product-stats-grid">
+        <div class="product-stat-card">
+            <div class="product-stat-icon bg-primary">
+                <i class="bi bi-box"></i>
+            </div>
+            <div class="product-stat-info">
+                <h6>Total Products</h6>
+                <h4>{{ total_products }}</h4>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon bg-success text-white rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="bi bi-folder"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h6 class="text-muted mb-0">Categories</h6>
-                            <h4 class="mb-0">{{ total_categories }}</h4>
-                        </div>
-                    </div>
-                </div>
+        <div class="product-stat-card">
+            <div class="product-stat-icon bg-success">
+                <i class="bi bi-folder"></i>
+            </div>
+            <div class="product-stat-info">
+                <h6>Categories</h6>
+                <h4>{{ total_categories }}</h4>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stats-card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="stats-icon bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="bi bi-exclamation-triangle"></i>
-                        </div>
-                        <div class="ms-3">
-                            <h6 class="text-muted mb-0">Low Stock</h6>
-                            <h4 class="mb-0">{{ low_stock_count }}</h4>
-                        </div>
-                    </div>
-                </div>
+        <div class="product-stat-card">
+            <div class="product-stat-icon bg-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="product-stat-info">
+                <h6>Low Stock</h6>
+                <h4>{{ low_stock_count }}</h4>
             </div>
         </div>
     </div>
 
     <!-- Category Filter -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="category" class="form-label">Filter by Category</label>
-                    <select class="form-select" id="category" name="category" onchange="this.form.submit()">
-                        <option value="">All Categories</option>
-                        {% for category in categories %}
-                        <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
-                            {{ category.name }} ({{ category.product_count }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <a href="{% url 'admin_dashboard:product_list' %}" class="btn btn-outline-secondary w-100">
-                        <i class="bi bi-x-circle"></i> Clear
-                    </a>
-                </div>
-            </form>
-        </div>
+    <div class="product-filter-card">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="category" class="design-form-label">Filter by Category</label>
+                <select class="design-form-select" id="category" name="category" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
+                        {{ category.name }} ({{ category.product_count }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'admin_dashboard:product_list' %}" class="design-btn design-btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+        </form>
     </div>
 
-    <!-- Products Table -->
-    <div class="card">
-        <div class="card-body">
+    <!-- Products Table Card -->
+    <div class="product-table-card">
+        <div class="table-responsive">
             {% if products %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+            <!-- Desktop/Tablet Table View -->
+            <div class="desktop-table-view">
+                <table class="table design-table mb-0">
+                    <thead>
                         <tr>
                             <th>Image</th>
                             <th>Name</th>
@@ -124,51 +524,49 @@
                         <tr class="{% if not product.is_active %}table-secondary{% endif %} {% if product.is_sample_data %}table-warning{% endif %}">
                             <td>
                                 {% if product.image %}
-                                <img src="{{ product.image.url }}" alt="{{ product.name }}" 
-                                     class="rounded" style="width: 48px; height: 48px; object-fit: cover;">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image-thumb">
                                 {% else %}
-                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                     style="width: 48px; height: 48px;">
-                                    <i class="bi bi-box-seam text-muted"></i>
+                                <div class="product-image-placeholder">
+                                    <i class="bi bi-box-seam"></i>
                                 </div>
                                 {% endif %}
                                 {% if product.is_sample_data %}
-                                <span class="badge bg-warning text-dark ms-1" style="font-size: 10px;">Sample</span>
+                                <span class="badge design-badge-warning ms-1" style="font-size: 10px;">Sample</span>
                                 {% endif %}
                             </td>
                             <td><strong>{{ product.name }}</strong></td>
                             <td>
                                 {% if product.category %}
-                                <span class="badge bg-info text-dark">{{ product.category.name }}</span>
+                                <span class="badge design-badge-info">{{ product.category.name }}</span>
                                 {% else %}
-                                <span class="badge bg-secondary">Uncategorized</span>
+                                <span class="badge design-badge-secondary">Uncategorized</span>
                                 {% endif %}
                             </td>
                             <td>₦{{ product.price|floatformat:2 }}</td>
                             <td>
                                 {% if product.stock_quantity == 0 %}
-                                <span class="badge bg-danger">Out of Stock</span>
-                                {% elif product.stock_quantity <= 10 %}
-                                <span class="badge bg-warning text-dark">{{ product.stock_quantity }} left</span>
+                                <span class="badge design-badge-danger">Out of Stock</span>
+                                {% elif product.is_low_stock %}
+                                <span class="badge design-badge-warning">{{ product.stock_quantity }} left (low)</span>
                                 {% else %}
-                                <span class="badge bg-success">{{ product.stock_quantity }}</span>
+                                <span class="badge design-badge-success">{{ product.stock_quantity }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if product.is_active %}
-                                <span class="badge bg-success">Active</span>
+                                <span class="badge design-badge-success">Active</span>
                                 {% else %}
-                                <span class="badge bg-secondary">Inactive</span>
+                                <span class="badge design-badge-secondary">Inactive</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="btn-group" role="group">
+                                <div class="design-btn-group">
                                     <a href="{% url 'admin_dashboard:product_edit' product.pk %}" 
-                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                       class="design-btn design-btn-primary design-btn-sm" title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <a href="{% url 'admin_dashboard:product_delete' product.pk %}" 
-                                       class="btn btn-sm btn-outline-danger" title="Delete">
+                                       class="design-btn design-btn-sm" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(220,38,38,0.2);" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -178,93 +576,98 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="bi bi-box-seam" style="font-size: 48px; color: #ccc;"></i>
-                <p class="text-muted mt-3">No products found. Add your first product or populate sample data.</p>
+
+            <!-- Mobile Card View -->
+            <div class="mobile-card-view">
+                {% for product in products %}
+                <div class="product-mobile-card">
+                    <div class="product-mobile-header">
+                        <div class="product-mobile-title">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image-thumb" style="width: 36px; height: 36px;">
+                            {% else %}
+                            <div class="product-image-placeholder" style="width: 36px; height: 36px; font-size: 1rem;">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            {% endif %}
+                            {{ product.name }}
+                        </div>
+                        <div>
+                            {% if product.is_active %}
+                            <span class="badge design-badge-success">Active</span>
+                            {% else %}
+                            <span class="badge design-badge-secondary">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="product-mobile-body">
+                        <div class="product-mobile-row">
+                            <span class="product-mobile-label">Category</span>
+                            <span class="product-mobile-value">
+                                {% if product.category %}
+                                <span class="badge design-badge-info">{{ product.category.name }}</span>
+                                {% else %}
+                                <span class="badge design-badge-secondary">Uncategorized</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="product-mobile-row">
+                            <span class="product-mobile-label">Price</span>
+                            <span class="product-mobile-value" style="color: #1B5E20; font-weight: 700;">₦{{ product.price|floatformat:2 }}</span>
+                        </div>
+                        <div class="product-mobile-row">
+                            <span class="product-mobile-label">Stock</span>
+                            <span class="product-mobile-value">
+                                {% if product.stock_quantity == 0 %}
+                                <span class="badge design-badge-danger">Out of Stock</span>
+                                {% elif product.is_low_stock %}
+                                <span class="badge design-badge-warning">{{ product.stock_quantity }} left (low)</span>
+                                {% else %}
+                                <span class="badge design-badge-success">{{ product.stock_quantity }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="product-mobile-actions">
+                        <a href="{% url 'admin_dashboard:product_edit' product.pk %}" class="design-btn design-btn-primary design-btn-sm">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a href="{% url 'admin_dashboard:product_delete' product.pk %}" class="design-btn design-btn-sm" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white;">
+                            <i class="bi bi-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="design-empty-state">
+                    <i class="bi bi-box-seam"></i>
+                    <h3>No products found</h3>
+                    <p>Add your first product or populate sample data to get started.</p>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Product pagination">
+        <ul class="pagination design-pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
-
-<style>
-.inventory-header {
-    margin-bottom: 24px;
-}
-.inventory-header h2 {
-    margin: 0;
-    color: #1B5E20;
-}
-.stats-card {
-    border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    transition: transform 0.2s ease;
-}
-.stats-card:hover {
-    transform: translateY(-2px);
-}
-.stats-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 20px;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                      document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
-
-    document.getElementById('populateSampleBtn')?.addEventListener('click', function() {
-        if (!confirm('This will create sample categories and products. Continue?')) {
-            return;
-        }
-        fetch('{% url 'admin_dashboard:populate_sample_data' %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            alert('Error: ' + error.message);
-        });
-    });
-
-    document.getElementById('deleteSampleBtn')?.addEventListener('click', function() {
-        if (!confirm('This will permanently delete ALL sample data (categories and products flagged as sample data). Real data will NOT be affected. Continue?')) {
-            return;
-        }
-        fetch('{% url 'admin_dashboard:delete_sample_data' %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            alert('Error: ' + error.message);
-        });
-    });
-});
-</script>
 {% endblock %}

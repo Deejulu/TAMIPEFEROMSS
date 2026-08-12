@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.test.utils import override_settings
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 import re
 
 from .models import CustomUser, SecurityQuestion, SavedCard
@@ -16,6 +17,7 @@ from .utils import generate_unique_username
 from .validators import UppercaseValidator, LowercaseValidator, DigitValidator
 from .constants import SECURITY_QUESTIONS
 from notifications.models import Notification
+from shop.models import Category, Order, OrderItem, Product, Payment
 
 User = get_user_model()
 
@@ -28,87 +30,71 @@ class UsernameGenerationTests(TestCase):
     """Tests for the generate_unique_username utility function."""
 
     def test_basic_username_generation(self):
-        """Test that username is generated from first and last name with random suffix."""
+        """Test that username is generated from first and last name with year and sequence."""
         username = generate_unique_username("John", "Doe")
-        self.assertTrue(username.startswith("johndoe"))
-        self.assertTrue(username[len("johndoe"):].isdigit())
-
-    def test_lowercase_conversion(self):
-        """Test that username is converted to lowercase."""
-        username = generate_unique_username("JOHN", "DOE")
-        self.assertTrue(username.startswith("johndoe"))
+        self.assertTrue(username.startswith("JohnDoe"))
+        self.assertIn(str(timezone.now().year), username)
 
     def test_spaces_removed(self):
         """Test that spaces are removed from username."""
         username = generate_unique_username("  John  ", "  Doe  ")
-        self.assertTrue(username.startswith("johndoe"))
+        self.assertEqual(username, "JohnDoe" + str(timezone.now().year) + "001")
 
     def test_special_characters_removed(self):
         """Test that special characters are removed from username."""
         username = generate_unique_username("John!", "Doe@")
-        self.assertTrue(username.startswith("johndoe"))
+        self.assertEqual(username, "JohnDoe" + str(timezone.now().year) + "001")
 
     def test_unicode_normalization(self):
         """Test that unicode characters are normalized."""
         username = generate_unique_username("José", "García")
-        self.assertTrue(username.startswith("josegarcia"))
+        self.assertEqual(username, "JoseGarcia" + str(timezone.now().year) + "001")
 
     def test_collision_handling(self):
-        """Test that duplicate base names get unique usernames."""
-        existing_username = generate_unique_username("John", "Doe")
+        """Test that duplicate base names get sequential numbers."""
         User.objects.create_user(
             email="john1@example.com",
             full_name="John Doe",
             password="TestPass123",
-            username=existing_username,
+            username="JohnDoe" + str(timezone.now().year) + "001",
         )
         new_username = generate_unique_username("John", "Doe")
-        self.assertNotEqual(new_username, existing_username)
-        self.assertTrue(new_username.startswith("johndoe"))
+        self.assertEqual(new_username, "JohnDoe" + str(timezone.now().year) + "002")
 
     def test_multiple_collisions(self):
         """Test that multiple collisions all produce unique usernames."""
-        used = set()
         for i in range(5):
-            u = generate_unique_username("John", "Doe")
+            seq = f"{i+1:03d}"
             User.objects.create_user(
                 email=f"john{i}@example.com",
                 full_name="John Doe",
                 password="TestPass123",
-                username=u,
+                username="JohnDoe" + str(timezone.now().year) + seq,
             )
-            used.add(u)
         new_u = generate_unique_username("John", "Doe")
-        self.assertNotIn(new_u, used)
-        self.assertTrue(new_u.startswith("johndoe"))
+        self.assertEqual(new_u, "JohnDoe" + str(timezone.now().year) + "006")
 
     def test_empty_first_name_fallback(self):
         """Test that empty first name still generates a username."""
         username = generate_unique_username("", "Doe")
-        self.assertTrue(username.startswith("doe"))
+        self.assertEqual(username, "Doe" + str(timezone.now().year) + "001")
 
     def test_empty_last_name_fallback(self):
         """Test that empty last name still generates a username."""
         username = generate_unique_username("John", "")
-        self.assertTrue(username.startswith("john"))
+        self.assertEqual(username, "John" + str(timezone.now().year) + "001")
 
     def test_both_names_empty_fallback(self):
-        """Test that both empty names fall back to 'user'."""
+        """Test that both empty names fall back to 'User'."""
         username = generate_unique_username("", "")
-        self.assertTrue(username.startswith("user"))
+        self.assertEqual(username, "User" + str(timezone.now().year) + "001")
 
-    def test_unicode_collision_handling(self):
-        """Test collision handling with unicode-normalized names."""
-        u1 = generate_unique_username("José", "García")
-        User.objects.create_user(
-            email="jose@example.com",
-            full_name="José García",
-            password="TestPass123",
-            username=u1,
-        )
-        u2 = generate_unique_username("José", "García")
-        self.assertNotEqual(u2, u1)
-        self.assertTrue(u2.startswith("josegarcia"))
+    def test_sequential_per_year(self):
+        """Test that sequence resets per year."""
+        u1 = generate_unique_username("Test", "User", year=2026)
+        u2 = generate_unique_username("Test", "User", year=2027)
+        self.assertTrue(u1.startswith("TestUser2026"))
+        self.assertTrue(u2.startswith("TestUser2027"))
 
 
 # =============================================================================
@@ -435,7 +421,7 @@ class SignupViewTests(TestCase):
         """Test that a user can successfully sign up with valid data."""
         response = self.client.post(self.signup_url, data=self.valid_signup_data)
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.login_url)
+        self.assertRedirects(response, reverse("accounts:signup_download"))
 
         self.assertEqual(User.objects.count(), 1)
         user = User.objects.first()
@@ -447,7 +433,7 @@ class SignupViewTests(TestCase):
         """Test that signup generates a username automatically."""
         self.client.post(self.signup_url, data=self.valid_signup_data)
         user = User.objects.first()
-        self.assertTrue(user.username.startswith("johndoe"))
+        self.assertEqual(user.username, "JohnDoe2026001")
 
     def test_signup_creates_security_questions(self):
         """Test that signup creates three security questions."""
@@ -540,7 +526,7 @@ class SignupViewTests(TestCase):
         """Test that a user can log in after successful registration."""
         self.client.post(self.signup_url, data=self.valid_signup_data)
         user = User.objects.first()
-        login_successful = self.client.login(email=user.email, password="StrongPass1")
+        login_successful = self.client.login(username=user.username, password="StrongPass1")
         self.assertTrue(login_successful)
 
     def test_signup_rollback_on_failure(self):
@@ -578,18 +564,17 @@ class LoginTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/login.html")
 
-    def test_login_form_label_is_email(self):
-        """Test that the login form labels the email field as 'Email'."""
+    def test_login_form_label_is_username(self):
+        """Test that the login form labels the username field as 'Username'."""
         response = self.client.get(self.login_url)
-        self.assertContains(response, "Email")
-        self.assertNotContains(response, "Email Address")
-        self.assertNotContains(response, "Username")
+        self.assertContains(response, "Username")
+        self.assertNotContains(response, "Email")
 
-    def test_successful_login_with_email(self):
-        """Test successful login using email and password."""
+    def test_successful_login_with_username(self):
+        """Test successful login using username and password."""
         response = self.client.post(
             self.login_url,
-            data={"username": self.user.email, "password": self.password},
+            data={"username": self.user.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -599,17 +584,17 @@ class LoginTests(TestCase):
         """Test that login fails with incorrect password."""
         response = self.client.post(
             self.login_url,
-            data={"username": self.user.email, "password": "WrongPassword123!"},
+            data={"username": self.user.username, "password": "WrongPassword123!"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
-    def test_login_with_nonexistent_email(self):
-        """Test that login fails with an unregistered email."""
+    def test_login_with_nonexistent_username(self):
+        """Test that login fails with an unregistered username."""
         response = self.client.post(
             self.login_url,
             data={
-                "username": "nonexistent@example.com",
+                "username": "nonexistentuser",
                 "password": self.password,
             },
         )
@@ -618,17 +603,17 @@ class LoginTests(TestCase):
 
     def test_authenticated_user_redirected_from_login(self):
         """Test that an authenticated user visiting login page is redirected to dashboard."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
 
     def test_login_redirect_authenticated_user(self):
         """Test that authenticated user POSTing to login is redirected."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
             self.login_url,
-            data={"username": self.user.email, "password": self.password},
+            data={"username": self.user.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -652,7 +637,7 @@ class LoginTests(TestCase):
         )
         response = self.client.post(
             self.login_url,
-            data={"username": admin_user.email, "password": self.password},
+            data={"username": admin_user.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("admin_dashboard:overview"))
@@ -668,7 +653,7 @@ class LoginTests(TestCase):
         )
         response = self.client.post(
             self.login_url,
-            data={"username": manager.email, "password": self.password},
+            data={"username": manager.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("admin_dashboard:overview"))
@@ -684,7 +669,7 @@ class LoginTests(TestCase):
         )
         response = self.client.post(
             self.login_url,
-            data={"username": staff.email, "password": self.password},
+            data={"username": staff.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -693,7 +678,7 @@ class LoginTests(TestCase):
         """Customer login redirects to regular dashboard."""
         response = self.client.post(
             self.login_url,
-            data={"username": self.user.email, "password": self.password},
+            data={"username": self.user.username, "password": self.password},
         )
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -720,7 +705,7 @@ class LogoutTests(TestCase):
 
     def test_successful_logout(self):
         """Test that a logged-in user can log out successfully."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(self.logout_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.login_url)
@@ -728,7 +713,7 @@ class LogoutTests(TestCase):
 
     def test_logout_clears_session(self):
         """Test that after logout, the user cannot access dashboard."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         self.client.post(self.logout_url)
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 302)
@@ -744,7 +729,7 @@ class LogoutTests(TestCase):
 
     def test_logout_requires_post(self):
         """Test that GET request to logout URL does not log out."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.logout_url)
         self.assertEqual(response.status_code, 405)
 
@@ -783,7 +768,7 @@ class HomeRedirectTests(TestCase):
             username="adminuser1",
             role=User.Role.SUPER_ADMIN,
         )
-        self.client.login(email=admin_user.email, password=self.password)
+        self.client.login(username=admin_user.username, password=self.password)
         response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("admin_dashboard:overview"))
@@ -797,14 +782,14 @@ class HomeRedirectTests(TestCase):
             username="manager1",
             role=User.Role.FARM_MANAGER,
         )
-        self.client.login(email=manager.email, password=self.password)
+        self.client.login(username=manager.username, password=self.password)
         response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("admin_dashboard:overview"))
 
     def test_role_based_redirect_to_dashboard_for_customer(self):
         """Customer visiting / is redirected to regular dashboard."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -818,7 +803,7 @@ class HomeRedirectTests(TestCase):
             username="staff1",
             role=User.Role.STAFF,
         )
-        self.client.login(email=staff.email, password=self.password)
+        self.client.login(username=staff.username, password=self.password)
         response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, self.dashboard_url)
@@ -854,39 +839,39 @@ class DashboardTests(TestCase):
 
     def test_authenticated_user_can_access_dashboard(self):
         """Test that logged-in users can access the dashboard."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/dashboard.html")
 
     def test_dashboard_shows_user_full_name(self):
         """Test that dashboard displays the user's full name."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, "Test User")
 
     def test_dashboard_shows_user_email(self):
         """Test that dashboard displays the user's email."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, "testuser@example.com")
 
     def test_dashboard_shows_user_role(self):
         """Test that dashboard displays the user's role."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, self.user.get_role_display())
 
     def test_dashboard_shows_date_joined(self):
         """Test that dashboard displays the date the user joined."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         expected_date = self.user.date_joined.strftime("%B %d, %Y")
         self.assertContains(response, expected_date)
 
     def test_dashboard_has_logout_button(self):
         """Test that dashboard contains a logout button."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, "Logout")
         self.assertContains(response, self.logout_url)
@@ -905,7 +890,7 @@ class DashboardTests(TestCase):
         design, so this test scopes its assertion to the <main> content area
         only rather than the full response body.
         """
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         content = response.content.decode()
 
@@ -928,20 +913,20 @@ class DashboardTests(TestCase):
         """Test that a saved phone number is displayed instead of the fallback text."""
         self.user.phone_number = "+1 555-123-4567"
         self.user.save(update_fields=["phone_number"])
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, "+1 555-123-4567")
         self.assertNotContains(response, "Not provided")
 
     def test_dashboard_shows_fallback_when_phone_blank(self):
         """Test that the 'Not provided' fallback is shown when no phone number is set."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         self.assertContains(response, "Not provided")
 
     def test_quick_action_links_resolve_and_load(self):
         """Test that every Quick Action link on the dashboard resolves to a working page."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         quick_action_urls = [
             reverse("accounts:profile_edit"),
             reverse("accounts:password_change"),
@@ -956,7 +941,7 @@ class DashboardTests(TestCase):
         """Test that unverified users see a working resend-verification link."""
         self.user.email_verified = False
         self.user.save(update_fields=["email_verified"])
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         resend_url = reverse("accounts:resend_verification")
         self.assertContains(response, resend_url)
@@ -968,10 +953,64 @@ class DashboardTests(TestCase):
         """Test that verified users do not see the resend-verification link."""
         self.user.email_verified = True
         self.user.save(update_fields=["email_verified"])
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.dashboard_url)
         resend_url = reverse("accounts:resend_verification")
         self.assertNotContains(response, resend_url)
+
+    def test_dashboard_shows_recent_orders_and_shopping_links(self):
+        category = Category.objects.create(name="Dashboard Category")
+        product = Product.objects.create(
+            name="Dashboard Product",
+            price=Decimal("2500.00"),
+            stock_quantity=10,
+            category=category,
+        )
+        order = Order.objects.create(user=self.user, total=Decimal("2500.00"))
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            product_name=product.name,
+            quantity=1,
+            price=product.price,
+        )
+
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.get(self.dashboard_url)
+
+        self.assertContains(response, "Recent Orders")
+        self.assertContains(response, f"Order #{order.pk}")
+        self.assertContains(response, reverse("shop:product_list"))
+        self.assertContains(response, reverse("accounts:order_list"))
+
+    def test_header_dropdown_shows_my_orders_and_payment_history_for_customer(self):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.get(reverse("accounts:dashboard"))
+
+        self.assertContains(response, reverse("accounts:order_list"))
+        self.assertContains(response, reverse("accounts:payment_history"))
+
+    def test_header_dropdown_hides_customer_links_for_non_customers(self):
+        for role in (User.Role.SUPER_ADMIN, User.Role.FARM_MANAGER, User.Role.STAFF):
+            with self.subTest(role=role):
+                non_customer = User.objects.create_user(
+                    email=f"{role.lower()}@example.com",
+                    full_name=role.title(),
+                    password=self.password,
+                    username=f"{role.lower()}user",
+                    role=role,
+                )
+                self.client.login(username=non_customer.username, password=self.password)
+                response = self.client.get(reverse("accounts:dashboard"))
+                content = response.content.decode()
+                
+                # Extract just the dropdown menu HTML
+                dropdown_start = content.find('<ul class="dropdown-menu')
+                dropdown_end = content.find('</ul>', dropdown_start) + 5
+                dropdown_html = content[dropdown_start:dropdown_end]
+                
+                self.assertNotIn(reverse("accounts:order_list"), dropdown_html)
+                self.assertNotIn(reverse("accounts:payment_history"), dropdown_html)
 
 
 # =============================================================================
@@ -1004,7 +1043,7 @@ class PaymentTests(TestCase):
 
     def test_payment_page_renders_successfully(self):
         """The payment page renders without error for a logged-in user."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.payment_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/payment.html")
@@ -1012,14 +1051,14 @@ class PaymentTests(TestCase):
     def test_payment_page_shows_add_new_card_when_cards_exist(self):
         """The Add New Card control stays visible once a card is saved."""
         SavedCard.objects.create(user=self.user, last4="4242", expiry="12/28", is_default=True)
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.get(self.payment_url)
         self.assertContains(response, "Add New Card")
         self.assertContains(response, "4242")
 
     def test_add_saved_card_creates_card_with_valid_data(self):
         """Posting valid card details creates a SavedCard with only last4/expiry stored."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(self.add_card_url, {
             "cardNumber": "4111 1111 1111 1111",
             "expiry": "09/29",
@@ -1033,7 +1072,7 @@ class PaymentTests(TestCase):
 
     def test_add_saved_card_rejects_invalid_card_number(self):
         """An obviously invalid card number is rejected and no card is created."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(self.add_card_url, {
             "cardNumber": "123",
             "expiry": "09/29",
@@ -1044,7 +1083,7 @@ class PaymentTests(TestCase):
 
     def test_add_saved_card_rejects_invalid_expiry(self):
         """An invalid expiry format is rejected."""
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(self.add_card_url, {
             "cardNumber": "4111111111111111",
             "expiry": "13/29",
@@ -1056,7 +1095,7 @@ class PaymentTests(TestCase):
     def test_add_saved_card_only_makes_first_card_default_by_default(self):
         """Adding a second card without checking makeDefault keeps the existing default."""
         SavedCard.objects.create(user=self.user, last4="9999", expiry="01/26", is_default=True)
-        self.client.login(email=self.user.email, password=self.password)
+        self.client.login(username=self.user.username, password=self.password)
         self.client.post(self.add_card_url, {
             "cardNumber": "5555555555554444",
             "expiry": "05/30",
@@ -1186,8 +1225,8 @@ class PasswordResetTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("accounts:password_reset_complete"))
 
-        login_successful = self.client.login(
-            email=self.user.email, password=new_password
+        login_successful =         self.client.login(
+            username=self.user.username, password=new_password
         )
         self.assertTrue(login_successful)
 
@@ -1704,7 +1743,7 @@ class HeaderLinkResolutionTests(TestCase):
             password="StrongPass123",
             username="dashuser1",
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("accounts:dashboard"))
         self.assertEqual(response.status_code, 200)
 
@@ -1716,7 +1755,7 @@ class HeaderLinkResolutionTests(TestCase):
             password="StrongPass123",
             username="profuser1",
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("accounts:profile"))
         self.assertEqual(response.status_code, 200)
 
@@ -1738,7 +1777,7 @@ class ScrollButtonTests(TestCase):
 
     def test_scroll_buttons_render_in_base_template(self):
         """Scroll buttons render in pages extending base.html."""
-        self.client.login(email=self.user.email, password="TestPass123!")
+        self.client.login(username=self.user.username, password="TestPass123!")
         response = self.client.get(reverse("accounts:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="scrollToTop"')
@@ -1748,7 +1787,7 @@ class ScrollButtonTests(TestCase):
 
     def test_scroll_buttons_css_present(self):
         """Scroll button CSS is included in base template."""
-        self.client.login(email=self.user.email, password="TestPass123!")
+        self.client.login(username=self.user.username, password="TestPass123!")
         response = self.client.get(reverse("accounts:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, ".scroll-button")
@@ -1758,7 +1797,7 @@ class ScrollButtonTests(TestCase):
 
     def test_scroll_buttons_javascript_present(self):
         """Scroll button JavaScript is included in base template."""
-        self.client.login(email=self.user.email, password="TestPass123!")
+        self.client.login(username=self.user.username, password="TestPass123!")
         response = self.client.get(reverse("accounts:dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "getElementById('scrollToTop')")
@@ -1768,7 +1807,7 @@ class ScrollButtonTests(TestCase):
 
     def test_scroll_buttons_in_profile_page(self):
         """Scroll buttons render in profile page extending base.html."""
-        self.client.login(email=self.user.email, password="TestPass123!")
+        self.client.login(username=self.user.username, password="TestPass123!")
         response = self.client.get(reverse("accounts:profile"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="scrollToTop"')
@@ -1783,7 +1822,7 @@ class ScrollButtonTests(TestCase):
             username="adminuser1",
             role="SUPER_ADMIN",
         )
-        self.client.login(email=admin_user.email, password="TestPass123!")
+        self.client.login(username=admin_user.username, password="TestPass123!")
         response = self.client.get(reverse("admin_dashboard:overview"))
         self.assertEqual(response.status_code, 200)
         # base_admin.html extends base.html, so buttons should be present
@@ -1799,7 +1838,7 @@ class ScrollButtonTests(TestCase):
             password="StrongPass123",
             username="pwcuser1",
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("accounts:password_change"))
         self.assertEqual(response.status_code, 200)
 
@@ -1812,7 +1851,7 @@ class ScrollButtonTests(TestCase):
             username="staffuser1",
             role=User.Role.STAFF,
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("admin_dashboard:overview"))
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("accounts:dashboard"))
@@ -1832,7 +1871,7 @@ class ScrollButtonTests(TestCase):
             username="superadmin1",
             role=User.Role.SUPER_ADMIN,
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("admin_dashboard:overview"))
         self.assertEqual(response.status_code, 200)
 
@@ -1845,7 +1884,7 @@ class ScrollButtonTests(TestCase):
             username="farmmanager1",
             role=User.Role.FARM_MANAGER,
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("admin_dashboard:overview"))
         self.assertEqual(response.status_code, 200)
 
@@ -1862,7 +1901,7 @@ class ScrollButtonTests(TestCase):
             password="StrongPass123",
             username="logoutuser1",
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.post(reverse("accounts:logout"))
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("accounts:login"))
@@ -1876,7 +1915,7 @@ class ScrollButtonTests(TestCase):
             username="indexuser1",
             role=User.Role.SUPER_ADMIN,
         )
-        self.client.login(email=user.email, password="StrongPass123")
+        self.client.login(username=user.username, password="StrongPass123")
         response = self.client.get(reverse("admin_dashboard:index"))
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("admin_dashboard:overview"))
@@ -1884,6 +1923,8 @@ class ScrollButtonTests(TestCase):
 
 class BatchAlertsLoginTests(TestCase):
     def setUp(self):
+        from farm_management.models import Category, Species
+
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
             full_name="Super Admin",
@@ -1906,13 +1947,18 @@ class BatchAlertsLoginTests(TestCase):
             username="customer1",
             role=User.Role.CUSTOMER,
         )
+        fish_category = Category.objects.create(name="Fish")
+        self.catfish = Species.objects.create(
+            name="Catfish",
+            category=fish_category,
+        )
 
     def test_check_batch_alerts_runs_on_super_admin_login(self):
         from farm_management.models import Batch
         from datetime import date
         Batch.objects.create(
             name="Alert Test Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1920,7 +1966,7 @@ class BatchAlertsLoginTests(TestCase):
         initial_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         final_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
@@ -1931,7 +1977,7 @@ class BatchAlertsLoginTests(TestCase):
         from datetime import date
         Batch.objects.create(
             name="FM Alert Test Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1939,7 +1985,7 @@ class BatchAlertsLoginTests(TestCase):
         initial_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
-        self.client.login(email=self.farm_manager.email, password="StrongPass1!")
+        self.client.login(username=self.farm_manager.username, password="StrongPass1!")
         final_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
@@ -1950,7 +1996,7 @@ class BatchAlertsLoginTests(TestCase):
         from datetime import date
         Batch.objects.create(
             name="Customer Alert Test Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1958,8 +2004,398 @@ class BatchAlertsLoginTests(TestCase):
         initial_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
-        self.client.login(email=self.customer.email, password="StrongPass1!")
+        self.client.login(username=self.customer.username, password="StrongPass1!")
         final_count = Notification.objects.filter(
             notification_type='batch_alert',
         ).count()
         self.assertEqual(initial_count, final_count)
+
+
+class CustomerOrderViewTests(TestCase):
+    """Tests for customer-only order history and order detail views."""
+
+    def setUp(self):
+        self.password = "StrongPass123!"
+        self.customer = User.objects.create_user(
+            email="customer-orders@example.com",
+            full_name="Customer Orders",
+            password=self.password,
+            username="customerorders",
+            role=User.Role.CUSTOMER,
+        )
+        self.other_customer = User.objects.create_user(
+            email="other-orders@example.com",
+            full_name="Other Customer",
+            password=self.password,
+            username="otherorders",
+            role=User.Role.CUSTOMER,
+        )
+        category = Category.objects.create(name="Order Category")
+        self.product = Product.objects.create(
+            name="Order Product",
+            price=Decimal("1200.00"),
+            stock_quantity=10,
+            category=category,
+        )
+        self.own_order = Order.objects.create(
+            user=self.customer,
+            total=Decimal("2400.00"),
+            status=Order.Status.PROCESSING,
+            delivery_address="12 Customer Road",
+            payment_method="Cash on Delivery",
+        )
+        OrderItem.objects.create(
+            order=self.own_order,
+            product=self.product,
+            product_name=self.product.name,
+            quantity=2,
+            price=self.product.price,
+        )
+        self.other_order = Order.objects.create(
+            user=self.other_customer,
+            total=Decimal("1200.00"),
+        )
+
+    def test_my_orders_lists_only_logged_in_customers_orders(self):
+        self.client.login(username=self.customer.username, password=self.password)
+
+        response = self.client.get(reverse("accounts:order_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"Order #{self.own_order.pk}")
+        self.assertNotContains(response, f"Order #{self.other_order.pk}")
+
+    def test_customer_can_view_own_order_detail(self):
+        self.client.login(username=self.customer.username, password=self.password)
+
+        response = self.client.get(
+            reverse("accounts:order_detail", args=[self.own_order.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Order Product")
+        self.assertContains(response, "12 Customer Road")
+        self.assertContains(response, "Cash on Delivery")
+
+    def test_customer_cannot_view_another_customers_order_detail(self):
+        self.client.login(username=self.customer.username, password=self.password)
+
+        response = self.client.get(
+            reverse("accounts:order_detail", args=[self.other_order.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+
+class CustomerPaymentHistoryTests(TestCase):
+    """Tests for customer payment history and printable receipts."""
+
+    def setUp(self):
+        self.password = "StrongPass123!"
+        self.customer = User.objects.create_user(
+            email="payment-customer@example.com",
+            full_name="Payment Customer",
+            password=self.password,
+            username="paymentcustomer",
+            role=User.Role.CUSTOMER,
+        )
+        self.other_customer = User.objects.create_user(
+            email="other-payment@example.com",
+            full_name="Other Payment",
+            password=self.password,
+            username="otherpayment",
+            role=User.Role.CUSTOMER,
+        )
+        category = Category.objects.create(name="Payment Category")
+        product = Product.objects.create(
+            name="Payment Product",
+            price=Decimal("1500.00"),
+            stock_quantity=10,
+            category=category,
+        )
+
+        self.own_order = Order.objects.create(
+            user=self.customer,
+            total=Decimal("3000.00"),
+            status=Order.Status.DELIVERED,
+            delivery_address="45 Payment Lane",
+            payment_method="Card",
+        )
+        OrderItem.objects.create(
+            order=self.own_order,
+            product=product,
+            product_name=product.name,
+            quantity=2,
+            price=product.price,
+        )
+
+        self.other_order = Order.objects.create(
+            user=self.other_customer,
+            total=Decimal("1500.00"),
+            status=Order.Status.PENDING,
+        )
+        OrderItem.objects.create(
+            order=self.other_order,
+            product=product,
+            product_name=product.name,
+            quantity=1,
+            price=product.price,
+        )
+
+        self.own_success_payment = Payment.objects.create(
+            order=self.own_order,
+            reference="PAY-SUCCESS-001",
+            amount=Decimal("3000.00"),
+            status="success",
+        )
+        self.own_failed_payment = Payment.objects.create(
+            order=self.own_order,
+            reference="PAY-FAILED-001",
+            amount=Decimal("3000.00"),
+            status="failed",
+        )
+        self.other_payment = Payment.objects.create(
+            order=self.other_order,
+            reference="PAY-OTHER-001",
+            amount=Decimal("1500.00"),
+            status="success",
+        )
+
+    def test_payment_history_requires_authentication(self):
+        response = self.client.get(reverse("accounts:payment_history"))
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:login')}?next={reverse('accounts:payment_history')}",
+        )
+
+    def test_payment_history_lists_only_customers_payments(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(reverse("accounts:payment_history"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PAY-SUCCESS-001")
+        self.assertContains(response, "PAY-FAILED-001")
+        self.assertNotContains(response, "PAY-OTHER-001")
+
+    def test_payment_history_shows_success_and_failed_statuses(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(reverse("accounts:payment_history"))
+
+        self.assertContains(response, "Successful")
+        self.assertContains(response, "Failed")
+
+    def test_payment_history_shows_receipt_link_for_successful_payments(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(reverse("accounts:payment_history"))
+
+        self.assertContains(response, reverse("accounts:payment_receipt", args=[self.own_success_payment.pk]))
+
+    def test_payment_history_does_not_show_receipt_link_for_failed_payments(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(reverse("accounts:payment_history"))
+
+        self.assertNotContains(response, reverse("accounts:payment_receipt", args=[self.own_failed_payment.pk]))
+
+    def test_customer_can_view_own_successful_payment_receipt(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(
+            reverse("accounts:payment_receipt", args=[self.own_success_payment.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PAY-SUCCESS-001")
+        self.assertContains(response, "Payment Product")
+        self.assertContains(response, "3000.00")
+        self.assertContains(response, "Payment Customer")
+        self.assertContains(response, "45 Payment Lane")
+
+    def test_customer_cannot_view_receipt_for_failed_payment(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(
+            reverse("accounts:payment_receipt", args=[self.own_failed_payment.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_customer_cannot_view_another_customers_payment_receipt(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(
+            reverse("accounts:payment_receipt", args=[self.other_payment.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_dashboard_shows_payment_history_link(self):
+        self.client.login(username=self.customer.username, password=self.password)
+        response = self.client.get(reverse("accounts:dashboard"))
+
+        self.assertContains(response, reverse("accounts:payment_history"))
+
+
+class SignupDownloadTests(TestCase):
+    """Tests for the signup security questions download step."""
+
+    def setUp(self):
+        self.signup_url = reverse("accounts:signup")
+        self.download_url = reverse("accounts:signup_download")
+        self.file_url = reverse("accounts:download_security_questions")
+
+    def test_signup_stores_questions_in_session(self):
+        """After successful signup, questions should be stored in session."""
+        response = self.client.post(self.signup_url, {
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "testdownload@example.com",
+            "phone_number": "1234567890",
+            "password1": "StrongPass1!",
+            "password2": "StrongPass1!",
+            "security_question_1": "first_pet",
+            "security_answer_1": "Fluffy",
+            "security_question_2": "birth_city",
+            "security_answer_2": "Lagos",
+            "security_question_3": "first_school",
+            "security_answer_3": "Springfield Elementary",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, self.download_url)
+        self.assertEqual(self.client.session["signup_security_questions"], ["first_pet", "birth_city", "first_school"])
+
+    def test_download_page_requires_session_questions(self):
+        """Download page should redirect to signup if no questions in session."""
+        response = self.client.get(self.download_url)
+        self.assertRedirects(response, self.signup_url)
+
+    def test_download_page_renders_questions(self):
+        """Download page should show the stored questions."""
+        session = self.client.session
+        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
+        session.save()
+        response = self.client.get(self.download_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "first_pet")
+        self.assertContains(response, "birth_city")
+        self.assertContains(response, "first_school")
+
+    def test_file_download_requires_session_questions(self):
+        """File download should redirect to signup if no questions in session."""
+        response = self.client.get(self.file_url)
+        self.assertRedirects(response, self.signup_url)
+
+    def test_file_download_generates_text_file(self):
+        """File download should return a plain text file with questions."""
+        session = self.client.session
+        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
+        session.save()
+        response = self.client.get(self.file_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/plain")
+        self.assertIn('attachment; filename="tamipee-security-questions.txt"', response["Content-Disposition"])
+        content = response.content.decode()
+        self.assertIn("first_pet", content)
+        self.assertIn("birth_city", content)
+        self.assertIn("first_school", content)
+        self.assertNotIn("Fluffy", content)
+        self.assertNotIn("Lagos", content)
+
+    def test_download_confirmation_redirects_to_login(self):
+        """Submitting the confirmation form should redirect to login."""
+        session = self.client.session
+        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
+        session.save()
+        response = self.client.post(self.download_url, {"downloaded_confirmed": "on"})
+        self.assertRedirects(response, reverse("accounts:login"))
+        self.assertNotIn("signup_security_questions", self.client.session)
+
+    def test_download_page_blocks_without_confirmation(self):
+        """Download page should show error if confirmation checkbox is not checked."""
+        session = self.client.session
+        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
+        session.save()
+        response = self.client.post(self.download_url, {})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please confirm")
+
+
+class SecurityAnswerExposureTests(TestCase):
+    """Tests to confirm no endpoint exposes plaintext security answers."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="securitytest@example.com",
+            full_name="Security Test",
+            password="StrongPass1!",
+            username="securitytest",
+        )
+        SecurityQuestion.objects.create(
+            user=self.user,
+            question="pet_name",
+            hashed_answer=make_password("Fluffy"),
+        )
+        SecurityQuestion.objects.create(
+            user=self.user,
+            question="birth_city",
+            hashed_answer=make_password("Lagos"),
+        )
+        SecurityQuestion.objects.create(
+            user=self.user,
+            question="first_school",
+            hashed_answer=make_password("Springfield"),
+        )
+
+    def test_admin_user_detail_does_not_explain_hashed_answers(self):
+        """Admin user detail page should not show hashed answers."""
+        super_admin = User.objects.create_user(
+            email="admin@example.com",
+            full_name="Admin User",
+            password="StrongPass1!",
+            username="adminuser",
+            role=User.Role.SUPER_ADMIN,
+        )
+        self.client.login(username=super_admin.username, password="StrongPass1!")
+        response = self.client.get(reverse("admin_dashboard:user_detail", args=[self.user.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "pbkdf2_sha256")
+        self.assertNotContains(response, "Fluffy")
+        self.assertNotContains(response, "Lagos")
+        self.assertNotContains(response, "Springfield")
+
+    def test_admin_user_edit_does_not_expose_security_answers(self):
+        """Admin user edit page should not expose security answers."""
+        super_admin = User.objects.create_user(
+            email="admin2@example.com",
+            full_name="Admin User 2",
+            password="StrongPass1!",
+            username="adminuser2",
+            role=User.Role.SUPER_ADMIN,
+        )
+        self.client.login(username=super_admin.username, password="StrongPass1!")
+        response = self.client.get(reverse("admin_dashboard:user_edit", args=[self.user.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "pbkdf2_sha256")
+        self.assertNotContains(response, "Fluffy")
+        self.assertNotContains(response, "Lagos")
+        self.assertNotContains(response, "Springfield")
+
+    def test_security_question_model_str_does_not_expose_answer(self):
+        """SecurityQuestion __str__ should not include the hashed answer."""
+        sq = SecurityQuestion.objects.first()
+        str_repr = str(sq)
+        self.assertNotIn("pbkdf2_sha256", str_repr)
+        self.assertNotIn("Fluffy", str_repr)
+        self.assertIn(self.user.full_name, str_repr)
+
+    def test_no_api_endpoint_returns_plaintext_answers(self):
+        """Confirm no known endpoint returns plaintext security answers."""
+        # Check a few key URLs that might expose user data
+        urls_to_check = [
+            reverse("admin_dashboard:user_detail", args=[self.user.pk]),
+            reverse("accounts:profile"),
+        ]
+        for url in urls_to_check:
+            response = self.client.get(url)
+            if response.status_code == 200:
+                content = response.content.decode()
+                self.assertNotIn("Fluffy", content)
+                self.assertNotIn("Lagos", content)
+                self.assertNotIn("Springfield", content)

@@ -9,6 +9,8 @@ app_name = "accounts"
 urlpatterns = [
     # User registration
     path("signup/", views.SignUpView.as_view(), name="signup"),
+    path("signup/download/", views.SignupDownloadView.as_view(), name="signup_download"),
+    path("signup/download/file/", views.download_security_questions_file, name="download_security_questions"),
 
     # Authentication views (using custom login view for role-based redirect)
     path(
@@ -28,6 +30,26 @@ urlpatterns = [
 
     # Dashboard (must be authenticated)
     path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    path(
+        "dashboard/orders/",
+        views.CustomerOrderListView.as_view(),
+        name="order_list",
+    ),
+    path(
+        "dashboard/orders/<int:pk>/",
+        views.CustomerOrderDetailView.as_view(),
+        name="order_detail",
+    ),
+    path(
+        "dashboard/payments/",
+        views.CustomerPaymentHistoryView.as_view(),
+        name="payment_history",
+    ),
+    path(
+        "dashboard/payments/<int:pk>/receipt/",
+        views.CustomerPaymentReceiptView.as_view(),
+        name="payment_receipt",
+    ),
 
     # Email Verification
     path("verify-email/<token>/", views.verify_email, name="verify_email"),

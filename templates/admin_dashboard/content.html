@@ -4,11 +4,6 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
-/* Page Background */
-body {
-    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
-}
-
 .content-list-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -18,29 +13,41 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .page-header h1 {
+    font-family: "Poppins", sans-serif;
     font-size: 1.875rem;
     font-weight: 700;
-    color: #1F2937;
+    color: #1B5E20;
     margin: 0;
 }
 
 .content-card {
-    background: white;
-    border-radius: 12px;
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #fbfdf9 100%);
+    border-radius: 16px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(229, 231, 235, 0.6);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(27, 94, 32, 0.08), 0 10px 24px rgba(27, 94, 32, 0.08);
+    border: 1px solid rgba(27, 94, 32, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.content-card::before {
+    content: '';
+    position: absolute;
+    inset: 16px auto 16px 0;
+    width: 4px;
+    background: linear-gradient(180deg, #D4AF37, #F5D06B);
+    border-radius: 0 4px 4px 0;
 }
 
 .content-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.15);
+    box-shadow: 0 8px 16px rgba(27, 94, 32, 0.12), 0 18px 36px rgba(27, 94, 32, 0.12);
 }
 
 .content-header {
@@ -51,20 +58,21 @@ body {
 }
 
 .content-header h3 {
+    font-family: "Poppins", sans-serif;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1F2937;
+    color: #163B19;
     margin: 0;
 }
 
 .content-preview {
-    color: #6B7280;
+    color: #38513b;
     font-size: 0.9375rem;
     margin: 1rem 0;
     padding: 1rem;
-    background: #F9FAFB;
+    background: #f5f8f2;
     border-radius: 8px;
-    border-left: 3px solid #2E7D32;
+    border-left: 3px solid #D4AF37;
     max-height: 150px;
     overflow: hidden;
     position: relative;
@@ -77,17 +85,17 @@ body {
     left: 0;
     right: 0;
     height: 50px;
-    background: linear-gradient(to bottom, transparent, #F9FAFB);
+    background: linear-gradient(to bottom, transparent, #f5f8f2);
 }
 
 .content-meta {
     font-size: 0.875rem;
-    color: #9CA3AF;
+    color: #617463;
     margin-top: 1rem;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #2E7D32, #388E3C, #43A047);
+.design-btn-primary {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
     border: none;
     color: white;
     padding: 0.75rem 1.5rem;
@@ -96,31 +104,31 @@ body {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-primary:hover {
-    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+.design-btn-primary:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.3);
     color: white;
 }
 
-.btn-secondary {
-    background: white;
-    border: 1px solid #d1d5db;
-    color: #374151;
+.design-btn-secondary {
+    background: #fff;
+    border: 1px solid #D4AF37;
+    color: #163B19;
     padding: 0.625rem 1.25rem;
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-secondary:hover {
-    background: #F3F4F6;
+.design-btn-secondary:hover {
+    background: #fff7df;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    color: #374151;
+    color: #163B19;
 }
 
-.empty-state {
+.design-empty-state {
     text-align: center;
     padding: 4rem 2rem;
     background: white;
@@ -128,22 +136,64 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.empty-state i {
+.design-empty-state i {
     font-size: 4rem;
     color: #D1D5DB;
     margin-bottom: 1rem;
+    display: block;
 }
 
-.empty-state h3 {
+.design-empty-state h3 {
     font-size: 1.5rem;
     font-weight: 700;
     color: #6B7280;
     margin-bottom: 0.5rem;
 }
 
-.empty-state p {
+.design-empty-state p {
     color: #9CA3AF;
     margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .content-list-container {
+        max-width: 100%;
+    }
+
+    .page-header,
+    .content-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-header .design-btn,
+    .content-header .design-btn {
+        width: 100%;
+    }
+
+    .content-card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .content-meta {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .content-meta .ms-3 {
+        margin-left: 0 !important;
+    }
+}
+
+@media (max-width: 375px) {
+    .page-header h1 {
+        font-size: 1.45rem;
+    }
+
+    .content-preview {
+        padding: 0.85rem;
+    }
 }
 </style>
 {% endblock %}
@@ -152,9 +202,20 @@ body {
 <div class="content-list-container">
     <div class="page-header">
         <h1><i class="bi bi-window-stack me-2"></i>Website Content Management</h1>
-        <a href="{% url 'admin_dashboard:content_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Add Content Section
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'admin_dashboard:delivery_settings' %}" class="design-btn design-btn-secondary">
+                <i class="bi bi-truck me-2"></i>Delivery Settings
+            </a>
+            <a href="{% url 'admin_dashboard:content_create' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Add Content Section
+            </a>
+            <button type="button" id="populateSiteSampleBtn" class="design-btn design-btn-outline-success">
+                <i class="bi bi-database-add me-2"></i>Populate Sample Data
+            </button>
+            <button type="button" id="deleteSiteSampleBtn" class="design-btn design-btn-outline-danger">
+                <i class="bi bi-database-dash me-2"></i>Delete Sample Data
+            </button>
+        </div>
     </div>
 
     {% if content_sections %}
@@ -162,7 +223,7 @@ body {
         <div class="content-card">
             <div class="content-header">
                 <h3>{{ content.title }}</h3>
-                <a href="{% url 'admin_dashboard:content_edit' content.pk %}" class="btn btn-secondary">
+                <a href="{% url 'admin_dashboard:content_edit' content.pk %}" class="design-btn design-btn-secondary">
                     <i class="bi bi-pencil me-1"></i>Edit
                 </a>
             </div>
@@ -176,14 +237,57 @@ body {
         </div>
         {% endfor %}
     {% else %}
-        <div class="empty-state">
+        <div class="design-empty-state">
             <i class="bi bi-file-text"></i>
             <h3>No Content Sections Yet</h3>
             <p>Start by adding content for your About or Contact pages.</p>
-            <a href="{% url 'admin_dashboard:content_create' %}" class="btn btn-primary">
+            <a href="{% url 'admin_dashboard:content_create' %}" class="design-btn design-btn-primary">
                 <i class="bi bi-plus-circle me-2"></i>Create First Section
             </a>
         </div>
     {% endif %}
 </div>
+
+<script>
+function getCsrfToken() {
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+
+document.getElementById('populateSiteSampleBtn').addEventListener('click', function() {
+    if (!confirm('Populate the entire site with sample data? This will create site content, shop products, and farm records.')) return;
+    fetch('{% url "admin_dashboard:content_populate_sample_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert('Sample data populated successfully. Refreshing...');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    }).catch(() => alert('Request failed.'));
+});
+
+document.getElementById('deleteSiteSampleBtn').addEventListener('click', function() {
+    if (!confirm('Delete ALL sample data? This will remove site content, shop products, farm records, and related orders.')) return;
+    fetch('{% url "admin_dashboard:content_delete_sample_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert('Sample data deleted successfully. Refreshing...');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    }).catch(() => alert('Request failed.'));
+});
+</script>
 {% endblock %}

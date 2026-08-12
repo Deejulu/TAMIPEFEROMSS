@@ -4,55 +4,115 @@
 {% block title %}Checkout - TAMIPEE{% endblock %}
 
 {% block content %}
-<div class="checkout-wrapper">
-  <div class="checkout-container">
+<div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: clamp(1.5rem, 4vw, 2.5rem) 0;">
+  <div class="container-custom">
 
     <!-- Checkout Header -->
-    <div class="checkout-header">
-      <div class="checkout-header-content">
-        <h1>Checkout</h1>
-        <p>Review your order and complete payment to confirm your purchase.</p>
+    <div class="card shadow-lg border-0 mb-4 overflow-hidden animate-fade-in-up" style="border-radius: var(--radius-xl); border: 1px solid var(--farm-border-light);">
+      <div class="card-body p-4 p-md-5" style="background: linear-gradient(135deg, var(--farm-forest) 0%, var(--farm-primary-dark) 50%, var(--farm-primary) 100%); color: #FFFFFF; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; right: -10%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div style="position: absolute; bottom: -40%; left: -5%; width: 250px; height: 250px; background: radial-gradient(circle, rgba(46,125,50,0.15) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div style="position: relative; z-index: 1;">
+          <span class="eyebrow" style="color: var(--farm-accent);">Secure Checkout</span>
+          <h1 class="h3 mb-2" style="color: #FFFFFF; font-weight: 800; letter-spacing: -0.02em;">Checkout</h1>
+          <p class="mb-0" style="color: rgba(255,255,255,0.88); font-size: 0.9375rem; max-width: 520px; line-height: 1.6;">Review your order and complete payment to confirm your purchase.</p>
+        </div>
       </div>
     </div>
 
     <!-- Order Summary -->
     <div class="checkout-layout">
       <div class="checkout-main">
-        <div class="checkout-section">
-          <h2>Order Summary</h2>
-          <div class="order-items">
-            {% for item in order.items.all %}
-            <div class="order-item">
-              <div class="order-item-details">
-                <span class="order-item-name">{{ item.product_name }}</span>
-                <span class="order-item-qty">x {{ item.quantity }}</span>
-              </div>
-              <span class="order-item-price">₦{{ item.subtotal|floatformat:2 }}</span>
-            </div>
-            {% endfor %}
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white border-0 py-3">
+            <h2 class="h5 mb-0 text-primary">Order Summary</h2>
           </div>
-          <div class="order-total">
-            <span>Total</span>
-            <span class="total-amount">₦{{ order.total|floatformat:2 }}</span>
+          <div class="card-body">
+            <div class="order-items">
+              {% for item in cart_items %}
+              <div class="order-item">
+                <div class="order-item-details">
+                  <span class="order-item-name">{{ item.product_name }}</span>
+                  <span class="order-item-qty">x {{ item.quantity }}</span>
+                </div>
+                <span class="order-item-price">₦{{ item.subtotal|floatformat:2 }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="order-total">
+              <span>Total</span>
+              <span class="total-amount">₦{{ subtotal|floatformat:2 }} + delivery</span>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white border-0 py-3">
+            <h2 class="h5 mb-0 text-primary">Delivery</h2>
+          </div>
+          <div class="card-body">
+            <p class="checkout-note text-muted">Select a delivery speed and confirm the address for this order.</p>
+            <label for="delivery_address" class="form-label">Delivery address</label>
+            <textarea id="delivery_address" form="checkout-form" name="delivery_address" class="form-control" rows="4" required placeholder="Enter your full delivery address">{{ delivery_address }}</textarea>
+            <div class="delivery-options-list mt-3">
+              {% for option in delivery_options %}
+              <div class="delivery-option-card">
+                <input class="form-check-input" form="checkout-form" type="radio" name="delivery_option" id="delivery-{{ option.pk }}" value="{{ option.pk }}" {% if forloop.first %}checked{% endif %}>
+                <label for="delivery-{{ option.pk }}">
+                  <span class="delivery-name">
+                    <i class="bi bi-truck"></i>
+                    {{ option.get_code_display }}
+                  </span>
+                  <span class="delivery-meta">
+                    <span class="delivery-eta">{{ option.estimated_days }} day{{ option.estimated_days|pluralize }}</span>
+                    <span class="delivery-price">₦{{ option.price|floatformat:2 }}</span>
+                  </span>
+                  {% if option.notes %}<span class="delivery-notes">{{ option.notes }}</span>{% endif %}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Paystack Payment -->
+      <!-- Payment Methods -->
       <div class="checkout-sidebar">
-        <div class="checkout-section">
-          <h2>Payment</h2>
-          <p class="checkout-note">Secure payment powered by Paystack</p>
-          <button id="paystack-btn" class="btn-paystack"
-                  data-amount="{{ paystack_amount }}"
-                  data-email="{{ user.email }}"
-                  data-reference="TAMIPEE-{{ order.pk }}-{{ order.created_at|date:'YmdHis' }}"
-                  data-callback="{% url 'shop:paystack_callback' %}">
-            <i class="bi bi-lock"></i> Pay ₦{{ order.total|floatformat:2 }}
-          </button>
-          <p class="checkout-order-ref">
-            Order #{{ order.pk }}
-          </p>
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white border-0 py-3">
+            <h2 class="h5 mb-0 text-primary">Payment Method</h2>
+          </div>
+          <div class="card-body">
+            <p class="checkout-note text-muted">Choose your preferred payment option</p>
+            
+            <!-- Payment Method Selection -->
+            <form id="checkout-form" method="post" action="{% url 'shop:place_order' %}">
+              {% csrf_token %}
+            <div class="payment-methods">
+              {% for method in enabled_payment_methods %}
+              <div class="payment-method-option">
+                <input type="radio" class="form-check-input"
+                       id="payment-{{ method.code }}" 
+                       name="payment_method" 
+                       value="{{ method.code }}"
+                       {% if forloop.first %}checked{% endif %}>
+                <label for="payment-{{ method.code }}">
+                  {% if method.code == 'paystack' %}
+                    <i class="bi bi-credit-card"></i>
+                  {% elif method.code == 'bank_transfer' %}
+                    <i class="bi bi-bank"></i>
+                  {% elif method.code == 'cash_on_delivery' %}
+                    <i class="bi bi-cash-coin"></i>
+                  {% endif %}
+                  <span>{{ method.label }}</span>
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+
+            <p class="payment-instruction text-muted small">Bank transfer customers receive account details and verification instructions after placing the order. Cash on Delivery is collected when your order arrives.</p>
+            <button type="submit" class="btn btn-accent btn-lg btn-block w-100"><i class="bi bi-lock"></i> Continue to payment</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -60,146 +120,56 @@
   </div>
 </div>
 
-<!-- Paystack SDK -->
-<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+  // Payment method switching
+  document.addEventListener('DOMContentLoaded', function() {
+    const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
+    
+    paymentRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        // Hide all payment panels
+        document.querySelectorAll('.payment-panel').forEach(panel => {
+          panel.style.display = 'none';
+        });
+        
+        // Show the selected payment panel
+        const selectedPanel = document.getElementById(this.value + '-panel');
+        if (selectedPanel) {
+          selectedPanel.style.display = 'block';
+        }
+      });
+    });
 
-<style>
-  .checkout-wrapper {
-    background: #F5F7F2;
-    min-height: 100vh;
-    padding: 24px;
-  }
-
-  .checkout-container {
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .checkout-header {
-    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
-    padding: 32px 40px;
-    border-radius: 16px;
-    margin-bottom: 24px;
-  }
-
-  .checkout-header-content h1 {
-    color: #FFFFFF;
-    font-weight: 700;
-    font-size: 28px;
-    margin: 0 0 6px 0;
-  }
-
-  .checkout-header-content p {
-    color: rgba(255,255,255,0.85);
-    font-size: 14px;
-    margin: 0;
-  }
-
-  .checkout-layout {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 24px;
-    align-items: start;
-  }
-
-  .checkout-section {
-    background: #FFFFFF;
-    border-radius: 14px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.04);
-  }
-
-  .checkout-section h2 {
-    color: #1B5E20;
-    font-size: 18px;
-    margin: 0 0 16px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E8EDE8;
-  }
-
-  .order-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #F0F2F0;
-  }
-
-  .order-item-details {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .order-item-name {
-    font-weight: 500;
-    color: #1B5E20;
-  }
-
-  .order-item-qty {
-    color: #6B7A6B;
-    font-size: 13px;
-  }
-
-  .order-item-price {
-    font-weight: 600;
-    color: #1B5E20;
-  }
-
-  .order-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  .total-amount {
-    color: #1B5E20;
-    font-size: 22px;
-  }
-
-  .checkout-note {
-    color: #6B7A6B;
-    font-size: 13px;
-    margin: 0 0 16px 0;
-  }
-
-  .btn-paystack {
-    width: 100%;
-    background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
-    color: #1B5E20;
-    border: none;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .btn-paystack:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(212,175,55,0.4);
-  }
-
-  .checkout-order-ref {
-    text-align: center;
-    color: #6B7A6B;
-    font-size: 13px;
-    margin-top: 12px;
-  }
-
-  @media (max-width: 768px) {
-    .checkout-layout {
-      grid-template-columns: 1fr;
+    // Paystack payment button
+    const paystackBtn = document.getElementById('paystack-btn');
+    if (paystackBtn) {
+      paystackBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const amount = this.getAttribute('data-amount');
+        const email = this.getAttribute('data-email');
+        const reference = this.getAttribute('data-reference');
+        const callbackUrl = this.getAttribute('data-callback');
+        
+        const handler = PaystackPop.setup({
+          key: '{{ paystack_public_key }}',
+          email: email,
+          amount: amount,
+          currency: 'NGN',
+          ref: reference,
+          callback: function(response) {
+            // Payment successful, redirect to callback URL
+            window.location.href = callbackUrl + '?reference=' + response.reference;
+          },
+          onClose: function() {
+            // User closed the payment modal
+            console.log('Payment cancelled');
+          }
+        });
+        
+        handler.openIframe();
+      });
     }
-  }
-</style>
+  });
+</script>
 {% endblock %}

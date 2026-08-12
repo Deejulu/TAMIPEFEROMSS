@@ -1,12 +1,12 @@
 {% extends "admin_dashboard/base_admin.html" %}
-{% load static %}
+{% load static admin_dashboard_extras %}
 
 {% block extra_head %}
 {{ block.super }}
 <style>
 /* Page Background */
 body {
-    background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
+    background: linear-gradient(180deg, #f3f7ef 0%, #f8faf6 100%);
 }
 
 .form-container {
@@ -15,20 +15,22 @@ body {
 }
 
 .form-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(229, 231, 235, 0.6);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.08), 0 16px 32px rgba(27, 94, 32, 0.1);
+    border: 1px solid rgba(27, 94, 32, 0.1);
     overflow: hidden;
 }
 
 .form-header {
     background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    border-bottom: 4px solid #D4AF37;
     padding: 2rem;
     color: white;
 }
 
 .form-header h2 {
+    font-family: 'Poppins', sans-serif;
     margin: 0;
     font-size: 1.75rem;
     font-weight: 700;
@@ -38,20 +40,21 @@ body {
     padding: 2rem;
 }
 
-.form-group {
+.design-form-group {
     margin-bottom: 1.5rem;
 }
 
-.form-label {
+.design-form-label {
     font-weight: 700;
-    color: #374151;
+    color: #163B19;
     margin-bottom: 0.5rem;
     font-size: 0.8125rem;
     text-transform: uppercase;
     letter-spacing: 0.075em;
 }
 
-.form-control, .form-select {
+.design-form-control,
+.design-form-select {
     border-radius: 8px;
     border: 1px solid #d1d5db;
     padding: 0.75rem 1rem;
@@ -59,9 +62,70 @@ body {
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.form-control:focus, .form-select:focus {
+.design-form-control:focus,
+.design-form-select:focus {
     border-color: #2E7D32;
     box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.social-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1.25rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    background: #f5f8f2;
+    border: 1px solid rgba(27, 94, 32, 0.1);
+    border-left: 4px solid #D4AF37;
+    border-radius: 12px;
+}
+
+.social-fields-heading {
+    grid-column: 1 / -1;
+    margin: 0 0 0.5rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #163B19;
+}
+
+.social-fields-help {
+    grid-column: 1 / -1;
+    margin: 0 0 1rem;
+    color: #4b6350;
+    font-size: 0.9rem;
+}
+
+.business-hours-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1.25rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    background: #f5f8f2;
+    border: 1px solid rgba(27, 94, 32, 0.1);
+    border-left: 4px solid #D4AF37;
+    border-radius: 12px;
+}
+
+.business-hours-day-row {
+    grid-column: 1 / -1;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(27, 94, 32, 0.08);
+}
+
+.business-hours-day-row:last-child {
+    border-bottom: none;
+}
+
+.business-hours-day-row.is-closed .time-inputs {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.business-hours-day-row .day-label {
+    font-weight: 700;
+    color: #163B19;
 }
 
 .form-text {
@@ -70,14 +134,14 @@ body {
     margin-top: 0.25rem;
 }
 
-.form-actions {
+.design-form-actions {
     display: flex;
     gap: 1rem;
     padding-top: 1.5rem;
     border-top: 1px solid #E5E7EB;
 }
 
-.btn-submit {
+.design-btn-submit {
     background: linear-gradient(135deg, #2E7D32, #388E3C, #43A047);
     border: none;
     color: white;
@@ -87,14 +151,14 @@ body {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-submit:hover {
+.design-btn-submit:hover {
     background: linear-gradient(135deg, #1B5E20, #2E7D32);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.3);
     color: white;
 }
 
-.btn-cancel {
+.design-btn-cancel {
     background: white;
     border: 1px solid #d1d5db;
     color: #374151;
@@ -104,26 +168,34 @@ body {
     transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-cancel:hover {
+.design-btn-cancel:hover {
     background: #F3F4F6;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     color: #374151;
 }
 
-.errorlist {
+.design-errorlist {
     list-style: none;
     padding: 0;
     margin: 0.5rem 0 0 0;
 }
 
-.errorlist li {
+.design-errorlist li {
     color: #DC2626;
     font-size: 0.875rem;
     padding: 0.375rem 0.75rem;
     background-color: #FEE2E2;
     border-radius: 4px;
     margin-top: 0.25rem;
+}
+
+.rich-text-editor {
+    min-height: 300px;
+}
+
+.ck-editor__editable {
+    min-height: 300px;
 }
 
 @media (max-width: 768px) {
@@ -135,12 +207,17 @@ body {
         padding: 1.5rem;
     }
     
-    .form-actions {
+    .design-form-actions {
         flex-direction: column;
     }
     
-    .form-actions .btn {
+    .design-form-actions .design-btn {
         width: 100%;
+    }
+
+    .social-fields {
+        grid-template-columns: 1fr;
+        padding: 1rem;
     }
 }
 </style>
@@ -149,7 +226,7 @@ body {
 {% block admin_content %}
 <div class="form-container">
     <div class="mb-4">
-        <a href="{% url 'admin_dashboard:content' %}" class="btn btn-cancel">
+        <a href="{% url 'admin_dashboard:content' %}" class="design-btn design-btn-outline-secondary design-btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Back to Content List
         </a>
     </div>
@@ -173,14 +250,14 @@ body {
                 {% endif %}
                 
                 <!-- Section -->
-                <div class="form-group">
-                    <label for="id_section" class="form-label">Section <span class="text-danger">*</span></label>
+                <div class="design-form-group">
+                    <label for="id_section" class="design-form-label">Section <span class="text-danger">*</span></label>
                     {{ form.section }}
                     {% if form.section.help_text %}
                     <div class="form-text">{{ form.section.help_text }}</div>
                     {% endif %}
                     {% if form.section.errors %}
-                        <ul class="errorlist">
+                        <ul class="design-errorlist">
                             {% for error in form.section.errors %}
                             <li>{{ error }}</li>
                             {% endfor %}
@@ -189,14 +266,14 @@ body {
                 </div>
                 
                 <!-- Title -->
-                <div class="form-group">
-                    <label for="id_title" class="form-label">Title <span class="text-danger">*</span></label>
+                <div class="design-form-group">
+                    <label for="id_title" class="design-form-label">Title <span class="text-danger">*</span></label>
                     {{ form.title }}
                     {% if form.title.help_text %}
                     <div class="form-text">{{ form.title.help_text }}</div>
                     {% endif %}
                     {% if form.title.errors %}
-                        <ul class="errorlist">
+                        <ul class="design-errorlist">
                             {% for error in form.title.errors %}
                             <li>{{ error }}</li>
                             {% endfor %}
@@ -204,29 +281,82 @@ body {
                     {% endif %}
                 </div>
                 
+                <div id="social-fields" class="social-fields">
+                    <h3 class="social-fields-heading"><i class="bi bi-share me-2"></i>Social media links</h3>
+                    <p class="social-fields-help">Only configured platforms are shown in the public footer. Each link opens safely in a new tab.</p>
+                    {% for field in form %}
+                        {% if field.name == 'facebook_url' or field.name == 'instagram_url' or field.name == 'twitter_url' or field.name == 'tiktok_url' or field.name == 'whatsapp_url' %}
+                        <div class="design-form-group">
+                            <label for="{{ field.id_for_label }}" class="design-form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <ul class="design-errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
                 <!-- Content -->
-                <div class="form-group">
-                    <label for="id_content" class="form-label">Content <span class="text-danger">*</span></label>
+                <div id="content-group" class="design-form-group">
+                    <label for="id_content" class="design-form-label">Content <span class="text-danger">*</span></label>
                     {{ form.content }}
                     {% if form.content.help_text %}
                     <div class="form-text">{{ form.content.help_text }}</div>
                     {% endif %}
                     {% if form.content.errors %}
-                        <ul class="errorlist">
+                        <ul class="design-errorlist">
                             {% for error in form.content.errors %}
                             <li>{{ error }}</li>
                             {% endfor %}
                         </ul>
                     {% endif %}
                 </div>
-                
+
+                <!-- Business Hours Structured Fields -->
+                <div id="business-hours-fields" class="business-hours-fields" style="display:none;">
+                    <h3 class="social-fields-heading"><i class="bi bi-clock me-2"></i>Business Hours by Day</h3>
+                    <p class="social-fields-help">Set open and close times for each day. Check "Closed" to mark a day as fully closed.</p>
+
+                    {% for day in days %}
+                    {% with closed_field=day|add:'_is_closed' open_field=day|add:'_open' close_field=day|add:'_close' %}
+                    {% with closed_field_obj=form|get_item:closed_field open_field_obj=form|get_item:open_field close_field_obj=form|get_item:close_field %}
+                    <div class="business-hours-day-row" data-day="{{ day }}">
+                        <div class="form-check mb-2">
+                            {{ closed_field_obj }}
+                            <label for="{{ closed_field_obj.id_for_label }}" class="form-check-label fw-bold">{{ day|capfirst }}</label>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-auto">
+                                <label for="{{ open_field_obj.id_for_label }}" class="visually-hidden">{{ day }} open</label>
+                                {{ open_field_obj }}
+                            </div>
+                            <div class="col-auto text-muted d-flex align-items-center">to</div>
+                            <div class="col-auto">
+                                <label for="{{ close_field_obj.id_for_label }}" class="visually-hidden">{{ day }} close</label>
+                                {{ close_field_obj }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                    {% endfor %}
+
+                    <!-- Notes -->
+                    <div class="design-form-group mt-3">
+                        <label for="{{ form.business_hours_notes.id_for_label }}" class="design-form-label">Notes</label>
+                        {{ form.business_hours_notes }}
+                        <div class="form-text">Special hours, holiday notices, or other remarks.</div>
+                    </div>
+                </div>
+
                 <!-- Form Actions -->
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-submit">
+                <div class="design-form-actions">
+                    <button type="submit" class="design-btn design-btn-submit">
                         <i class="bi bi-check-circle me-2"></i>
                         {{ form_action }} Content
                     </button>
-                    <a href="{% url 'admin_dashboard:content' %}" class="btn btn-cancel">
+                    <a href="{% url 'admin_dashboard:content' %}" class="design-btn design-btn-cancel">
                         <i class="bi bi-x-circle me-2"></i>
                         Cancel
                     </a>
@@ -235,4 +365,84 @@ body {
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const sectionField = document.getElementById('id_section');
+    const socialFields = document.getElementById('social-fields');
+    const contentGroup = document.getElementById('content-group');
+    const businessHoursFields = document.getElementById('business-hours-fields');
+
+    function updateContentFields() {
+        const section = sectionField.value;
+        const isSocialMedia = section === 'social_media';
+        const isBusinessHours = section === 'business_hours';
+        socialFields.hidden = !isSocialMedia;
+        contentGroup.hidden = isSocialMedia || isBusinessHours;
+        if (businessHoursFields) {
+            businessHoursFields.style.display = isBusinessHours ? 'block' : 'none';
+        }
+    }
+
+    sectionField.addEventListener('change', updateContentFields);
+    updateContentFields();
+
+    function updateBusinessHoursClosedState() {
+        document.querySelectorAll('.day-closed-checkbox').forEach(function(checkbox) {
+            var row = checkbox.closest('.business-hours-day-row');
+            var openInput = row.querySelector('input[type="time"]:first-of-type');
+            var closeInput = row.querySelector('input[type="time"]:last-of-type');
+            if (checkbox.checked) {
+                row.classList.add('is-closed');
+                if (openInput) openInput.disabled = true;
+                if (closeInput) closeInput.disabled = true;
+            } else {
+                row.classList.remove('is-closed');
+                if (openInput) openInput.disabled = false;
+                if (closeInput) closeInput.disabled = false;
+            }
+        });
+    }
+
+    document.querySelectorAll('.day-closed-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', updateBusinessHoursClosedState);
+    });
+    updateBusinessHoursClosedState();
+
+    ClassicEditor
+        .create(document.querySelector('#id_content'), {
+            toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|', 'bulletedList', 'numberedList', '|', 'link', '|', 'undo', 'redo'],
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                ]
+            },
+            link: {
+                addTargetToExternalLinks: true,
+                defaultProtocol: 'https://',
+            },
+            list: {
+                properties: {
+                    startIndex: true,
+                    reversed: true,
+                },
+            },
+            placeholder: 'Use the toolbar to format your content. Bold, headings, lists, and links are supported.',
+        })
+        .then(editor => {
+            window.editor = editor;
+        })
+        .catch(error => {
+            console.error('CKEditor initialization error:', error);
+        });
+});
+</script>
 {% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Order" %} #{{ order.pk }}{% endblock %}
+
+{% block content %}
+<div class="container-custom page-wrapper">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">{% trans "Dashboard" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'accounts:order_list' %}">{% trans "My Orders" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Order" %} #{{ order.pk }}</li>
+        </ol>
+    </nav>
+
+    <div class="page-header-section">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-bag-check me-2"></i>{% trans "Order" %} #{{ order.pk }}</h1>
+                <p class="page-subtitle mb-0">{{ order.created_at|date:"F j, Y, g:i a" }}</p>
+            </div>
+            <span class="order-status-badge order-status-{{ order.status }} fs-6">{{ order.get_status_display }}</span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="design-card">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent bg-white">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <span class="dashboard-section-icon"><i class="bi bi-box-seam"></i></span>{% trans "Items" %}
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for item in order.items.all %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ item.product_name }} <span class="text-muted">x {{ item.quantity }}</span></span>
+                            <strong>₦{{ item.subtotal|floatformat:2 }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between flex-wrap gap-2">
+                    <span class="text-muted">{% trans "Subtotal" %}: ₦{{ order.subtotal|floatformat:2 }} · {% trans "Delivery" %}: ₦{{ order.delivery_fee|floatformat:2 }}</span>
+                    <strong>₦{{ order.total|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="design-card mb-4">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent bg-white">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <span class="dashboard-section-icon"><i class="bi bi-info-circle"></i></span>{% trans "Delivery Details" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-2"><i class="bi bi-geo-alt me-2 text-primary"></i>{% trans "Delivery Address" %}</h6>
+                    <p class="mb-4">{{ order.delivery_address|default:_("Not provided")|linebreaksbr }}</p>
+
+                    <h6 class="mb-2"><i class="bi bi-credit-card me-2 text-primary"></i>{% trans "Payment Method" %}</h6>
+                    <p class="mb-3">{{ order.payment_method|default:_("Not selected") }}</p>
+
+                    <h6 class="mb-2"><i class="bi bi-truck me-2 text-primary"></i>{% trans "Delivery Option" %}</h6>
+                    <p class="mb-0">{{ order.delivery_option|default:_("Not selected") }}</p>
+
+                    {% if order.estimated_delivery_date %}
+                    <p class="small text-muted mt-3"><i class="bi bi-calendar-event me-1"></i>{% trans "Expected delivery" %}: {{ order.estimated_delivery_date|date:"F j, Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="design-card">
+                <div class="card-gold-bar-top"></div>
+                <div class="card-header card-header-accent bg-white">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <span class="dashboard-section-icon"><i class="bi bi-signpost-split"></i></span>{% trans "Order Status" %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="stepper">
+                        <div class="stepper-item {% if order.status == 'pending' %}active{% else %}completed{% endif %}">
+                            <div class="stepper-title">{% trans "Pending" %}</div>
+                        </div>
+                        <div class="stepper-item {% if order.status == 'confirmed' or order.status == 'processing' or order.status == 'awaiting_delivery' or order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}{% if order.status == 'confirmed' %}active{% endif %}">
+                            <div class="stepper-title">{% trans "Confirmed" %}</div>
+                        </div>
+                        <div class="stepper-item {% if order.status == 'processing' or order.status == 'awaiting_delivery' or order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}{% if order.status == 'processing' %}active{% endif %}">
+                            <div class="stepper-title">{% trans "Processing" %}</div>
+                        </div>
+                        <div class="stepper-item {% if order.status == 'awaiting_delivery' or order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}{% if order.status == 'awaiting_delivery' %}active{% endif %}">
+                            <div class="stepper-title">{% trans "Awaiting Delivery" %}</div>
+                        </div>
+                        <div class="stepper-item {% if order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}{% if order.status == 'shipped' %}active{% endif %}">
+                            <div class="stepper-title">{% trans "Shipped" %}</div>
+                        </div>
+                        <div class="stepper-item {% if order.status == 'delivered' %}completed{% endif %}{% if order.status == 'delivered' %}active{% endif %}">
+                            <div class="stepper-title">{% trans "Delivered" %}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

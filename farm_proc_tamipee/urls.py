@@ -22,7 +22,7 @@ urlpatterns = [
     path('', HomeRedirectView.as_view(), name='home'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls', namespace='accounts')),
-    path('admin-dashboard/', include('admin_dashboard.urls', namespace='admin_dashboard')),
     path('admin-dashboard/farm-management/', include('farm_management.urls', namespace='farm_management')),
+    path('admin-dashboard/', include('admin_dashboard.urls', namespace='admin_dashboard')),
     path('shop/', include('shop.urls', namespace='shop')),
 ]

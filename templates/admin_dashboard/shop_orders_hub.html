@@ -1,0 +1,199 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.shop-hub-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.shop-hub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.shop-hub-header h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.shop-hub-header h2 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.shop-hub-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.shop-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.shop-hub-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.shop-hub-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+}
+
+.shop-hub-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.shop-hub-card-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+    font-size: 2rem;
+    background: rgba(46, 125, 50, 0.1);
+    color: #2E7D32;
+}
+
+.shop-hub-card h4 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 0.75rem;
+}
+
+.shop-hub-card p {
+    font-family: "Inter", sans-serif;
+    color: #6b7280;
+    font-size: 0.9375rem;
+    margin-bottom: 1.5rem;
+}
+
+.design-btn-primary {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.design-btn-primary:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(27, 94, 32, 0.3);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .shop-hub-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .shop-hub-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .shop-hub-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .shop-hub-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .shop-hub-card {
+        padding: 1.25rem;
+    }
+    
+    .shop-hub-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+    }
+    
+    .shop-hub-card h4 {
+        font-size: 1.1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="shop-hub-container">
+    <div class="shop-hub-header">
+        <div>
+            <h2><i class="bi bi-shop"></i> Shop / Orders</h2>
+            <p class="shop-hub-subtitle mb-0">Track orders, manage inventory, and review payments.</p>
+        </div>
+    </div>
+
+    <div class="shop-hub-grid">
+        <div class="shop-hub-card">
+            <div class="shop-hub-card-icon">
+                <i class="bi bi-truck"></i>
+            </div>
+            <h4>Orders & Delivery</h4>
+            <p class="text-muted">View and update customer order statuses.</p>
+            <a href="{% url 'admin_dashboard:orders' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> View Orders
+            </a>
+        </div>
+        <div class="shop-hub-card">
+            <div class="shop-hub-card-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <h4>Products / Inventory</h4>
+            <p class="text-muted">Manage product catalog and stock levels.</p>
+            <a href="{% url 'admin_dashboard:inventory' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> Manage Inventory
+            </a>
+        </div>
+        <div class="shop-hub-card">
+            <div class="shop-hub-card-icon">
+                <i class="bi bi-credit-card"></i>
+            </div>
+            <h4>Payments</h4>
+            <p class="text-muted">Review payment records and transactions.</p>
+            <a href="{% url 'admin_dashboard:payments' %}" class="design-btn design-btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i> View Payments
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

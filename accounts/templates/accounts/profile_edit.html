@@ -5,18 +5,21 @@
 
 {% block content %}
 <div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="card-header">
-            <i class="bi bi-pencil-square" style="font-size: 2rem;"></i>
-            <h2 class="mt-2">{% trans "Edit Profile" %}</h2>
-            <p>{% trans "Update your personal information" %}</p>
+    <div class="auth-card design-card">
+        <div class="card-gold-bar-top"></div>
+        <div class="card-header card-header-accent">
+            <div class="text-center">
+                <i class="bi bi-pencil-square" style="font-size: 2rem; color: var(--farm-accent);"></i>
+                <h2 class="mt-2">{% trans "Edit Profile" %}</h2>
+                <p>{% trans "Update your personal information" %}</p>
+            </div>
         </div>
         <div class="card-body">
             <div class="text-center mb-4">
                 {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle img-thumbnail mb-3 profile-avatar" style="width: 120px; height: 120px; object-fit: cover;">
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle profile-avatar dashboard-avatar-ring profile-avatar-lg mb-3">
                 {% else %}
-                    <div class="rounded-circle profile-avatar-placeholder mb-3" style="width: 120px; height: 120px; font-size: 3rem;">
+                    <div class="rounded-circle profile-avatar-placeholder dashboard-avatar-ring profile-avatar-lg mb-3">
                         {{ user.full_name|first|upper }}
                     </div>
                 {% endif %}
@@ -36,8 +39,8 @@
                     </div>
                 {% endif %}
 
-                <div class="mb-3">
-                    <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                <div class="design-form-group">
+                    <label for="{{ form.full_name.id_for_label }}" class="design-form-label">
                         <i class="bi bi-person me-1"></i>{{ form.full_name.label }}
                     </label>
                     <div class="input-group">
@@ -53,8 +56,8 @@
                     {% endif %}
                 </div>
 
-                <div class="mb-3">
-                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                <div class="design-form-group">
+                    <label for="{{ form.phone_number.id_for_label }}" class="design-form-label">
                         <i class="bi bi-telephone me-1"></i>{{ form.phone_number.label }}
                     </label>
                     <div class="input-group">
@@ -70,8 +73,23 @@
                     {% endif %}
                 </div>
 
-                <div class="mb-3">
-                    <label for="{{ form.username.id_for_label }}" class="form-label">
+                <div class="design-form-group">
+                    <label for="{{ form.default_delivery_address.id_for_label }}" class="design-form-label">
+                        <i class="bi bi-geo-alt me-1"></i>{{ form.default_delivery_address.label }}
+                    </label>
+                    {{ form.default_delivery_address }}
+                    {% if form.default_delivery_address.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.default_delivery_address.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text">{% trans "This address will prefill at checkout and can be changed for an individual order." %}</div>
+                </div>
+
+                <div class="design-form-group">
+                    <label for="{{ form.username.id_for_label }}" class="design-form-label">
                         <i class="bi bi-at me-1"></i>{{ form.username.label }}
                     </label>
                     <div class="input-group">
@@ -88,8 +106,8 @@
                     <div class="form-text">{% trans "Choose a unique username. Only lowercase letters, numbers, and underscores allowed." %}</div>
                 </div>
 
-                <div class="mb-4">
-                    <label for="{{ form.profile_picture.id_for_label }}" class="form-label">
+                <div class="design-form-group">
+                    <label for="{{ form.profile_picture.id_for_label }}" class="design-form-label">
                         <i class="bi bi-image me-1"></i>{{ form.profile_picture.label }}
                     </label>
                     {{ form.profile_picture }}
@@ -103,11 +121,11 @@
                     <div class="form-text">{% trans "Accepted formats: JPG, PNG, GIF. Max size: 5MB." %}</div>
                 </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success btn-lg">
+                <div class="design-form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-save me-2"></i>{% trans "Save Changes" %}
                     </button>
-                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline btn-lg">
                         <i class="bi bi-x-circle me-2"></i>{% trans "Cancel" %}
                     </a>
                 </div>

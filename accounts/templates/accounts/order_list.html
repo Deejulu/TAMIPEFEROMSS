@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "My Orders" %}{% endblock %}
+
+{% block content %}
+<div class="container-custom page-wrapper">
+    <div class="page-header-section">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-receipt me-2"></i>{% trans "My Orders" %}</h1>
+                <p class="page-subtitle mb-0">{% trans "Review your purchases and their current status." %}</p>
+            </div>
+            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                <i class="bi bi-shop me-1"></i>{% trans "Continue Shopping" %}
+            </a>
+        </div>
+    </div>
+
+    {% if orders %}
+        <div class="design-card desktop-table-view">
+            <div class="card-gold-bar-top"></div>
+            <div class="card-header card-header-accent">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dashboard-section-icon"><i class="bi bi-list-ul"></i></span>{% trans "Order History" %} ({{ orders|length }})
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for order in orders %}
+                    <a href="{% url 'accounts:order_detail' order.pk %}" class="order-card-improved">
+                        <div class="order-main">
+                            <strong>{% trans "Order" %} #{{ order.pk }}</strong>
+                            <span class="d-block small text-muted">{{ order.created_at|date:"F j, Y, g:i a" }} &middot; {{ order.items.count }} {% trans "item" %}{{ order.items.count|pluralize }}</span>
+                        </div>
+                        <div class="order-meta">
+                            <span class="order-status-badge order-status-{{ order.status }}">{{ order.get_status_display }}</span>
+                            <span class="d-block small fw-semibold mt-1">₦{{ order.total|floatformat:2 }}</span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mobile-card-view">
+            {% for order in orders %}
+                <a href="{% url 'accounts:order_detail' order.pk %}" class="mobile-card">
+                    <div class="mobile-card-header">
+                        <div class="mobile-card-title">
+                            <i class="bi bi-bag-check"></i>
+                            {% trans "Order" %} #{{ order.pk }}
+                        </div>
+                        <span class="order-status-badge order-status-{{ order.status }}">{{ order.get_status_display }}</span>
+                    </div>
+                    <div class="mobile-card-body">
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-calendar me-2"></i>{% trans "Date" %}</span>
+                            <span class="mobile-card-value">{{ order.created_at|date:"M j, Y" }}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-box-seam me-2"></i>{% trans "Items" %}</span>
+                            <span class="mobile-card-value">{{ order.items.count }}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-currency-dollar me-2"></i>{% trans "Total" %}</span>
+                            <span class="mobile-card-value">₦{{ order.total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="design-empty-state">
+            <i class="bi bi-bag-x"></i>
+            <h3>{% trans "No orders yet" %}</h3>
+            <p>{% trans "When you place an order, it will appear here." %}</p>
+            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">{% trans "Visit Shop" %}</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

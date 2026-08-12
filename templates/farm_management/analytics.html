@@ -1,12 +1,108 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+<style>
+    .chart-container {
+        position: relative;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        position: relative;
+        overflow: hidden;
+    }
+    .chart-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #1B5E20, #D4AF37, #43A047);
+    }
+    .chart-wrapper {
+        position: relative;
+        height: 350px;
+        margin-top: 1rem;
+    }
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1B5E20;
+        margin-bottom: 0.5rem;
+    }
+    .chart-description {
+        color: #6B7A6B;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    .chart-no-data {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #999;
+    }
+    .analytics-intro {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 16px rgba(27, 94, 32, 0.18);
+    }
+    .analytics-intro h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+    .analytics-intro p {
+        margin-bottom: 0;
+        opacity: 0.95;
+        line-height: 1.6;
+    }
+    .admin-main {
+        min-width: 0;
+    }
+    @media (max-width: 768px) {
+        .chart-wrapper {
+            height: 280px;
+        }
+        .chart-container {
+            padding: 1rem;
+        }
+    }
+    @media (max-width: 375px) {
+        .chart-wrapper {
+            height: 220px;
+        }
+        .chart-container {
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        .chart-title {
+            font-size: 1rem;
+        }
+        .chart-description {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+{% endblock %}
+
 {% block admin_content %}
-<div class="analytics-page">
+<div class="farm-management-page analytics-page">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h2><i class="bi bi-bar-chart-line"></i> Batch Comparison Analytics</h2>
-            <p class="text-muted mb-0">All batches compared across key performance metrics</p>
+            <p class="text-muted mb-0">Visual insights and data comparison across all batches</p>
         </div>
         <a href="{% url 'farm_management:batch_list' %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to Batches
@@ -14,19 +110,186 @@
     </div>
 
     {% if analytics %}
+    <!-- Intro Paragraph -->
+    <div class="analytics-intro">
+        <h3><i class="bi bi-info-circle"></i> How to Use This Page</h3>
+        <p>This page helps you compare your batches side-by-side so you can see which ones are performing best and worst — in terms of cost, growth, health, and profit. Use the charts below to quickly spot trends and patterns, then refer to the detailed table at the bottom for specific numbers. This way, you know what's working well and what needs attention.</p>
+    </div>
+
+    {% if analytics|length >= 2 %}
+    <!-- Charts Section -->
+    <div class="row">
+        <!-- Feed Cost Comparison Chart -->
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-currency-exchange"></i> Feed Cost Comparison</h4>
+                <p class="chart-description">Shows which batch is consuming the most feed budget. Higher bars mean higher costs.</p>
+                <div class="chart-wrapper">
+                    <canvas id="feedCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- FCR Comparison Chart -->
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-graph-up-arrow"></i> Feed Conversion Ratio (FCR) Comparison</h4>
+                <p class="chart-description">Lower is better — it measures how efficiently feed turns into body weight.</p>
+                <div class="chart-wrapper">
+                    <canvas id="fcrChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mortality Rate Chart -->
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-heartbreak"></i> Mortality Rate Comparison</h4>
+                <p class="chart-description">Shows death rate as a percentage per batch. Lower is better.</p>
+                <div class="chart-wrapper">
+                    <canvas id="mortalityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit Distribution Pie Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-pie-chart"></i> Profit Distribution</h4>
+                <p class="chart-description">Each slice shows one batch's share of total farm profit.</p>
+                <div class="chart-wrapper">
+                    <canvas id="profitPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Rate Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-speedometer2"></i> Growth Rate Comparison</h4>
+                <p class="chart-description">Shows how fast each batch gains weight per day. Faster is usually better, but balance with FCR.</p>
+                <div class="chart-wrapper">
+                    <canvas id="growthRateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie Charts Row -->
+    <div class="row mb-4">
+        <!-- Feed Cost Distribution Pie Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-pie-chart"></i> Feed Cost Distribution</h4>
+                <p class="chart-description">Shows each batch's share of total feed spend. Bigger slices mean higher feed costs.</p>
+                <div class="chart-wrapper">
+                    <canvas id="feedCostPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Distribution Pie Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-pie-chart"></i> Stock Distribution</h4>
+                <p class="chart-description">Shows how your total livestock/fish count is split across batches.</p>
+                <div class="chart-wrapper">
+                    <canvas id="stockPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trend Chart -->
+    <div class="row mb-4">
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-graph-up-arrow"></i> Feed Cost Trend Over Time</h4>
+                <p class="chart-description">Shows how monthly feed spending changes over time. Rising lines mean increasing costs.</p>
+                <div class="chart-wrapper">
+                    <canvas id="feedCostTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vaccination & Health Analytics Section -->
+    <h3 class="mt-5 mb-3" style="color: #1B5E20; font-weight: 700;">
+        <i class="bi bi-heart-pulse"></i> Health & Vaccination Analytics
+    </h3>
+
+    <!-- Vaccination Coverage Chart -->
+    <div class="row mb-4">
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-shield-check"></i> Vaccination Coverage per Batch</h4>
+                <p class="chart-description">Shows how many vaccination records have been logged for each batch relative to its current animal count. Higher bars mean better coverage.</p>
+                <div class="chart-wrapper">
+                    <canvas id="vaccinationCoverageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Log Frequency Chart -->
+    <div class="row mb-4">
+        <div class="col-12 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-clipboard-pulse"></i> Health Issue Frequency per Batch</h4>
+                <p class="chart-description">Shows the number of medication/health entries recorded for each batch. More entries mean more logged health issues.</p>
+                <div class="chart-wrapper">
+                    <canvas id="healthLogFrequencyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Reasons & Medications Pie Charts Row -->
+    <div class="row mb-4">
+        <!-- Most Common Health Reasons -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-list-task"></i> Most Common Health Reasons</h4>
+                <p class="chart-description">Shows which health issues are being treated most often across all batches.</p>
+                <div class="chart-wrapper">
+                    <canvas id="healthReasonsPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Common Medications Used -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-capsule"></i> Most Common Medications Used</h4>
+                <p class="chart-description">Shows which medications are used most frequently across all health logs.</p>
+                <div class="chart-wrapper">
+                    <canvas id="healthMedicinesPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Not Enough Data for Charts -->
+    <div class="chart-container" style="text-align: center;">
+        <i class="bi bi-bar-chart-line" style="font-size: 4rem; opacity: 0.5; color: #D4AF37;"></i>
+        <h4 class="mt-3">Not Enough Data for Comparisons</h4>
+        <p>Add at least 2 batches with recorded data to see meaningful comparison charts.</p>
+    </div>
+    {% endif %}
+
     <!-- Summary Highlights -->
     <div class="row mb-4">
         <div class="col-md-2">
-            <div class="card stats-card border-success">
+            <div class="card farm-stats-card border-success">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Highest Feed Cost</h6>
                     <h6 class="text-success">{{ highest_feed.batch.name }}</h6>
-                    <small>₦{{ highest_feed.total_feed_cost|floatformat:2 }}</small>
+                    <small>{{ highest_feed.total_feed_cost|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card stats-card border-info">
+            <div class="card farm-stats-card border-info">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Best FCR</h6>
                     <h6 class="text-info">{{ best_fcr.batch.name }}</h6>
@@ -35,7 +298,7 @@
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card stats-card border-primary">
+            <div class="card farm-stats-card border-primary">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Fastest Growth</h6>
                     <h6 class="text-primary">{{ fastest_growth.batch.name }}</h6>
@@ -44,7 +307,7 @@
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card stats-card border-danger">
+            <div class="card farm-stats-card border-danger">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Highest Mortality</h6>
                     <h6 class="text-danger">{{ highest_mortality.batch.name }}</h6>
@@ -53,16 +316,16 @@
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card stats-card border-warning">
+            <div class="card farm-stats-card border-warning">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Most Profitable</h6>
                     <h6 class="text-warning">{{ most_profitable.batch.name }}</h6>
-                    <small>₦{{ most_profitable.profit|floatformat:2 }}</small>
+                    <small>{{ most_profitable.profit|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card stats-card">
+            <div class="card farm-stats-card">
                 <div class="card-body text-center">
                     <h6 class="text-muted">Total Batches</h6>
                     <h3>{{ analytics|length }}</h3>
@@ -73,40 +336,41 @@
     </div>
 
     <!-- Comparison Table -->
-    <div class="card">
+    <div class="card farm-table-card mt-4">
         <div class="card-header">
-            <strong>Batch Comparison</strong>
+            <strong><i class="bi bi-table"></i> Detailed Batch Comparison Table</strong>
+            <p class="mb-0 mt-1 text-muted small">Reference table with all metrics — use this for specific numbers and deeper analysis</p>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive farm-desktop-table">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Batch</th>
                             <th>Species</th>
                             <th>Status</th>
                             <th>Stock</th>
-                            <th>Feed Cost (₦)</th>
+                            <th>Feed Cost (&#x20A6;)</th>
                             <th>Feed Qty (kg)</th>
                             <th>FCR</th>
                             <th>Mortality %</th>
                             <th>Growth Rate</th>
-                            <th>Profit (₦)</th>
+                            <th>Profit (&#x20A6;)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in analytics %}
                         <tr>
-                            <td><a href="{% url 'farm_management:batch_detail' item.batch.pk %}"><strong>{{ item.batch.name }}</strong></a></td>
-                            <td>{{ item.batch.get_species_display }}</td>
+                            <td><a href="{% url 'farm_management:batch_detail' item.batch.pk %}" class="fw-semibold text-decoration-none">{{ item.batch.name }}</a></td>
+                            <td>{{ item.batch.species }}</td>
                             <td>
-                                <span class="badge bg-{% if item.batch.status == 'active' %}success{% else %}secondary{% endif %}">
+                                <span class="farm-badge farm-badge-{% if item.batch.status == 'active' %}success{% else %}secondary{% endif %}">
                                     {{ item.batch.get_status_display }}
                                 </span>
                             </td>
                             <td>{{ item.batch.current_stock }}</td>
-                            <td>₦{{ item.total_feed_cost|floatformat:2 }}</td>
+                            <td>{{ item.total_feed_cost|floatformat:2 }}</td>
                             <td>{{ item.total_feed_qty|floatformat:2 }}</td>
                             <td>{% if item.fcr %}{{ item.fcr }}{% else %}<span class="text-muted">N/A</span>{% endif %}</td>
                             <td>
@@ -118,20 +382,16 @@
                             <td>
                                 {% if item.profit is not None %}
                                 <span class="{% if item.profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    ₦{{ item.profit|floatformat:2 }}
+                                    {{ item.profit|floatformat:2 }}
                                 </span>
                                 {% else %}
                                 <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'farm_management:batch_detail' item.batch.pk %}" class="btn btn-sm btn-outline-primary" title="View">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{% url 'farm_management:batch_report' item.batch.pk %}" class="btn btn-sm btn-outline-secondary" title="PDF Report">
-                                        <i class="bi bi-file-earmark-pdf"></i>
-                                    </a>
+                                <div class="farm-action-group">
+                                    <a href="{% url 'farm_management:batch_detail' item.batch.pk %}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <a href="{% url 'farm_management:batch_report' item.batch.pk %}" class="btn btn-sm btn-outline-secondary" title="PDF Report"><i class="bi bi-file-earmark-pdf"></i></a>
                                 </div>
                             </td>
                         </tr>
@@ -139,16 +399,842 @@
                     </tbody>
                 </table>
             </div>
+            <div class="farm-mobile-cards">
+                {% for item in analytics %}
+                <div class="farm-mobile-card">
+                    <div class="farm-mobile-card-header">
+                        <div class="farm-mobile-card-title">{{ item.batch.name }}</div>
+                        <div class="farm-mobile-card-subtitle">{{ item.batch.species }}</div>
+                    </div>
+                    <div class="farm-mobile-card-body">
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Status</span>
+                            <span class="farm-mobile-value">
+                                <span class="farm-badge farm-badge-{% if item.batch.status == 'active' %}success{% else %}secondary{% endif %}">{{ item.batch.get_status_display }}</span>
+                            </span>
+                        </div>
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Stock</span>
+                            <span class="farm-mobile-value">{{ item.batch.current_stock }}</span>
+                        </div>
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Feed Cost</span>
+                            <span class="farm-mobile-value">{{ item.total_feed_cost|floatformat:2 }}</span>
+                        </div>
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">FCR</span>
+                            <span class="farm-mobile-value">{% if item.fcr %}{{ item.fcr }}{% else %}N/A{% endif %}</span>
+                        </div>
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Mortality</span>
+                            <span class="farm-mobile-value">{% if item.mortality_rate > 20 %}text-danger{% endif %}{{ item.mortality_rate }}%</span>
+                        </div>
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Profit</span>
+                            <span class="farm-mobile-value">{% if item.profit is not None %}{{ item.profit|floatformat:2 }}{% else %}N/A{% endif %}</span>
+                        </div>
+                    </div>
+                    <div class="farm-mobile-card-actions">
+                        <a href="{% url 'farm_management:batch_detail' item.batch.pk %}" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-eye"></i> View</a>
+                        <a href="{% url 'farm_management:batch_report' item.batch.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i></a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-bar-chart-line" style="font-size: 48px; color: #ccc;"></i>
-            <p class="text-muted mt-3">No batches found. Create a batch to see analytics.</p>
+    <div class="card farm-table-card">
+        <div class="card-body farm-empty-state">
+            <i class="bi bi-bar-chart-line"></i>
+            <p class="text-muted">No batches found. Create a batch to see analytics.</p>
             <a href="{% url 'farm_management:batch_add' %}" class="btn btn-primary">Create Batch</a>
         </div>
     </div>
     {% endif %}
 </div>
+
+{% if analytics and analytics|length >= 2 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Deep Green & Gold color palette for charts
+    const deepGreen = '#1B5E20';
+    const gold = '#D4AF37';
+    const lightGreen = '#4CAF50';
+    const darkGreen = '#0D3D14';
+    const amber = '#FFA726';
+    const red = '#E53935';
+    
+    // Parse analytics data from Django context
+    const analyticsData = {{ analytics_json|safe }};
+    const batchNames = analyticsData.map(item => item.batch.name);
+    const feedCosts = analyticsData.map(item => item.total_feed_cost);
+    const fcrValues = analyticsData.map(item => item.fcr !== null ? item.fcr : 0);
+    const mortalityRates = analyticsData.map(item => item.mortality_rate);
+    const profits = analyticsData.map(item => item.profit !== null ? item.profit : 0);
+    const growthRates = analyticsData.map(item => item.growth_rate !== null ? item.growth_rate : 0);
+    
+    // Pie chart data
+    const feedCostPieData = {{ feed_cost_pie_json|safe }};
+    const stockPieData = {{ stock_pie_json|safe }};
+    
+    // Trend data
+    const trendLabels = {{ trend_labels_json|safe }};
+    const trendValues = {{ trend_values_json|safe }};
+
+    // Chart.js default settings for consistency
+    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    Chart.defaults.color = '#495057';
+    
+    // Function to generate color based on value (for FCR and Mortality)
+    function getColorByPerformance(value, values, reverse = false) {
+        if (!value || values.filter(v => v > 0).length === 0) return '#95A5A6';
+        
+        const validValues = values.filter(v => v > 0);
+        const min = Math.min(...validValues);
+        const max = Math.max(...validValues);
+        const range = max - min;
+        
+        if (range === 0) return lightGreen;
+        
+        const normalizedValue = (value - min) / range;
+        
+        if (reverse) {
+            // For FCR: lower is better
+            if (normalizedValue <= 0.33) return lightGreen; // Best performers
+            if (normalizedValue <= 0.66) return amber;      // Average
+            return red;                                     // Needs attention
+        } else {
+            // For mortality: higher is worse
+            if (normalizedValue <= 0.33) return lightGreen;
+            if (normalizedValue <= 0.66) return amber;
+            return red;
+        }
+    }
+
+    // 1. Feed Cost Comparison Chart
+    const feedCostCtx = document.getElementById('feedCostChart');
+    if (feedCostCtx) {
+        new Chart(feedCostCtx, {
+            type: 'bar',
+            data: {
+                labels: batchNames,
+                datasets: [{
+                    label: 'Total Feed Cost (₦)',
+                    data: feedCosts,
+                    backgroundColor: deepGreen,
+                    borderColor: darkGreen,
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₦' + context.parsed.y.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₦' + value.toLocaleString('en-NG');
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. FCR Comparison Chart (color-coded)
+    const fcrCtx = document.getElementById('fcrChart');
+    if (fcrCtx) {
+        const fcrColors = fcrValues.map(fcr => getColorByPerformance(fcr, fcrValues, true));
+        
+        new Chart(fcrCtx, {
+            type: 'bar',
+            data: {
+                labels: batchNames,
+                datasets: [{
+                    label: 'FCR (kg feed / kg gain)',
+                    data: fcrValues,
+                    backgroundColor: fcrColors,
+                    borderColor: fcrColors.map(c => c),
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                if (value === 0) return 'No FCR data';
+                                return 'FCR: ' + value.toFixed(2) + ' kg/kg';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Lower is Better',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Mortality Rate Comparison Chart (color-coded)
+    const mortalityCtx = document.getElementById('mortalityChart');
+    if (mortalityCtx) {
+        const mortalityColors = mortalityRates.map(rate => getColorByPerformance(rate, mortalityRates, false));
+        
+        new Chart(mortalityCtx, {
+            type: 'bar',
+            data: {
+                labels: batchNames,
+                datasets: [{
+                    label: 'Mortality Rate (%)',
+                    data: mortalityRates,
+                    backgroundColor: mortalityColors,
+                    borderColor: mortalityColors.map(c => c),
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toFixed(1) + '% mortality';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Lower is Better',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Profit Distribution Pie Chart
+    const profitPieCtx = document.getElementById('profitPieChart');
+    if (profitPieCtx) {
+        // Filter out batches with null or zero profit for pie chart
+        const profitableData = analyticsData.filter(item => item.profit !== null && item.profit > 0);
+        const profitLabels = profitableData.map(item => item.batch.name);
+        const profitValues = profitableData.map(item => item.profit);
+        
+        // Generate distinct colors for pie chart (mix of greens and golds)
+        const pieColors = [
+            deepGreen,
+            gold,
+            lightGreen,
+            '#8BC34A',
+            '#FFD700',
+            '#689F38',
+            '#FFC107',
+            '#558B2F'
+        ];
+        
+        if (profitableData.length > 0) {
+            new Chart(profitPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: profitLabels,
+                    datasets: [{
+                        data: profitValues,
+                        backgroundColor: pieColors.slice(0, profitLabels.length),
+                        borderColor: '#fff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ₦' + value.toLocaleString('en-NG', { minimumFractionDigits: 2 }) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            profitPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No profitable batches to display</p></div>';
+        }
+    }
+
+    // 5. Growth Rate Comparison Chart
+    const growthRateCtx = document.getElementById('growthRateChart');
+    if (growthRateCtx) {
+        new Chart(growthRateCtx, {
+            type: 'bar',
+            data: {
+                labels: batchNames,
+                datasets: [{
+                    label: 'Growth Rate (kg/day)',
+                    data: growthRates,
+                    backgroundColor: gold,
+                    borderColor: '#B8860B',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                if (value === 0) return 'No growth data';
+                                return value.toFixed(4) + ' kg/day';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Higher is Better',
+                            font: {
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 6. Feed Cost Distribution Pie Chart
+    const feedCostPieCtx = document.getElementById('feedCostPieChart');
+    if (feedCostPieCtx) {
+        const feedCostPieLabels = feedCostPieData.map(item => item.name);
+        const feedCostPieValues = feedCostPieData.map(item => item.value);
+        const pieColors = [
+            deepGreen, gold, lightGreen, '#8BC34A', '#FFD700',
+            '#689F38', '#FFC107', '#558B2F'
+        ];
+        
+        if (feedCostPieValues.some(v => v > 0)) {
+            new Chart(feedCostPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: feedCostPieLabels,
+                    datasets: [{
+                        data: feedCostPieValues,
+                        backgroundColor: pieColors.slice(0, feedCostPieLabels.length),
+                        borderColor: '#fff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return label + ': ₦' + value.toLocaleString('en-NG', { minimumFractionDigits: 2 }) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            feedCostPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No feed cost data available</p></div>';
+        }
+    }
+
+    // 7. Stock Distribution Pie Chart
+    const stockPieCtx = document.getElementById('stockPieChart');
+    if (stockPieCtx) {
+        const stockPieLabels = stockPieData.map(item => item.name);
+        const stockPieValues = stockPieData.map(item => item.value);
+        const stockPieColors = [
+            '#1B5E20', '#D4AF37', '#4CAF50', '#8BC34A', '#FFD700',
+            '#689F38', '#FFC107', '#558B2F'
+        ];
+        
+        if (stockPieValues.some(v => v > 0)) {
+            new Chart(stockPieCtx, {
+                type: 'pie',
+                data: {
+                    labels: stockPieLabels,
+                    datasets: [{
+                        data: stockPieValues,
+                        backgroundColor: stockPieColors.slice(0, stockPieLabels.length),
+                        borderColor: '#fff',
+                        borderWidth: 3,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return label + ': ' + value + ' animals (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            stockPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No stock data available</p></div>';
+        }
+    }
+
+    // 8. Feed Cost Trend Over Time (Line Chart)
+    const trendCtx = document.getElementById('feedCostTrendChart');
+    if (trendCtx && trendLabels.length > 0) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Monthly Feed Cost (₦)',
+                    data: trendValues,
+                    borderColor: deepGreen,
+                    backgroundColor: 'rgba(27, 94, 32, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointBackgroundColor: deepGreen,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₦' + context.parsed.y.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₦' + value.toLocaleString('en-NG');
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    } else if (trendCtx) {
+        trendCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No feed log data available for trend analysis</p></div>';
+    }
+
+    // 9. Vaccination Coverage Chart (Stacked Bar: Vaccinated count vs Total Stock)
+    const vaccinationCtx = document.getElementById('vaccinationCoverageChart');
+    const vaccinationData = {{ vaccination_coverage_json|safe }};
+    if (vaccinationCtx && vaccinationData.length > 0) {
+        const vBatchNames = vaccinationData.map(d => d.batch);
+        const vVaccinations = vaccinationData.map(d => d.vaccinations_count);
+        const vRemaining = vaccinationData.map(d => Math.max(0, d.total_stock - d.vaccinations_count));
+
+        new Chart(vaccinationCtx, {
+            type: 'bar',
+            data: {
+                labels: vBatchNames,
+                datasets: [
+                    {
+                        label: 'Vaccination Records',
+                        data: vVaccinations,
+                        backgroundColor: deepGreen,
+                        borderColor: darkGreen,
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    },
+                    {
+                        label: 'Remaining Stock (No Vaccination Record)',
+                        data: vRemaining,
+                        backgroundColor: '#95A5A6',
+                        borderColor: '#7F8C8D',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' animals';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        stacked: true,
+                    }
+                }
+            }
+        });
+    } else if (vaccinationCtx) {
+        vaccinationCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No vaccination data available</p></div>';
+    }
+
+    // 10. Health Log Frequency Chart
+    const healthFreqCtx = document.getElementById('healthLogFrequencyChart');
+    const healthFreqData = {{ health_log_frequency_json|safe }};
+    if (healthFreqCtx && healthFreqData.length > 0) {
+        const hBatchNames = healthFreqData.map(d => d.batch);
+        const hLogCounts = healthFreqData.map(d => d.log_count);
+        const hColors = hLogCounts.map(count => {
+            if (count === 0) return '#95A5A6';
+            const maxCount = Math.max(...hLogCounts);
+            if (maxCount === 0) return lightGreen;
+            const normalized = count / maxCount;
+            if (normalized <= 0.33) return lightGreen;
+            if (normalized <= 0.66) return amber;
+            return red;
+        });
+
+        new Chart(healthFreqCtx, {
+            type: 'bar',
+            data: {
+                labels: hBatchNames,
+                datasets: [{
+                    label: 'Health/Medication Logs',
+                    data: hLogCounts,
+                    backgroundColor: hColors,
+                    borderColor: hColors.map(c => c),
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                if (value === 0) return 'No health logs';
+                                return value + ' log' + (value !== 1 ? 's' : '') + ' recorded';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return Number.isInteger(value) ? value : '';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    } else if (healthFreqCtx) {
+        healthFreqCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No health log data available</p></div>';
+    }
+
+    // 11. Health Reasons Pie Chart
+    const reasonsData = {{ health_reasons_json|safe }};
+    const reasonsPieCtx = document.getElementById('healthReasonsPieChart');
+    if (reasonsPieCtx && reasonsData.length > 0) {
+        const reasonLabels = reasonsData.map(d => d.reason);
+        const reasonValues = reasonsData.map(d => d.count);
+        const reasonColors = [
+            deepGreen, gold, lightGreen, '#8BC34A', '#FFD700',
+            '#689F38', '#FFC107', '#558B2F'
+        ];
+
+        new Chart(reasonsPieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: reasonLabels,
+                datasets: [{
+                    data: reasonValues,
+                    backgroundColor: reasonColors.slice(0, reasonLabels.length),
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 12,
+                            font: { size: 11 },
+                            usePointStyle: true,
+                            pointStyleWidth: 10,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else if (reasonsPieCtx) {
+        reasonsPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No health reason data available</p></div>';
+    }
+
+    // 12. Health Medicines Pie Chart
+    const medicinesData = {{ health_medicines_json|safe }};
+    const medicinesPieCtx = document.getElementById('healthMedicinesPieChart');
+    if (medicinesPieCtx && medicinesData.length > 0) {
+        const medicineLabels = medicinesData.map(d => d.medicine);
+        const medicineValues = medicinesData.map(d => d.count);
+        const medicineColors = [
+            '#1B5E20', '#D4AF37', '#4CAF50', '#8BC34A', '#FFD700',
+            '#689F38', '#FFC107', '#558B2F'
+        ];
+
+        new Chart(medicinesPieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: medicineLabels,
+                datasets: [{
+                    data: medicineValues,
+                    backgroundColor: medicineColors.slice(0, medicineLabels.length),
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 12,
+                            font: { size: 11 },
+                            usePointStyle: true,
+                            pointStyleWidth: 10,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else if (medicinesPieCtx) {
+        medicinesPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No medication data available</p></div>';
+    }
+
+});
+</script>
+{% endif %}
 {% endblock %}

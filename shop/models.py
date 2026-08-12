@@ -31,6 +31,11 @@ class Product(models.Model):
     description = models.TextField(_("description"), blank=True)
     price = models.DecimalField(_("price"), max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(_("stock quantity"), default=0)
+    low_stock_threshold = models.PositiveIntegerField(
+        _("low stock threshold"),
+        default=5,
+        help_text=_("Stock level below which product is considered low stock"),
+    )
     image = models.ImageField(
         _("image"),
         upload_to="products/",
@@ -60,6 +65,11 @@ class Product(models.Model):
     def in_stock(self):
         """Return True if stock is available."""
         return self.stock_quantity > 0
+
+    @property
+    def is_low_stock(self):
+        """Return True if stock is at or below the low stock threshold."""
+        return self.stock_quantity <= self.low_stock_threshold
 
     def decrement_stock(self, quantity):
         """Reduce stock by given quantity. Raises ValueError if insufficient."""
@@ -164,10 +174,22 @@ class Order(models.Model):
     """
     class Status(models.TextChoices):
         PENDING = "pending", _("Pending")
-        PAID = "paid", _("Paid")
+        CONFIRMED = "confirmed", _("Confirmed")
+        PROCESSING = "processing", _("Processing")
+        AWAITING_DELIVERY = "awaiting_delivery", _("Awaiting Delivery")
         SHIPPED = "shipped", _("Shipped")
         DELIVERED = "delivered", _("Delivered")
         CANCELLED = "cancelled", _("Cancelled")
+
+    # Ordered, non-cancelled lifecycle used to build a minimal status timeline.
+    STATUS_FLOW = [
+        Status.PENDING,
+        Status.CONFIRMED,
+        Status.PROCESSING,
+        Status.AWAITING_DELIVERY,
+        Status.SHIPPED,
+        Status.DELIVERED,
+    ]
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -190,6 +212,40 @@ class Order(models.Model):
         decimal_places=2,
         default=0,
     )
+    subtotal = models.DecimalField(
+        _("subtotal"),
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text=_("Item total before delivery charges."),
+    )
+    delivery_option = models.ForeignKey(
+        "admin_dashboard.DeliveryOption",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        verbose_name=_("delivery option"),
+    )
+    delivery_fee = models.DecimalField(
+        _("delivery fee"),
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+    )
+    payment_method = models.CharField(
+        _("payment method"),
+        max_length=50,
+        blank=True,
+        default="",
+        help_text=_("Payment method used for this order"),
+    )
+    delivery_address = models.TextField(
+        _("delivery address"),
+        blank=True,
+        default="",
+        help_text=_("Delivery address for this order"),
+    )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
 
@@ -201,6 +257,64 @@ class Order(models.Model):
     def __str__(self):
         user_name = self.user.full_name if self.user else "Deleted User"
         return f"Order #{self.pk} - {user_name} ({self.get_status_display()})"
+
+    @property
+    def estimated_delivery_date(self):
+        if not self.delivery_option:
+            return None
+        from datetime import timedelta
+        from django.utils import timezone
+
+        return (self.created_at or timezone.now()).date() + timedelta(
+            days=self.delivery_option.estimated_days
+        )
+
+    def recalculate_totals(self, save=True):
+        """
+        Recompute subtotal/delivery_fee/total from the order's current
+        line items and delivery option selection.
+        """
+        subtotal = sum(
+            (item.subtotal for item in self.items.all()), Decimal("0.00")
+        )
+        delivery_fee = self.delivery_option.price if self.delivery_option else Decimal("0.00")
+        self.subtotal = subtotal
+        self.delivery_fee = delivery_fee
+        self.total = subtotal + delivery_fee
+        if save:
+            self.save(update_fields=["subtotal", "delivery_fee", "total"])
+        return self.total
+
+    @property
+    def status_timeline(self):
+        """
+        Minimal, robust status timeline derived from the order's current
+        status. Each step is marked 'done', 'current', or 'upcoming'.
+        Cancelled orders show a short two-step timeline instead.
+        """
+        labels = dict(self.Status.choices)
+
+        if self.status == self.Status.CANCELLED:
+            return [
+                {"code": self.Status.PENDING, "label": labels[self.Status.PENDING], "state": "done"},
+                {"code": self.Status.CANCELLED, "label": labels[self.Status.CANCELLED], "state": "current"},
+            ]
+
+        try:
+            current_index = self.STATUS_FLOW.index(self.status)
+        except ValueError:
+            current_index = 0
+
+        steps = []
+        for index, code in enumerate(self.STATUS_FLOW):
+            if index < current_index:
+                state = "done"
+            elif index == current_index:
+                state = "current"
+            else:
+                state = "upcoming"
+            steps.append({"code": code, "label": labels[code], "state": state})
+        return steps
 
 
 class OrderItem(models.Model):

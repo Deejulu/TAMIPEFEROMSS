@@ -1,11 +1,976 @@
 {% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
 
 {% block admin_content %}
-<div class="coming-soon-card">
-    <div class="icon-circle">
-        <i class="bi bi-speedometer2"></i>
+<div class="overview-page">
+
+    <!-- Page Header -->
+    <div class="overview-header">
+        <div>
+            <h1><i class="bi bi-speedometer2"></i> Dashboard Overview</h1>
+            <p class="overview-subtitle">Snapshot of your farm operations, shop activity, and user landscape</p>
+        </div>
     </div>
-    <h2>Overview</h2>
-    <p>This dashboard overview is coming soon. You'll find key metrics and summaries here.</p>
+
+    <!-- ========== FARM SNAPSHOT ========== -->
+    <section class="overview-section">
+        <div class="section-header-bar">
+            <h2><i class="bi bi-basket"></i> Farm Snapshot</h2>
+            <span class="gold-accent-bar"></span>
+        </div>
+
+        <div class="overview-grid">
+            <!-- Active Batches Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(46, 125, 50, 0.1); color: #2E7D32;">
+                        <i class="bi bi-house"></i>
+                    </div>
+                    <h3 class="card-title">Active Batches</h3>
+                    <div class="card-value">{{ active_batches_count }}</div>
+                    {% if batches_by_species %}
+                    <div class="card-detail">
+                        {% for entry in batches_by_species %}
+                        <span class="species-badge">
+                            {{ entry.species|title }}: {{ entry.count }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Active Alerts Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(212, 175, 55, 0.15); color: #D4AF37;">
+                        <i class="bi bi-bell"></i>
+                    </div>
+                    <h3 class="card-title">Active Alerts</h3>
+                    <div class="card-value">{{ active_alerts_total }}</div>
+                    {% if active_alerts %}
+                    <div class="alert-list">
+                        {% for alert in active_alerts %}
+                        <div class="alert-item">
+                            <span class="alert-dot"></span>
+                            <span class="alert-text">{{ alert.message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if active_alerts_total > 5 %}
+                    <a href="{% url 'admin_dashboard:notifications' %}" class="view-all-link">View All Alerts ({{ active_alerts_total }})</a>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state-mini">
+                        <i class="bi bi-check-circle"></i>
+                        <span>No active alerts</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Low Feed Inventory Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(198, 40, 40, 0.1); color: #C62828;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="card-title">Low Feed Inventory</h3>
+                    <div class="card-value">{{ low_feed_inventory_count }}</div>
+                    {% if low_feed_inventory %}
+                    <div class="alert-list">
+                        {% for item in low_feed_inventory %}
+                        <div class="alert-item critical">
+                            <span class="alert-dot critical"></span>
+                            <span class="alert-text">
+                                {{ item.feed_type }}: {{ item.quantity_on_hand_kg }} kg
+                                (threshold: {{ item.reorder_point_kg }} kg)
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if low_feed_inventory_count > 5 %}
+                    <a href="{% url 'farm_management:feed_inventory_list' %}" class="view-all-link">View All Feed Inventory ({{ low_feed_inventory_count }})</a>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state-mini">
+                        <i class="bi bi-check-circle"></i>
+                        <span>All feed inventory above reorder point</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== ORDERS / SHOP SNAPSHOT ========== -->
+    <section class="overview-section">
+        <div class="section-header-bar">
+            <h2><i class="bi bi-cart"></i> Orders / Shop Snapshot</h2>
+            <span class="gold-accent-bar"></span>
+        </div>
+
+        <div class="overview-grid">
+            <!-- Recent Orders Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(46, 125, 50, 0.1); color: #2E7D32;">
+                        <i class="bi bi-cart-check"></i>
+                    </div>
+                    <h3 class="card-title">Recent Orders (7 days)</h3>
+                    <div class="card-value">{{ recent_orders_count }}</div>
+                    <div class="empty-state-mini">
+                        <i class="bi bi-calendar-week"></i>
+                        <span>Orders placed in the last week</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Products Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(198, 40, 40, 0.1); color: #C62828;">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h3 class="card-title">Low Stock Products</h3>
+                    <div class="card-value">{{ low_stock_products_count }}</div>
+                    {% if low_stock_products %}
+                    <div class="alert-list">
+                        {% for product in low_stock_products %}
+                        <div class="alert-item critical">
+                            <span class="alert-dot critical"></span>
+                            <span class="alert-text">{{ product.name }} (&#x20A6;{{ product.price }})</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if low_stock_products_count > 5 %}
+                    <a href="{% url 'shop:product_list' %}" class="view-all-link">View All Products ({{ low_stock_products_count }})</a>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state-mini">
+                        <i class="bi bi-check-circle"></i>
+                        <span>All products in stock</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== USER SNAPSHOT ========== -->
+    <section class="overview-section">
+        <div class="section-header-bar">
+            <h2><i class="bi bi-people"></i> User Snapshot</h2>
+            <span class="gold-accent-bar"></span>
+        </div>
+
+        <div class="overview-grid">
+            <!-- Total Active Users Card -->
+            <div class="overview-card">
+                <div class="card-gold-bar"></div>
+                <div class="card-body">
+                    <div class="card-icon-circle" style="background: rgba(46, 125, 50, 0.1); color: #2E7D32;">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <h3 class="card-title">Total Active Users</h3>
+                    <div class="card-value">{{ total_active_users }}</div>
+                    {% if users_by_role %}
+                    <div class="role-breakdown">
+                        {% for entry in users_by_role %}
+                        <div class="role-row">
+                            <span class="role-label">{{ entry.role }}</span>
+                            <span class="role-count">{{ entry.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== RECENT CUSTOMER ORDERS ========== -->
+    <section class="overview-section">
+        <div class="section-header-bar">
+            <h2><i class="bi bi-receipt"></i> Recent Customer Orders</h2>
+            <span class="gold-accent-bar"></span>
+        </div>
+
+        <div class="overview-card overview-table-card">
+            <div class="card-gold-bar"></div>
+            <div class="card-body">
+                {% if recent_customer_orders %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted small">Showing {{ recent_customer_orders|length }} of {{ recent_orders_total }} orders</span>
+                    {% if recent_orders_total > 5 %}
+                    <a href="{% url 'admin_dashboard:orders' %}" class="view-all-link">View All Orders</a>
+                    {% endif %}
+                </div>
+                <!-- Desktop/Tablet Table View -->
+                <div class="table-responsive desktop-table-view">
+                    <table class="table overview-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_customer_orders %}
+                            <tr>
+                                <td><strong class="order-id">#{{ order.pk }}</strong></td>
+                                <td>{{ order.user.full_name|default:"Deleted User" }}</td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                    <span class="badge overview-badge overview-badge-warning">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'confirmed' %}
+                                    <span class="badge overview-badge overview-badge-success">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'processing' %}
+                                    <span class="badge overview-badge overview-badge-info">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'shipped' %}
+                                    <span class="badge overview-badge overview-badge-primary">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'delivered' %}
+                                    <span class="badge overview-badge overview-badge-success">{{ order.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="badge overview-badge overview-badge-danger">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>&#x20A6;{{ order.total|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-card-view">
+                    {% for order in recent_customer_orders %}
+                    <div class="order-mobile-card">
+                        <div class="order-mobile-header">
+                            <div class="order-mobile-id">#{{ order.pk }}</div>
+                            <div class="order-mobile-status">
+                                {% if order.status == 'pending' %}
+                                <span class="badge overview-badge overview-badge-warning">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'confirmed' %}
+                                <span class="badge overview-badge overview-badge-success">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'processing' %}
+                                <span class="badge overview-badge overview-badge-info">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'shipped' %}
+                                <span class="badge overview-badge overview-badge-primary">{{ order.get_status_display }}</span>
+                                {% elif order.status == 'delivered' %}
+                                <span class="badge overview-badge overview-badge-success">{{ order.get_status_display }}</span>
+                                {% else %}
+                                <span class="badge overview-badge overview-badge-danger">{{ order.get_status_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="order-mobile-body">
+                            <div class="order-mobile-row">
+                                <span class="order-mobile-label">Customer</span>
+                                <span class="order-mobile-value">{{ order.user.full_name|default:"Deleted User" }}</span>
+                            </div>
+                            <div class="order-mobile-row">
+                                <span class="order-mobile-label">Date</span>
+                                <span class="order-mobile-value">{{ order.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="order-mobile-row">
+                                <span class="order-mobile-label">Total</span>
+                                <span class="order-mobile-value order-total">&#x20A6;{{ order.total|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="overview-empty-state">
+                    <i class="bi bi-receipt"></i>
+                    <p>No customer orders yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== QUICK LINKS ========== -->
+    <section class="overview-section">
+        <div class="section-header-bar">
+            <h2><i class="bi bi-link-45deg"></i> Quick Links</h2>
+            <span class="gold-accent-bar"></span>
+        </div>
+
+        <div class="quick-links-grid">
+            {% for link in quick_links %}
+            <a href="{{ link.url }}" class="quick-link-card">
+                <div class="quick-link-icon" style="background: {{ link.color }}15; color: {{ link.color }};">
+                    <i class="bi {{ link.icon }}"></i>
+                </div>
+                <span class="quick-link-label">{{ link.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ==========================================   OVERVIEW PAGE   ========================================== */
+
+/* Page Background */
+.overview-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Page Header */
+.overview-header {
+    margin-bottom: 2rem;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.overview-header h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.overview-header h1 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.overview-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+/* Section */
+.overview-section {
+    margin-bottom: 2.5rem;
+}
+
+.section-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.section-header-bar h2 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin: 0;
+}
+
+.section-header-bar h2 i {
+    margin-right: 0.4rem;
+    font-size: 1.1rem;
+    color: #D4AF37;
+}
+
+.gold-accent-bar {
+    display: inline-block;
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(180deg, #D4AF37, #C5A028);
+    border-radius: 2px;
+}
+
+/* Grid */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+/* Card */
+.overview-card {
+    background: #fff;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(27, 94, 32, 0.12));
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp 0.5s ease-out both;
+}
+
+.overview-card:hover {
+    box-shadow: var(--shadow-md, 0 4px 16px rgba(27, 94, 32, 0.18));
+    transform: translateY(-2px);
+}
+
+.overview-table-card {
+    animation: slideInUp 0.6s ease-out 0.1s both;
+}
+
+.card-gold-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.card-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.5rem 0;
+}
+
+.card-value {
+    font-family: "Poppins", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1B5E20;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.card-detail {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+/* Species badges */
+.species-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: rgba(46, 125, 50, 0.1);
+    color: #2E7D32;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0.15rem 0.25rem 0.15rem 0;
+    border: 1px solid rgba(46, 125, 50, 0.2);
+}
+
+/* Alert list */
+.alert-list {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(212, 175, 55, 0.06);
+    border-radius: 8px;
+    border-left: 3px solid #D4AF37;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.alert-item.critical {
+    background: rgba(198, 40, 40, 0.06);
+    border-left-color: #C62828;
+}
+
+.alert-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #D4AF37;
+    flex-shrink: 0;
+    margin-top: 0.35rem;
+}
+
+.alert-dot.critical {
+    background: #C62828;
+}
+
+.alert-text {
+    color: #374151;
+}
+
+.view-all-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2E7D32;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.view-all-link:hover {
+    color: #1B5E20;
+    text-decoration: underline;
+}
+
+/* Role breakdown */
+.role-breakdown {
+    margin-top: 0.75rem;
+}
+
+.role-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 0.85rem;
+}
+
+.role-row:last-child {
+    border-bottom: none;
+}
+
+.role-label {
+    color: #6b7280;
+    text-transform: capitalize;
+}
+
+.role-count {
+    font-weight: 700;
+    color: #1B5E20;
+    background: rgba(46, 125, 50, 0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* ==========================================   OVERVIEW BADGES   ========================================== */
+.overview-badge {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.overview-badge-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #92400E;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.overview-badge-success {
+    background: rgba(67, 160, 71, 0.12) !important;
+    color: #2E7D32;
+    border-color: rgba(67, 160, 71, 0.25);
+}
+
+.overview-badge-info {
+    background: rgba(13, 202, 240, 0.15) !important;
+    color: #014B4B;
+    border-color: rgba(13, 202, 240, 0.35);
+}
+
+.overview-badge-primary {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #1E40AF;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+.overview-badge-danger {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: #991B1B;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* ==========================================   OVERVIEW TABLE   ========================================== */
+.overview-table {
+    margin-bottom: 0;
+    font-size: 0.9375rem;
+}
+
+.overview-table thead {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    position: relative;
+}
+
+.overview-table thead::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
+}
+
+.overview-table thead th {
+    background: transparent;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 0.875rem 1rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.overview-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.overview-table tbody tr:hover {
+    background: linear-gradient(90deg, #f8fdf8, #ffffff);
+    transform: translateY(-1px) translateX(2px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.10);
+    border-left: 3px solid #2E7D32;
+}
+
+.overview-table tbody td {
+    padding: 0.875rem 1rem;
+    vertical-align: middle;
+    color: #374151;
+}
+
+.order-id {
+    color: #1B5E20;
+    font-weight: 700;
+}
+
+/* ==========================================   MOBILE ORDER CARDS   ========================================== */
+.mobile-card-view {
+    display: none;
+}
+
+.order-mobile-card {
+    background: #fff;
+    border-radius: var(--radius-md, 12px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+.order-mobile-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.12);
+    transform: translateY(-2px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.order-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(248, 253, 248, 0.6), rgba(255, 255, 255, 0.9));
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.order-mobile-id {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.order-mobile-body {
+    padding: 1rem;
+}
+
+.order-mobile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.order-mobile-row:last-child {
+    border-bottom: none;
+}
+
+.order-mobile-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.order-mobile-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: right;
+}
+
+.order-total {
+    color: #1B5E20;
+}
+
+/* ==========================================   QUICK LINKS   ========================================== */
+.quick-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.quick-link-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem;
+    background: #fff;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(27, 94, 32, 0.12));
+    text-decoration: none;
+    color: #1B5E20;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideInUp 0.5s ease-out both;
+}
+
+.quick-link-card:hover {
+    box-shadow: var(--shadow-md, 0 4px 16px rgba(27, 94, 32, 0.18));
+    transform: translateY(-3px);
+    color: #1B5E20;
+    text-decoration: none;
+}
+
+.quick-link-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.quick-link-card:hover .quick-link-icon {
+    transform: scale(1.1);
+}
+
+.quick-link-label {
+    font-family: "Inter", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* ==========================================   EMPTY STATES   ========================================== */
+.overview-empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.overview-empty-state i {
+    font-size: 3.5rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.overview-empty-state p {
+    color: #6b7280;
+    font-size: 1.0625rem;
+    margin-bottom: 0;
+}
+
+.empty-state-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(46, 125, 50, 0.06);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #4B5563;
+}
+
+.empty-state-mini i {
+    color: #2E7D32;
+    font-size: 1rem;
+}
+
+/* ==========================================   ANIMATIONS   ========================================== */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================   RESPONSIVE   ========================================== */
+
+/* Tablet: 768px - 1200px */
+@media (max-width: 1200px) {
+    .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .overview-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Tablet: 768px */
+@media (max-width: 768px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .overview-header h1 {
+        font-size: 1.35rem;
+    }
+
+    .section-header-bar h2 {
+        font-size: 1.1rem;
+    }
+
+    .card-value {
+        font-size: 1.75rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .overview-table thead th {
+        font-size: 0.7rem;
+        padding: 0.75rem 0.625rem;
+    }
+
+    .overview-table tbody td {
+        padding: 0.75rem 0.625rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Mobile: 576px */
+@media (max-width: 576px) {
+    .quick-links-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .quick-link-card {
+        padding: 1rem 0.75rem;
+    }
+
+    .quick-link-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .quick-link-label {
+        font-size: 0.75rem;
+    }
+
+    .card-value {
+        font-size: 1.5rem;
+    }
+
+    .overview-header h1 {
+        font-size: 1.2rem;
+    }
+
+    .section-header-bar {
+        flex-wrap: wrap;
+    }
+
+    .alert-item {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .card-icon-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    /* Hide desktop table, show mobile cards */
+    .desktop-table-view {
+        display: none !important;
+    }
+
+    .mobile-card-view {
+        display: block !important;
+    }
+
+    .overview-table-card .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Small Mobile: 375px */
+@media (max-width: 375px) {
+    .quick-links-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-header h1 {
+        font-size: 1.1rem;
+    }
+
+    .card-value {
+        font-size: 1.35rem;
+    }
+
+    .overview-section {
+        margin-bottom: 1.5rem;
+    }
+}
+</style>
 {% endblock %}

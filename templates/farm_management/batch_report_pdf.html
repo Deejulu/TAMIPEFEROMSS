@@ -1,133 +1,156 @@
-{% extends "admin_dashboard/base_admin.html" %}
-{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 20px; color: #1a1a1a; font-size: 11pt; background: #fff; }
+h1 { font-family: 'Poppins', sans-serif; font-size: 18pt; border-bottom: 3px solid #D4AF37; padding-bottom: 4px; color: #1B5E20; }
+h2 { font-family: 'Poppins', sans-serif; font-size: 14pt; margin-top: 18px; border-bottom: 1px solid #e5e7eb; padding-bottom: 2px; color: #1B5E20; }
+p { margin: 4px 0; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 16px 0; border-radius: 8px; overflow: hidden; }
+th, td { border: 1px solid #d1d5db; padding: 4px 8px; text-align: left; font-size: 10pt; }
+th { background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047); color: white; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+tr:nth-child(even) { background: #f8fdf8; }
+.metric { display: inline-block; margin-right: 24px; font-size: 11pt; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 9pt; color: #fff; }
+.badge-success { background-color: #1B5E20; }
+.badge-secondary { background-color: #6c757d; }
+.text-danger { color: #dc3545; }
+.text-success { color: #1B5E20; }
+.fw-bold { font-weight: bold; }
+.footer { margin-top: 30px; font-size: 9pt; color: #888; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+</style>
+</head>
+<body>
+<h1>Batch Report: {{ batch.name }}</h1>
+<p><strong>Species:</strong> {{ batch.species }} | <strong>Season:</strong> {{ batch.get_season_display }}</p>
+<p><strong>Start Date:</strong> {{ batch.start_date }} | <strong>Status:</strong> <span class="badge {% if batch.status == 'closed' %}badge-secondary{% else %}badge-success{% endif %}">{{ batch.get_status_display }}</span></p>
+<p><strong>Initial Count:</strong> {{ batch.initial_count }} | <strong>Current Stock:</strong> {{ batch.current_stock }}</p>
 
-{% block admin_content %}
-<div class="batch-report-pdf">
-    <h1>Batch Report: {{ batch.name }}</h1>
-    <p><strong>Species:</strong> {{ batch.get_species_display }} | <strong>Season:</strong> {{ batch.get_season_display }}</p>
-    <p><strong>Start Date:</strong> {{ batch.start_date }} | <strong>Status:</strong> <span class="badge bg-{% if batch.status == 'closed' %}secondary{% else %}success{% endif %}">{{ batch.get_status_display }}</span></p>
-    <p><strong>Initial Count:</strong> {{ batch.initial_count }} | <strong>Current Stock:</strong> {{ batch.current_stock }}</p>
+<h2>Key Metrics</h2>
+<p>
+<span class="metric"><strong>Mortality Rate</strong> {{ batch.mortality_rate }}%</span>
+<span class="metric"><strong>Total Feed Cost</strong> &#x20A6;{{ batch.total_feed_cost|floatformat:2 }}</span>
+<span class="metric"><strong>FCR</strong> {% if batch.feed_conversion_ratio %}{{ batch.feed_conversion_ratio }}{% else %}N/A{% endif %}</span>
+{% if has_harvest %}
+<span class="metric"><strong>Profit</strong> &#x20A6;{{ profit|floatformat:2 }}</span>
+{% endif %}
+</p>
 
-    <h2>Key Metrics</h2>
-    <p>
-        <span class="metric"><strong>Mortality Rate</strong> {{ batch.mortality_rate }}%</span>
-        <span class="metric"><strong>Total Feed Cost</strong> ₦{{ batch.total_feed_cost|floatformat:2 }}</span>
-        <span class="metric"><strong>FCR</strong> {% if batch.feed_conversion_ratio %}{{ batch.feed_conversion_ratio }}{% else %}N/A{% endif %}</span>
-        {% if has_harvest %}
-        <span class="metric"><strong>Profit</strong> ₦{{ profit|floatformat:2 }}</span>
-        {% endif %}
-    </p>
+{% if has_harvest %}
+<h2>Harvest Record</h2>
+<p><strong>Harvest Date:</strong> {{ batch.harvest.harvest_date }}</p>
+<p><strong>Quantity Sold:</strong> {{ batch.harvest.quantity_sold }}</p>
+<p><strong>Total Revenue:</strong> &#x20A6;{{ batch.harvest.total_revenue|floatformat:2 }}</p>
+<p><strong>Profit:</strong> <span class="{% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">&#x20A6;{{ profit|floatformat:2 }}</span></p>
+{% endif %}
 
-    {% if has_harvest %}
-    <h2>Harvest Record</h2>
-    <p><strong>Harvest Date:</strong> {{ batch.harvest.harvest_date }}</p>
-    <p><strong>Quantity Sold:</strong> {{ batch.harvest.quantity_sold }}</p>
-    <p><strong>Total Revenue:</strong> ₦{{ batch.harvest.total_revenue|floatformat:2 }}</p>
-    <p><strong>Profit:</strong> <span class="{% if profit >= 0 %}text-success{% else %}text-danger{% endif %}">₦{{ profit|floatformat:2 }}</span></p>
-    {% endif %}
+<h2>Feed Logs</h2>
+<table>
+<tr><th>Date</th><th>Feed Type</th><th>Qty (kg)</th><th>Cost (&#x20A6;)</th><th>Notes</th></tr>
+{% for log in feed_logs %}
+<tr>
+<td>{{ log.date|date:"M d, Y" }}</td>
+<td>{{ log.feed_inventory.feed_type }}</td>
+<td>{{ log.quantity_kg }}</td>
+<td>&#x20A6;{{ log.cost|floatformat:2 }}</td>
+<td>{{ log.notes|default:"-" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No feed logs</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Feed Logs</h2>
-    <table>
-        <tr><th>Date</th><th>Feed Type</th><th>Qty (kg)</th><th>Cost (₦)</th><th>Notes</th></tr>
-        {% for log in feed_logs %}
-        <tr>
-            <td>{{ log.date|date:"M d, Y" }}</td>
-            <td>{{ log.feed_type }}</td>
-            <td>{{ log.quantity_kg }}</td>
-            <td>₦{{ log.cost|floatformat:2 }}</td>
-            <td>{{ log.notes|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5">No feed logs</td></tr>
-        {% endfor %}
-    </table>
+<h2>Growth Records</h2>
+<table>
+<tr><th>Date</th><th>Avg Weight (kg)</th><th>Sample Size</th></tr>
+{% for record in growth_records %}
+<tr>
+<td>{{ record.date|date:"M d, Y" }}</td>
+<td>{{ record.average_weight_kg }}</td>
+<td>{{ record.sample_size }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3">No growth records</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Growth Records</h2>
-    <table>
-        <tr><th>Date</th><th>Avg Weight (kg)</th><th>Sample Size</th></tr>
-        {% for record in growth_records %}
-        <tr>
-            <td>{{ record.date|date:"M d, Y" }}</td>
-            <td>{{ record.average_weight_kg }}</td>
-            <td>{{ record.sample_size }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No growth records</td></tr>
-        {% endfor %}
-    </table>
+<h2>Mortality Logs</h2>
+<table>
+<tr><th>Date</th><th>Count</th><th>Cause</th><th>Notes</th></tr>
+{% for log in mortality_logs %}
+<tr>
+<td>{{ log.date|date:"M d, Y" }}</td>
+<td class="text-danger fw-bold">{{ log.count }}</td>
+<td>{{ log.cause|default:"-" }}</td>
+<td>{{ log.notes|default:"-" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="4">No mortality records</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Mortality Logs</h2>
-    <table>
-        <tr><th>Date</th><th>Count</th><th>Cause</th><th>Notes</th></tr>
-        {% for log in mortality_logs %}
-        <tr>
-            <td>{{ log.date|date:"M d, Y" }}</td>
-            <td class="text-danger fw-bold">{{ log.count }}</td>
-            <td>{{ log.cause|default:"-" }}</td>
-            <td>{{ log.notes|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No mortality records</td></tr>
-        {% endfor %}
-    </table>
+<h2>Health / Medication Logs</h2>
+<table>
+<tr><th>Date</th><th>Medicine</th><th>Dosage</th><th>Reason</th></tr>
+{% for log in health_logs %}
+<tr>
+<td>{{ log.date|date:"M d, Y" }}</td>
+<td>{{ log.medicine_name }}</td>
+<td>{{ log.dosage }}</td>
+<td>{{ log.reason }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="4">No health/medication logs</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Health / Medication Logs</h2>
-    <table>
-        <tr><th>Date</th><th>Medicine</th><th>Dosage</th><th>Reason</th></tr>
-        {% for log in health_logs %}
-        <tr>
-            <td>{{ log.date|date:"M d, Y" }}</td>
-            <td>{{ log.medicine_name }}</td>
-            <td>{{ log.dosage }}</td>
-            <td>{{ log.reason }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No health/medication logs</td></tr>
-        {% endfor %}
-    </table>
+<h2>Vaccination Records</h2>
+<table>
+<tr><th>Date</th><th>Vaccine</th><th>Dosage</th><th>Administered By</th></tr>
+{% for record in vaccination_records %}
+<tr>
+<td>{{ record.date|date:"M d, Y" }}</td>
+<td>{{ record.vaccine_name }}</td>
+<td>{{ record.dosage }}</td>
+<td>{{ record.administered_by|default:"-" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="4">No vaccination records</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Vaccination Records</h2>
-    <table>
-        <tr><th>Date</th><th>Vaccine</th><th>Dosage</th><th>Administered By</th></tr>
-        {% for record in vaccination_records %}
-        <tr>
-            <td>{{ record.date|date:"M d, Y" }}</td>
-            <td>{{ record.vaccine_name }}</td>
-            <td>{{ record.dosage }}</td>
-            <td>{{ record.administered_by|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No vaccination records</td></tr>
-        {% endfor %}
-    </table>
+<h2>Water Quality Logs</h2>
+<table>
+<tr><th>Date</th><th>pH</th><th>Temp (&deg;C)</th><th>Oxygen (mg/L)</th><th>Notes</th></tr>
+{% for log in water_logs %}
+<tr>
+<td>{{ log.date|date:"M d, Y" }}</td>
+<td>{{ log.ph_level|default:"-" }}</td>
+<td>{{ log.temperature_c|default:"-" }}</td>
+<td>{{ log.oxygen_level|default:"-" }}</td>
+<td>{{ log.notes|default:"-" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No water quality logs</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Water Quality Logs</h2>
-    <table>
-        <tr><th>Date</th><th>pH</th><th>Temp (°C)</th><th>Oxygen (mg/L)</th><th>Notes</th></tr>
-        {% for log in water_logs %}
-        <tr>
-            <td>{{ log.date|date:"M d, Y" }}</td>
-            <td>{{ log.ph_level|default:"-" }}</td>
-            <td>{{ log.temperature_c|default:"-" }}</td>
-            <td>{{ log.oxygen_level|default:"-" }}</td>
-            <td>{{ log.notes|default:"-" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5">No water quality logs</td></tr>
-        {% endfor %}
-    </table>
+<h2>Daily Activity Logs</h2>
+<table>
+<tr><th>Date</th><th>Note</th></tr>
+{% for log in activity_logs %}
+<tr>
+<td>{{ log.date|date:"M d, Y" }}</td>
+<td>{{ log.note }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="2">No activity logs</td></tr>
+{% endfor %}
+</table>
 
-    <h2>Daily Activity Logs</h2>
-    <table>
-        <tr><th>Date</th><th>Note</th></tr>
-        {% for log in activity_logs %}
-        <tr>
-            <td>{{ log.date|date:"M d, Y" }}</td>
-            <td>{{ log.note }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="2">No activity logs</td></tr>
-        {% endfor %}
-    </table>
+<div class="footer">
+<p>Generated for Batch #{{ batch.pk }} - Farm Proc Tamipee</p>
 </div>
-{% endblock %}
+</body>
+</html>

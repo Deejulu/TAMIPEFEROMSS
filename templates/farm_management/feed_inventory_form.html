@@ -1,8 +1,106 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+<style>
+.batch-checklist-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #fafafa;
+    max-height: 320px;
+    overflow-y: auto;
+}
+.batch-category-group {
+    margin-bottom: 1rem;
+}
+.batch-category-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid #D4AF37;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.batch-category-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2E7D32;
+    display: inline-block;
+}
+.batch-checkbox-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.5rem 1rem;
+}
+.batch-checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+    cursor: pointer;
+}
+.batch-checkbox-item:hover {
+    background: rgba(46, 125, 50, 0.06);
+}
+.batch-checkbox-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 0.15rem;
+    accent-color: #1B5E20;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.batch-checkbox-item label {
+    font-size: 0.9375rem;
+    color: #374151;
+    cursor: pointer;
+    line-height: 1.4;
+}
+.batch-checklist-container .form-check-input:checked {
+    background-color: #1B5E20;
+    border-color: #1B5E20;
+}
+@media (max-width: 768px) {
+    .batch-checklist-container {
+        max-height: 280px;
+    }
+    .batch-checkbox-list {
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+    }
+    .batch-checkbox-item input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+    }
+    .batch-checkbox-item label {
+        font-size: 1rem;
+    }
+}
+@media (max-width: 375px) {
+    .batch-checklist-container {
+        max-height: 260px;
+        padding: 0.75rem;
+    }
+    .batch-checkbox-item {
+        padding: 0.4rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
-<div class="log-form-page">
+<div class="farm-management-page log-form-page">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h2>{{ page_title }}</h2>
         <a href="{% url 'farm_management:feed_inventory_list' %}" class="btn btn-outline-secondary">
@@ -10,7 +108,7 @@
         </a>
     </div>
 
-    <div class="card">
+    <div class="card farm-form-card">
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
@@ -32,24 +130,68 @@
                         {% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                        <div class="text-danger mt-1">{% for error in form.category.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
                         <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier</label>
                         {{ form.supplier }}
                         {% if form.supplier.errors %}
                         <div class="text-danger mt-1">{% for error in form.supplier.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.quantity_on_hand_kg.id_for_label }}" class="form-label">Quantity on Hand (kg)</label>
-                        {{ form.quantity_on_hand_kg }}
-                        {% if form.quantity_on_hand_kg.errors %}
-                        <div class="text-danger mt-1">{% for error in form.quantity_on_hand_kg.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                </div>
+
+                <hr class="my-4">
+                <h5 class="mb-3"><i class="bi bi-diagram-3"></i> Batch Compatibility</h5>
+                <p class="text-muted small mb-3">
+                    Link this feed to batches it is suitable for. Batches are shown with their full path:
+                    <strong>Batch Name (Category — Species)</strong>. This helps avoid confusion between batches, categories, and species.
+                </p>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Compatible Batches</label>
+                        
+                        <input type="text" id="batchSearch" class="form-control mb-3" placeholder="Search batches by name, category, or species...">
+                        
+                        <div class="batch-checklist-container">
+                            {% if form.compatible_batches.field.queryset %}
+                                {% regroup form.compatible_batches.field.queryset|dictsort:"species.category.name" by species.category as batch_list %}
+                                {% for category in batch_list %}
+                                <div class="batch-category-group" data-category="{{ category.grouper.name|lower }}">
+                                    <h6 class="batch-category-title">
+                                        <span class="batch-category-dot"></span>
+                                        {{ category.grouper.name }}
+                                    </h6>
+                                    <div class="batch-checkbox-list">
+                                        {% for batch in category.list %}
+                                        <div class="batch-checkbox-item" data-search="{{ batch.name|lower }} {{ batch.species.category.name|lower }} {{ batch.species.name|lower }}">
+                                            <input class="form-check-input" type="checkbox" name="compatible_batches" value="{{ batch.pk }}" id="batch_{{ batch.pk }}" {% if batch in form.compatible_batches.value %}checked{% endif %}>
+                                            <label class="form-check-label" for="batch_{{ batch.pk }}">
+                                                {{ batch.name }} <span class="text-muted">({{ batch.species.category.name }} — {{ batch.species.name }})</span>
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No active batches available. Create batches first to link them to feed inventory.</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if form.compatible_batches.errors %}
+                        <div class="text-danger mt-1">{% for error in form.compatible_batches.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.cost_per_kg.id_for_label }}" class="form-label">Cost per kg (₦)</label>
+                        <label for="{{ form.cost_per_kg.id_for_label }}" class="form-label">Cost per kg (&#x20A6;)</label>
                         {{ form.cost_per_kg }}
                         {% if form.cost_per_kg.errors %}
                         <div class="text-danger mt-1">{% for error in form.cost_per_kg.errors %}<small>{{ error }}</small>{% endfor %}</div>
@@ -74,4 +216,35 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('batchSearch');
+    var checkboxItems = document.querySelectorAll('.batch-checkbox-item');
+    var categoryGroups = document.querySelectorAll('.batch-category-group');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var query = this.value.toLowerCase().trim();
+            
+            checkboxItems.forEach(function(item) {
+                var searchText = item.getAttribute('data-search') || '';
+                var matches = searchText.indexOf(query) !== -1;
+                item.style.display = matches ? '' : 'none';
+            });
+            
+            categoryGroups.forEach(function(group) {
+                var visibleItems = group.querySelectorAll('.batch-checkbox-item[style=""], .batch-checkbox-item:not([style])');
+                var hasVisible = false;
+                visibleItems.forEach(function(item) {
+                    if (item.style.display !== 'none') {
+                        hasVisible = true;
+                    }
+                });
+                group.style.display = hasVisible ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

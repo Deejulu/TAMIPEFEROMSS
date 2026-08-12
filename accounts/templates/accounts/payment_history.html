@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Payment History" %}{% endblock %}
+
+{% block content %}
+<div class="container-custom page-wrapper">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">{% trans "Dashboard" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% trans "Payment History" %}</li>
+        </ol>
+    </nav>
+
+    <div class="page-header-section">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="mb-1"><i class="bi bi-receipt me-2"></i>{% trans "Payment History" %}</h1>
+                <p class="page-subtitle mb-0">{% trans "Review your payment attempts and download receipts." %}</p>
+            </div>
+            <a href="{% url 'accounts:order_list' %}" class="btn btn-primary">
+                <i class="bi bi-bag-check me-1"></i>{% trans "My Orders" %}
+            </a>
+        </div>
+    </div>
+
+    {% if payments %}
+        <div class="design-card">
+            <div class="card-gold-bar-top"></div>
+            <div class="card-header card-header-accent">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <span class="dashboard-section-icon"><i class="bi bi-list-ul"></i></span>
+                    {% trans "All Payments" %} ({{ payments|length }})
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Transaction Ref" %}</th>
+                            <th>{% trans "Date" %}</th>
+                            <th>{% trans "Order" %}</th>
+                            <th>{% trans "Amount" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Receipt" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td><code>{{ payment.reference|truncatechars:15 }}</code></td>
+                            <td>{{ payment.created_at|date:"M d, Y" }}<br><span class="text-muted small">{{ payment.created_at|date:"H:i" }}</span></td>
+                            <td>
+                                <a href="{% url 'accounts:order_detail' payment.order.pk %}">
+                                    {% trans "Order" %} #{{ payment.order.pk }}
+                                </a>
+                            </td>
+                            <td><strong>₦{{ payment.amount|floatformat:2 }}</strong></td>
+                            <td>
+                                {% if payment.status == 'success' %}
+                                    <span class="design-badge design-badge-success">{% trans "Successful" %}</span>
+                                {% elif payment.status == 'failed' %}
+                                    <span class="design-badge design-badge-danger">{% trans "Failed" %}</span>
+                                {% else %}
+                                    <span class="design-badge design-badge-warning">{% trans "Pending" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.status == 'success' %}
+                                    <a href="{% url 'accounts:payment_receipt' payment.pk %}" class="btn btn-sm btn-outline" target="_blank">
+                                        <i class="bi bi-printer me-1"></i>{% trans "Print Receipt" %}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">{% trans "N/A" %}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="design-empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>{% trans "No payments yet" %}</h3>
+            <p>{% trans "When you make a payment, it will appear here." %}</p>
+            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">{% trans "Start shopping" %}</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

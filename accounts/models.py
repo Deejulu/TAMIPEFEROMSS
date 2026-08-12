@@ -73,6 +73,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     class Role(models.TextChoices):
         SUPER_ADMIN = "SUPER_ADMIN", _("Super Admin")
+        SUPER_STAFF = "SUPER_STAFF", _("Super Staff")
         FARM_MANAGER = "FARM_MANAGER", _("Farm Manager")
         STAFF = "STAFF", _("Staff")
         CUSTOMER = "CUSTOMER", _("Customer")
@@ -98,6 +99,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     full_name = models.CharField(_("full name"), max_length=255)
     phone_number = models.CharField(_("phone number"), max_length=20, blank=True)
+    default_delivery_address = models.TextField(
+        _("default delivery address"),
+        blank=True,
+        default="",
+        help_text=_("Used to prefill delivery details during checkout."),
+    )
     role = models.CharField(
         _("role"),
         max_length=20,
@@ -138,11 +145,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         blank=True,
         null=True,
     )
+    must_change_password = models.BooleanField(
+        _("must change password"),
+        default=False,
+        help_text=_("Requires the user to change their password on next login."),
+    )
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["full_name"]
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email", "full_name"]
 
     class Meta:
         verbose_name = _("user")

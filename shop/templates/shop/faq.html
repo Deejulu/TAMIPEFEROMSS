@@ -5,192 +5,150 @@
 
 {% block extra_head %}
 <style>
-    .faq-wrapper {
-        min-height: calc(100vh - 140px);
-        background: linear-gradient(to bottom, #FAFBFC, #F8F9FA);
-        padding: 48px 0;
-    }
+  .faq-hero {
+    background: linear-gradient(135deg, var(--farm-forest) 0%, var(--farm-primary-dark) 40%, var(--farm-primary) 100%);
+    color: var(--farm-white);
+    padding: clamp(3rem, 8vw, 5rem) 0;
+    position: relative;
+    overflow: hidden;
+  }
 
-    .faq-container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
+  .faq-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: heroFloat 8s ease-in-out infinite;
+  }
 
-    .faq-header {
-        text-align: center;
-        margin-bottom: 48px;
-    }
+  .faq-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    left: -8%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(46, 125, 50, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: heroFloat 10s ease-in-out infinite reverse;
+  }
 
-    .faq-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #1B5E20;
-        margin-bottom: 12px;
-        background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
+  .faq-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max-width-xl);
+    margin: 0 auto;
+    padding: 0 24px;
+    text-align: center;
+  }
 
-    .faq-header .subtitle {
-        font-size: 1.125rem;
-        color: #6B7280;
-        font-weight: 400;
-    }
+  .faq-hero h1 {
+    color: var(--farm-white);
+    margin-bottom: 16px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
 
-    .faq-content-card {
-        background: #FFFFFF;
-        border-radius: 16px;
-        padding: 48px;
-        box-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.05),
-            0 4px 12px rgba(0, 0, 0, 0.08);
-        margin-bottom: 32px;
-    }
+  .faq-hero p {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
 
-    .faq-content-card .content {
-        font-size: 1.0625rem;
-        line-height: 1.8;
-        color: #374151;
-    }
+  .content-card {
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--farm-border-light);
+  }
 
-    .faq-content-card .content p {
-        margin-bottom: 16px;
-    }
+  .content-card .content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--farm-text);
+  }
 
-    .faq-content-card .content p:last-child {
-        margin-bottom: 0;
-    }
+  .content-card .content h2 {
+    color: var(--farm-forest);
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
 
-    .faq-content-card .content ul,
-    .faq-content-card .content ol {
-        margin: 16px 0;
-        padding-left: 28px;
-    }
+  .content-card .content ul {
+    padding-left: 1.5rem;
+  }
 
-    .faq-content-card .content li {
-        margin-bottom: 8px;
-    }
+  .content-card .content li {
+    margin-bottom: 0.5rem;
+  }
 
-    .faq-content-card .content h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1F2937;
-        margin-top: 28px;
-        margin-bottom: 16px;
-    }
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+  }
 
-    .faq-content-card .content h4 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1F2937;
-        margin-top: 24px;
-        margin-bottom: 12px;
-    }
+  .empty-state i {
+    font-size: 64px;
+    color: #C8D6C8;
+    margin-bottom: 16px;
+  }
 
-    .fallback-state {
-        text-align: center;
-        padding: 64px 32px;
-    }
+  .empty-state h3 {
+    color: var(--farm-forest);
+    font-weight: 700;
+    margin: 0 0 8px 0;
+  }
 
-    .fallback-state i {
-        font-size: 64px;
-        color: #D1D5DB;
-        margin-bottom: 24px;
-        display: block;
-    }
-
-    .fallback-state h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #6B7280;
-        margin-bottom: 12px;
-    }
-
-    .fallback-state p {
-        font-size: 1rem;
-        color: #9CA3AF;
-        line-height: 1.6;
-    }
-
-    .updated-info {
-        text-align: center;
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 1px solid #E5E7EB;
-        font-size: 0.875rem;
-        color: #9CA3AF;
-    }
-
-    @media (max-width: 768px) {
-        .faq-wrapper {
-            padding: 32px 0;
-        }
-
-        .faq-header h1 {
-            font-size: 2rem;
-        }
-
-        .faq-header .subtitle {
-            font-size: 1rem;
-        }
-
-        .faq-content-card {
-            padding: 32px 24px;
-        }
-
-        .fallback-state {
-            padding: 48px 20px;
-        }
-
-        .fallback-state i {
-            font-size: 48px;
-        }
-    }
+  .empty-state p {
+    color: var(--farm-text-muted);
+    margin: 0;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="faq-wrapper">
-    <div class="faq-container">
-        
-        {% if faq_content %}
-        <!-- Header -->
-        <div class="faq-header">
-            <h1>{{ faq_content.title }}</h1>
-            <p class="subtitle">Frequently Asked Questions</p>
-        </div>
+<div class="faq-hero animate-fade-in-up">
+  <div class="faq-hero-content">
+    <span class="eyebrow" style="color: var(--farm-accent);">Support</span>
+    <h1>{% if faq_content %}{{ faq_content.title }}{% else %}FAQ{% endif %}</h1>
+    <p class="subtitle">Frequently Asked Questions</p>
+  </div>
+</div>
 
-        <!-- Content Card -->
-        <div class="faq-content-card">
-            <div class="content">
-                {{ faq_content.content|safe }}
-            </div>
-
-            {% if faq_content.updated_at %}
-            <div class="updated-info">
-                Last updated: {{ faq_content.updated_at|date:"F j, Y" }}
-            </div>
-            {% endif %}
-        </div>
-        {% else %}
-        <!-- Fallback State -->
-        <div class="faq-header">
-            <h1>FAQ</h1>
-        </div>
-
-        <div class="faq-content-card">
-            <div class="fallback-state">
-                <i class="bi bi-question-circle"></i>
-                <h3>No FAQ Content Available</h3>
-                <p>
-                    FAQ content has not been added yet. Please check back later or contact us if you have any questions.
-                </p>
-            </div>
-        </div>
-        {% endif %}
-
+<div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%);">
+  <div class="container-custom">
+    {% if faq_content %}
+    <div class="content-card animate-fade-in-up" style="animation-delay: 0.2s;">
+      <div class="content">
+        {{ faq_content.content|safe }}
+      </div>
+      {% if faq_content.updated_at %}
+      <div class="text-center mt-4 pt-3 border-top text-muted small">
+        Last updated: {{ faq_content.updated_at|date:"F j, Y" }}
+      </div>
+      {% endif %}
     </div>
+    {% else %}
+    <div class="empty-state animate-fade-in-up" style="animation-delay: 0.2s;">
+      <i class="bi bi-question-circle"></i>
+      <h3>No FAQ Content Available</h3>
+      <p>
+        FAQ content has not been added yet. Please check back later or contact us if you have any questions.
+      </p>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

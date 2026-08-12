@@ -1,8 +1,12 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
 {% block admin_content %}
-<div class="log-form-page">
+<div class="farm-management-page log-form-page">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h2>{{ page_title }}</h2>
         <a href="{% url 'farm_management:batch_detail' batch.pk %}" class="btn btn-outline-secondary">
@@ -10,7 +14,7 @@
         </a>
     </div>
 
-    <div class="card">
+    <div class="card farm-form-card">
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
@@ -45,7 +49,7 @@
                         <small class="text-muted">Current stock: {{ batch.current_stock }}</small>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.total_revenue.id_for_label }}" class="form-label">Total Revenue (₦)</label>
+                        <label for="{{ form.total_revenue.id_for_label }}" class="form-label">Total Revenue (&#x20A6;)</label>
                         {{ form.total_revenue }}
                         {% if form.total_revenue.errors %}
                         <div class="text-danger mt-1">{% for error in form.total_revenue.errors %}<small>{{ error }}</small>{% endfor %}</div>

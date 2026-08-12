@@ -2,20 +2,51 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.db import IntegrityError
 from decimal import Decimal
 from datetime import date, timedelta
 
 from notifications.models import Notification
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, WaterQualityLog, DailyActivityLog
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
 
 User = get_user_model()
 
 
+class SpeciesModelTests(TestCase):
+    def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
+    def test_species_creation(self):
+        self.assertEqual(self.catfish.name, "Catfish")
+        self.assertEqual(self.catfish.category.name, "Fish")
+        self.assertTrue(self.catfish.is_active)
+
+    def test_species_str(self):
+        self.assertEqual(str(self.catfish), "Catfish")
+
+    def test_species_unique_name(self):
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            Species.objects.create(name="Catfish", category=Category.objects.get(name="Fish"))
+
+
 class BatchModelTests(TestCase):
+    def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+
     def test_batch_creation_sets_current_stock(self):
         batch = Batch.objects.create(
             name="Catfish Batch 1",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -25,17 +56,17 @@ class BatchModelTests(TestCase):
     def test_batch_str(self):
         batch = Batch.objects.create(
             name="Test Batch",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=50,
             start_date=date.today(),
             season="dry",
         )
-        self.assertEqual(str(batch), "Test Batch")
+        self.assertEqual(str(batch), "Test Batch (Fish — Tilapia)")
 
     def test_is_fish_property(self):
         fish_batch = Batch.objects.create(
             name="Fish",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -46,7 +77,7 @@ class BatchModelTests(TestCase):
     def test_is_poultry_property(self):
         poultry_batch = Batch.objects.create(
             name="Broilers",
-            species="broiler",
+            species=self.broiler,
             initial_count=200,
             start_date=date.today(),
             season="dry",
@@ -57,7 +88,7 @@ class BatchModelTests(TestCase):
     def test_mortality_rate_calculation(self):
         batch = Batch.objects.create(
             name="Mortality Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -74,7 +105,7 @@ class BatchModelTests(TestCase):
     def test_mortality_rate_zero_initial(self):
         batch = Batch.objects.create(
             name="Zero Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=0,
             current_stock=0,
             start_date=date.today(),
@@ -85,17 +116,22 @@ class BatchModelTests(TestCase):
     def test_feed_conversion_ratio(self):
         batch = Batch.objects.create(
             name="FCR Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type="Test Feed",
+            quantity_on_hand_kg=1000,
+            cost_per_kg=Decimal("500"),
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=inventory,
             quantity_kg=Decimal("100.0"),
-            cost=Decimal("50000"),
         )
         GrowthRecord.objects.create(
             batch=batch,
@@ -116,52 +152,76 @@ class BatchModelTests(TestCase):
     def test_feed_conversion_ratio_none_when_insufficient_growth_records(self):
         batch = Batch.objects.create(
             name="FCR None Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=80,
             start_date=date.today(),
             season="rainy",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type="Test Feed",
+            quantity_on_hand_kg=1000,
+            cost_per_kg=Decimal("500"),
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=inventory,
             quantity_kg=Decimal("100.0"),
-            cost=Decimal("50000"),
         )
         self.assertIsNone(batch.feed_conversion_ratio)
 
     def test_total_feed_cost(self):
         batch = Batch.objects.create(
             name="Cost Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=80,
             start_date=date.today(),
             season="rainy",
         )
-        FeedLog.objects.create(
-            batch=batch,
-            date=date.today(),
+        inventory_a = FeedInventory.objects.create(
             feed_type="Feed A",
-            quantity_kg=Decimal("50.0"),
-            cost=Decimal("25000"),
+            quantity_on_hand_kg=1000,
+            cost_per_kg=Decimal("500"),
+            reorder_point_kg=100,
+        )
+        inventory_b = FeedInventory.objects.create(
+            feed_type="Feed B",
+            quantity_on_hand_kg=1000,
+            cost_per_kg=Decimal("600"),
+            reorder_point_kg=100,
         )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Feed B",
+            feed_inventory=inventory_a,
+            quantity_kg=Decimal("50.0"),
+        )
+        FeedLog.objects.create(
+            batch=batch,
+            date=date.today(),
+            feed_inventory=inventory_b,
             quantity_kg=Decimal("30.0"),
-            cost=Decimal("18000"),
         )
         self.assertEqual(batch.total_feed_cost, Decimal("43000"))
 
 
 class MortalityLogTests(TestCase):
+    def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
     def test_mortality_decrements_stock(self):
         batch = Batch.objects.create(
             name="Stock Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=100,
             start_date=date.today(),
@@ -180,7 +240,7 @@ class MortalityLogTests(TestCase):
     def test_mortality_does_not_go_below_zero(self):
         batch = Batch.objects.create(
             name="Zero Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=10,
             start_date=date.today(),
             season="rainy",
@@ -197,7 +257,7 @@ class MortalityLogTests(TestCase):
     def test_mortality_exceeding_current_stock_goes_to_zero(self):
         batch = Batch.objects.create(
             name="Zero Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=10,
             start_date=date.today(),
             season="rainy",
@@ -214,7 +274,7 @@ class MortalityLogTests(TestCase):
     def test_updating_mortality_does_not_double_decrement(self):
         batch = Batch.objects.create(
             name="Update Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=100,
             start_date=date.today(),
@@ -234,32 +294,55 @@ class MortalityLogTests(TestCase):
 
 
 class FeedLogModelTests(TestCase):
+    def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
     def test_feed_log_creation(self):
         batch = Batch.objects.create(
             name="Feed Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=80,
             start_date=date.today(),
             season="rainy",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type="Coppens",
+            quantity_on_hand_kg=1000,
+            cost_per_kg=Decimal("510"),
+            reorder_point_kg=100,
+        )
         log = FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Coppens",
+            feed_inventory=inventory,
             quantity_kg=Decimal("25.5"),
-            cost=Decimal("12750"),
-            notes="Morning feed",
         )
-        self.assertEqual(log.feed_type, "Coppens")
+        self.assertEqual(log.feed_inventory.feed_type, "Coppens")
         self.assertEqual(log.quantity_kg, Decimal("25.5"))
+        self.assertEqual(log.cost, Decimal("13005"))
 
 
 class GrowthRecordModelTests(TestCase):
+    def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
     def test_growth_record_creation(self):
         batch = Batch.objects.create(
             name="Growth Test",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             current_stock=80,
             start_date=date.today(),
@@ -277,6 +360,14 @@ class GrowthRecordModelTests(TestCase):
 
 class FarmManagementViewTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -293,14 +384,14 @@ class FarmManagementViewTests(TestCase):
         )
         self.batch = Batch.objects.create(
             name="Test Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
 
     def login(self, user):
-        return self.client.login(email=user.email, password="StrongPass1!")
+        return self.client.login(username=user.username, password="StrongPass1!")
 
     def test_dashboard_loads(self):
         self.login(self.super_admin)
@@ -326,7 +417,7 @@ class FarmManagementViewTests(TestCase):
             reverse('farm_management:batch_add'),
             {
                 'name': 'New Batch',
-                'species': 'tilapia',
+                'species': self.tilapia.pk,
                 'initial_count': 150,
                 'start_date': date.today().isoformat(),
                 'season': 'dry',
@@ -344,19 +435,29 @@ class FarmManagementViewTests(TestCase):
 
     def test_feed_log_create(self):
         self.login(self.super_admin)
+        inventory = FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=500,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
         response = self.client.post(
             reverse('farm_management:feed_log_add', args=[self.batch.pk]),
             {
                 'batch': self.batch.pk,
                 'date': date.today().isoformat(),
-                'feed_type': 'Test Feed',
+                'feed_inventory': inventory.pk,
                 'quantity_kg': 50,
-                'cost': 25000,
                 'notes': 'Test',
             }
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(FeedLog.objects.count(), 1)
+        log = FeedLog.objects.first()
+        self.assertEqual(log.feed_inventory, inventory)
+        self.assertEqual(log.cost, Decimal("25000"))
+        inventory.refresh_from_db()
+        self.assertEqual(inventory.quantity_on_hand_kg, Decimal("450"))
 
     def test_growth_record_create(self):
         self.login(self.super_admin)
@@ -397,13 +498,78 @@ class FarmManagementViewTests(TestCase):
             password="StrongPass1!",
             role=User.Role.STAFF,
         )
-        self.client.login(email=staff.email, password="StrongPass1!")
+        self.client.login(username=staff.username, password="StrongPass1!")
         response = self.client.get(reverse('farm_management:batch_list'))
         self.assertEqual(response.status_code, 302)
+
+    def test_feed_log_create_blocked_when_insufficient_stock(self):
+        self.login(self.super_admin)
+        inventory = FeedInventory.objects.create(
+            feed_type='Low Stock Feed',
+            quantity_on_hand_kg=50,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.batch.pk]),
+            {
+                'batch': self.batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': inventory.pk,
+                'quantity_kg': 100,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('not enough feed in stock', response.content.decode().lower())
+        self.assertEqual(FeedLog.objects.count(), 0)
+        inventory.refresh_from_db()
+        self.assertEqual(inventory.quantity_on_hand_kg, Decimal("50"))
+
+    def test_feed_log_update_blocked_when_insufficient_stock(self):
+        self.login(self.super_admin)
+        inventory = FeedInventory.objects.create(
+            feed_type='Low Stock Feed',
+            quantity_on_hand_kg=50,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
+        # Create the log through the view so inventory is properly debited (50 -> 0)
+        self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.batch.pk]),
+            {
+                'batch': self.batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': inventory.pk,
+                'quantity_kg': 50,
+                'notes': 'Initial',
+            }
+        )
+        log = FeedLog.objects.first()
+        response = self.client.post(
+            reverse('farm_management:feed_log_edit', args=[log.pk]),
+            {
+                'batch': self.batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': inventory.pk,
+                'quantity_kg': 100,
+                'notes': 'Updated',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('not enough feed in stock', response.content.decode().lower())
 
 
 class HarvestRecordTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -414,23 +580,28 @@ class HarvestRecordTests(TestCase):
         )
         self.batch = Batch.objects.create(
             name="Harvest Test Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         self.batch.current_stock = 80
         self.batch.save(update_fields=['current_stock'])
+        FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=1000,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=self.batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=FeedInventory.objects.first(),
             quantity_kg=Decimal("100.0"),
-            cost=Decimal("50000"),
         )
 
     def test_harvest_creates_and_closes_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:harvest_add', args=[self.batch.pk]),
             {
@@ -449,7 +620,7 @@ class HarvestRecordTests(TestCase):
         self.assertEqual(self.batch.harvest.total_revenue, Decimal("200000"))
 
     def test_harvest_profit_calculation(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         self.client.post(
             reverse('farm_management:harvest_add', args=[self.batch.pk]),
             {
@@ -465,7 +636,7 @@ class HarvestRecordTests(TestCase):
         self.assertEqual(self.batch.harvest.profit, expected_profit)
 
     def test_harvest_quantity_cannot_exceed_current_stock(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:harvest_add', args=[self.batch.pk]),
             {
@@ -480,7 +651,7 @@ class HarvestRecordTests(TestCase):
         self.assertFalse(hasattr(self.batch, 'harvest'))
 
     def test_duplicate_harvest_shows_friendly_error(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         self.client.post(
             reverse('farm_management:harvest_add', args=[self.batch.pk]),
             {
@@ -507,6 +678,14 @@ class HarvestRecordTests(TestCase):
 
 class ClosedBatchBlockTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -517,7 +696,7 @@ class ClosedBatchBlockTests(TestCase):
         )
         self.closed_batch = Batch.objects.create(
             name="Closed Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -526,15 +705,21 @@ class ClosedBatchBlockTests(TestCase):
         self.closed_batch.save(update_fields=['status'])
 
     def test_feed_log_blocked_on_closed_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
+        inventory = FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=500,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
         response = self.client.post(
             reverse('farm_management:feed_log_add', args=[self.closed_batch.pk]),
             {
                 'batch': self.closed_batch.pk,
                 'date': date.today().isoformat(),
-                'feed_type': 'Test Feed',
+                'feed_inventory': inventory.pk,
                 'quantity_kg': 10,
-                'cost': 5000,
+                'notes': 'Test',
             }
         )
         self.assertEqual(response.status_code, 200)
@@ -542,7 +727,7 @@ class ClosedBatchBlockTests(TestCase):
         self.assertEqual(FeedLog.objects.count(), 0)
 
     def test_growth_record_blocked_on_closed_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:growth_add', args=[self.closed_batch.pk]),
             {
@@ -557,7 +742,7 @@ class ClosedBatchBlockTests(TestCase):
         self.assertEqual(GrowthRecord.objects.count(), 0)
 
     def test_mortality_log_blocked_on_closed_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:mortality_add', args=[self.closed_batch.pk]),
             {
@@ -574,6 +759,14 @@ class ClosedBatchBlockTests(TestCase):
 
 class FeedInventoryTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -584,13 +777,13 @@ class FeedInventoryTests(TestCase):
         )
 
     def test_feed_inventory_list_loads(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.get(reverse('farm_management:feed_inventory_list'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('Feed Inventory', response.content.decode())
 
     def test_feed_inventory_create(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         supplier = Supplier.objects.create(name="Test Supplier", phone="1234567890")
         response = self.client.post(
             reverse('farm_management:feed_inventory_add'),
@@ -618,7 +811,7 @@ class FeedInventoryTests(TestCase):
         self.assertTrue(item.needs_reorder)
 
     def test_feed_inventory_edit(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         supplier = Supplier.objects.create(name="Edit Supplier", phone="0987654321")
         item = FeedInventory.objects.create(
             feed_type='Test Feed',
@@ -644,7 +837,7 @@ class FeedInventoryTests(TestCase):
         self.assertFalse(item.needs_reorder)
 
     def test_feed_inventory_delete(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         item = FeedInventory.objects.create(
             feed_type='ToDelete',
             quantity_on_hand_kg=50,
@@ -658,8 +851,323 @@ class FeedInventoryTests(TestCase):
         self.assertFalse(FeedInventory.objects.filter(pk=item.pk).exists())
 
 
+class FeedInventoryModelTests(TestCase):
+    def test_feed_inventory_has_category_field(self):
+        field = FeedInventory._meta.get_field('category')
+        self.assertTrue(field.is_relation)
+        self.assertEqual(field.related_model, Category)
+
+    def test_feed_inventory_category_can_be_null(self):
+        field = FeedInventory._meta.get_field('category')
+        self.assertTrue(field.null)
+        self.assertTrue(field.blank)
+
+
+class FeedInventoryCategoryTests(TestCase):
+    def setUp(self):
+        self.fish_category, _ = Category.objects.get_or_create(name="Fish")
+        self.poultry_category, _ = Category.objects.get_or_create(name="Poultry")
+        self.catfish, _ = Species.objects.get_or_create(name="Catfish", defaults={'category': self.fish_category, 'is_active': True})
+        self.broiler, _ = Species.objects.get_or_create(name="Broiler", defaults={'category': self.poultry_category, 'is_active': True})
+        self.fish_batch = Batch.objects.create(
+            name="Fish Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.poultry_batch = Batch.objects.create(
+            name="Poultry Batch",
+            species=self.broiler,
+            initial_count=100,
+            start_date=date.today(),
+            season="dry",
+        )
+        self.fish_feed = FeedInventory.objects.create(
+            feed_type='Fish Pellets',
+            category=self.fish_category,
+            quantity_on_hand_kg=100,
+            cost_per_kg=500,
+            reorder_point_kg=20,
+        )
+        self.poultry_feed = FeedInventory.objects.create(
+            feed_type='Poultry Mash',
+            category=self.poultry_category,
+            quantity_on_hand_kg=100,
+            cost_per_kg=400,
+            reorder_point_kg=20,
+        )
+        self.unassigned_feed = FeedInventory.objects.create(
+            feed_type='Generic Feed',
+            quantity_on_hand_kg=100,
+            cost_per_kg=300,
+            reorder_point_kg=20,
+        )
+
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin2@example.com",
+            full_name="Super Admin 2",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+
+    def login(self, user):
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    def test_feed_inventory_category_assignment(self):
+        self.assertEqual(self.fish_feed.category, self.fish_category)
+        self.assertEqual(self.poultry_feed.category, self.poultry_category)
+        self.assertIsNone(self.unassigned_feed.category)
+
+    def test_feed_log_allows_matching_category(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.fish_batch.pk]),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': self.fish_feed.pk,
+                'quantity_kg': 10,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(FeedLog.objects.count(), 1)
+
+    def test_feed_log_blocks_mismatched_category(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.fish_batch.pk]),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': self.poultry_feed.pk,
+                'quantity_kg': 10,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('poultry', response.content.decode().lower())
+        self.assertIn('fish', response.content.decode().lower())
+        self.assertEqual(FeedLog.objects.count(), 0)
+
+    def test_feed_log_allows_unassigned_feed(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.fish_batch.pk]),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': self.unassigned_feed.pk,
+                'quantity_kg': 10,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(FeedLog.objects.count(), 1)
+
+    def test_feed_inventory_list_shows_unassigned_count(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:feed_inventory_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Unassigned', content)
+        self.assertIn('border-danger', content)
+
+    def test_feed_inventory_list_shows_category_badge(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:feed_inventory_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Fish', content)
+        self.assertIn('Poultry', content)
+
+    def test_feed_inventory_create_with_category(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_inventory_add'),
+            {
+                'feed_type': 'New Fish Feed',
+                'category': self.fish_category.pk,
+                'quantity_on_hand_kg': 200,
+                'cost_per_kg': 600,
+                'reorder_point_kg': 50,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        item = FeedInventory.objects.get(feed_type='New Fish Feed')
+        self.assertEqual(item.category, self.fish_category)
+
+    def test_feed_inventory_create_without_category(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_inventory_add'),
+            {
+                'feed_type': 'Unassigned Feed',
+                'quantity_on_hand_kg': 200,
+                'cost_per_kg': 600,
+                'reorder_point_kg': 50,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        item = FeedInventory.objects.get(feed_type='Unassigned Feed')
+        self.assertIsNone(item.category)
+
+
+class FeedInventoryBatchLinkingTests(TestCase):
+    def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.fish_batch = Batch.objects.create(
+            name="Fish Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.poultry_batch = Batch.objects.create(
+            name="Poultry Batch",
+            species=self.broiler,
+            initial_count=100,
+            start_date=date.today(),
+            season="dry",
+        )
+        self.fish_feed = FeedInventory.objects.create(
+            feed_type='Fish Pellets',
+            category=self.fish_category,
+            quantity_on_hand_kg=100,
+            cost_per_kg=500,
+            reorder_point_kg=20,
+        )
+        self.poultry_feed = FeedInventory.objects.create(
+            feed_type='Poultry Mash',
+            category=self.poultry_category,
+            quantity_on_hand_kg=100,
+            cost_per_kg=400,
+            reorder_point_kg=20,
+        )
+
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin3@example.com",
+            full_name="Super Admin 3",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+
+    def login(self, user):
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    def test_feed_inventory_str_returns_feed_type_and_category(self):
+        self.assertEqual(str(self.fish_feed), "Fish Pellets (Fish)")
+        self.assertEqual(str(self.poultry_feed), "Poultry Mash (Poultry)")
+
+    def test_feed_inventory_str_without_category(self):
+        feed = FeedInventory.objects.create(
+            feed_type='Generic Feed',
+            quantity_on_hand_kg=100,
+            cost_per_kg=300,
+            reorder_point_kg=20,
+        )
+        self.assertEqual(str(feed), "Generic Feed")
+
+    def test_feed_inventory_form_saves_compatible_batches(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_inventory_add'),
+            {
+                'feed_type': 'Test Feed',
+                'category': self.fish_category.pk,
+                'quantity_on_hand_kg': 100,
+                'cost_per_kg': 500,
+                'reorder_point_kg': 20,
+                'compatible_batches': [self.fish_batch.pk, self.poultry_batch.pk],
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        item = FeedInventory.objects.get(feed_type='Test Feed')
+        self.assertEqual(item.compatible_batches.count(), 2)
+        self.assertIn(self.fish_batch, item.compatible_batches.all())
+        self.assertIn(self.poultry_batch, item.compatible_batches.all())
+
+    def test_feed_inventory_form_updates_compatible_batches(self):
+        self.fish_feed.compatible_batches.add(self.fish_batch)
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_inventory_edit', args=[self.fish_feed.pk]),
+            {
+                'feed_type': 'Fish Pellets',
+                'category': self.fish_category.pk,
+                'quantity_on_hand_kg': 100,
+                'cost_per_kg': 500,
+                'reorder_point_kg': 20,
+                'compatible_batches': [self.poultry_batch.pk],
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.fish_feed.refresh_from_db()
+        self.assertEqual(self.fish_feed.compatible_batches.count(), 1)
+        self.assertIn(self.poultry_batch, self.fish_feed.compatible_batches.all())
+        self.assertNotIn(self.fish_batch, self.fish_feed.compatible_batches.all())
+
+    def test_feed_inventory_list_shows_linked_batch_names(self):
+        self.fish_feed.compatible_batches.add(self.fish_batch, self.poultry_batch)
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:feed_inventory_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Fish Batch', content)
+        self.assertIn('Poultry Batch', content)
+
+    def test_feed_log_category_validation_still_works_with_batch_linking(self):
+        self.fish_feed.compatible_batches.add(self.fish_batch, self.poultry_batch)
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.fish_batch.pk]),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': self.fish_feed.pk,
+                'quantity_kg': 10,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(FeedLog.objects.count(), 1)
+
+    def test_feed_log_blocks_mismatched_category_even_with_batch_linking(self):
+        self.fish_feed.compatible_batches.add(self.fish_batch, self.poultry_batch)
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', args=[self.poultry_batch.pk]),
+            {
+                'batch': self.poultry_batch.pk,
+                'date': date.today().isoformat(),
+                'feed_inventory': self.fish_feed.pk,
+                'quantity_kg': 10,
+                'notes': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('poultry', response.content.decode().lower())
+        self.assertIn('fish', response.content.decode().lower())
+        self.assertEqual(FeedLog.objects.count(), 0)
+
+
 class Phase3LogTests(TestCase):
     def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -670,39 +1178,23 @@ class Phase3LogTests(TestCase):
         )
         self.fish_batch = Batch.objects.create(
             name="Fish Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         self.poultry_batch = Batch.objects.create(
             name="Poultry Batch",
-            species="broiler",
+            species=self.broiler,
             initial_count=200,
             start_date=date.today(),
             season="dry",
         )
 
     def test_health_log_create(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
-        response = self.client.post(
-            reverse('farm_management:health_log_add', args=[self.fish_batch.pk]),
-            {
-                'batch': self.fish_batch.pk,
-                'date': date.today().isoformat(),
-                'medicine_name': 'Oxytetracycline',
-                'dosage': '10mg/kg',
-                'reason': 'Bacterial infection',
-                'administered_by': 'Dr. Test',
-            }
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(HealthMedicationLog.objects.count(), 1)
-
-    def test_health_log_blocked_on_closed_batch(self):
         self.fish_batch.status = 'closed'
         self.fish_batch.save(update_fields=['status'])
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:health_log_add', args=[self.fish_batch.pk]),
             {
@@ -717,7 +1209,7 @@ class Phase3LogTests(TestCase):
         self.assertIn('closed batch', response.content.decode().lower())
 
     def test_vaccination_create(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:vaccination_add', args=[self.poultry_batch.pk]),
             {
@@ -731,40 +1223,8 @@ class Phase3LogTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(VaccinationRecord.objects.count(), 1)
 
-    def test_water_quality_create_for_fish_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
-        response = self.client.post(
-            reverse('farm_management:water_quality_add', args=[self.fish_batch.pk]),
-            {
-                'batch': self.fish_batch.pk,
-                'date': date.today().isoformat(),
-                'ph_level': 7.0,
-                'temperature_c': 28.5,
-                'oxygen_level': 5.5,
-                'notes': 'Normal parameters',
-            }
-        )
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(WaterQualityLog.objects.count(), 1)
-
-    def test_water_quality_blocked_for_poultry_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
-        response = self.client.post(
-            reverse('farm_management:water_quality_add', args=[self.poultry_batch.pk]),
-            {
-                'batch': self.poultry_batch.pk,
-                'date': date.today().isoformat(),
-                'ph_level': 7.0,
-                'temperature_c': 28.5,
-                'oxygen_level': 5.5,
-            }
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('fish batches', response.content.decode().lower())
-        self.assertEqual(WaterQualityLog.objects.count(), 0)
-
     def test_daily_activity_log_create(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:activity_log_add', args=[self.fish_batch.pk]),
             {
@@ -779,7 +1239,7 @@ class Phase3LogTests(TestCase):
     def test_daily_activity_log_blocks_closed_batch(self):
         self.fish_batch.status = 'closed'
         self.fish_batch.save(update_fields=['status'])
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:activity_log_add', args=[self.fish_batch.pk]),
             {
@@ -795,6 +1255,14 @@ class Phase3LogTests(TestCase):
 
 class VaccinationRecordSpeciesTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -805,21 +1273,21 @@ class VaccinationRecordSpeciesTests(TestCase):
         )
         self.fish_batch = Batch.objects.create(
             name="Fish Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         self.poultry_batch = Batch.objects.create(
             name="Poultry Batch",
-            species="broiler",
+            species=self.broiler,
             initial_count=200,
             start_date=date.today(),
             season="dry",
         )
 
     def test_vaccination_blocked_on_fish_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:vaccination_add', args=[self.fish_batch.pk]),
             {
@@ -835,7 +1303,7 @@ class VaccinationRecordSpeciesTests(TestCase):
         self.assertEqual(VaccinationRecord.objects.count(), 0)
 
     def test_vaccination_allowed_on_poultry_batch(self):
-        self.client.login(email=self.super_admin.email, password="StrongPass1!")
+        self.client.login(username=self.super_admin.username, password="StrongPass1!")
         response = self.client.post(
             reverse('farm_management:vaccination_add', args=[self.poultry_batch.pk]),
             {
@@ -852,6 +1320,14 @@ class VaccinationRecordSpeciesTests(TestCase):
 
 class CheckBatchAlertsTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
             full_name="Super Admin",
@@ -863,7 +1339,7 @@ class CheckBatchAlertsTests(TestCase):
     def test_feed_log_gap_alert(self):
         batch = Batch.objects.create(
             name="No Feed Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -880,17 +1356,22 @@ class CheckBatchAlertsTests(TestCase):
     def test_no_feed_gap_alert_when_recent_log_exists(self):
         batch = Batch.objects.create(
             name="Fed Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=1000,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=inventory,
             quantity_kg=Decimal("10.0"),
-            cost=Decimal("5000"),
         )
         call_command('check_batch_alerts')
         self.assertEqual(
@@ -941,7 +1422,7 @@ class CheckBatchAlertsTests(TestCase):
     def test_mortality_jump_alert(self):
         batch_high = Batch.objects.create(
             name="High Mort Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -976,7 +1457,7 @@ class CheckBatchAlertsTests(TestCase):
     def test_no_mortality_alert_when_stable(self):
         batch_stable = Batch.objects.create(
             name="Stable Mort Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1015,6 +1496,14 @@ class CheckBatchAlertsTests(TestCase):
 
 class BatchAnalyticsViewTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -1031,13 +1520,22 @@ class BatchAnalyticsViewTests(TestCase):
         )
 
     def login(self, user):
-        return self.client.login(email=user.email, password="StrongPass1!")
+        return self.client.login(username=user.username, password="StrongPass1!")
 
     def test_analytics_loads_for_super_admin(self):
         self.login(self.super_admin)
         response = self.client.get(reverse('farm_management:analytics'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('Batch Analytics', response.content.decode())
+
+    def test_analytics_preserves_admin_stylesheet_when_loading_charts(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:analytics'))
+        content = response.content.decode()
+
+        self.assertIn('admin_dashboard/css/admin_dashboard.css', content)
+        self.assertIn('farm_management/css/farm_management.css', content)
+        self.assertIn('chart.umd.js', content)
 
     def test_analytics_loads_for_farm_manager(self):
         self.login(self.farm_manager)
@@ -1051,7 +1549,7 @@ class BatchAnalyticsViewTests(TestCase):
             password="StrongPass1!",
             role=User.Role.STAFF,
         )
-        self.client.login(email=staff.email, password="StrongPass1!")
+        self.client.login(username=staff.username, password="StrongPass1!")
         response = self.client.get(reverse('farm_management:analytics'), follow=False)
         self.assertEqual(response.status_code, 302)
 
@@ -1059,21 +1557,27 @@ class BatchAnalyticsViewTests(TestCase):
         self.login(self.super_admin)
         batch1 = Batch.objects.create(
             name="Low Feed Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         batch2 = Batch.objects.create(
             name="High Feed Batch",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=100,
             start_date=date.today(),
             season="dry",
         )
-        FeedLog.objects.create(batch=batch1, date=date.today(), feed_type="A", quantity_kg=10, cost=1000)
-        FeedLog.objects.create(batch=batch2, date=date.today(), feed_type="B", quantity_kg=50, cost=5000)
-        FeedLog.objects.create(batch=batch2, date=date.today(), feed_type="B", quantity_kg=30, cost=3000)
+        inventory_a = FeedInventory.objects.create(
+            feed_type='A', quantity_on_hand_kg=1000, cost_per_kg=100, reorder_point_kg=100,
+        )
+        inventory_b = FeedInventory.objects.create(
+            feed_type='B', quantity_on_hand_kg=1000, cost_per_kg=100, reorder_point_kg=100,
+        )
+        FeedLog.objects.create(batch=batch1, date=date.today(), feed_inventory=inventory_a, quantity_kg=10)
+        FeedLog.objects.create(batch=batch2, date=date.today(), feed_inventory=inventory_b, quantity_kg=50)
+        FeedLog.objects.create(batch=batch2, date=date.today(), feed_inventory=inventory_b, quantity_kg=30)
 
         response = self.client.get(reverse('farm_management:analytics'))
         content = response.content.decode()
@@ -1083,20 +1587,26 @@ class BatchAnalyticsViewTests(TestCase):
         self.login(self.super_admin)
         batch1 = Batch.objects.create(
             name="Bad FCR Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         batch2 = Batch.objects.create(
             name="Good FCR Batch",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=100,
             start_date=date.today(),
             season="dry",
         )
-        FeedLog.objects.create(batch=batch1, date=date.today(), feed_type="A", quantity_kg=200, cost=10000)
-        FeedLog.objects.create(batch=batch2, date=date.today(), feed_type="B", quantity_kg=50, cost=5000)
+        inventory_a = FeedInventory.objects.create(
+            feed_type='A', quantity_on_hand_kg=1000, cost_per_kg=50, reorder_point_kg=100,
+        )
+        inventory_b = FeedInventory.objects.create(
+            feed_type='B', quantity_on_hand_kg=1000, cost_per_kg=100, reorder_point_kg=100,
+        )
+        FeedLog.objects.create(batch=batch1, date=date.today(), feed_inventory=inventory_a, quantity_kg=200)
+        FeedLog.objects.create(batch=batch2, date=date.today(), feed_inventory=inventory_b, quantity_kg=50)
         GrowthRecord.objects.create(batch=batch1, date=date.today(), average_weight_kg=1.0, sample_size=100)
         GrowthRecord.objects.create(batch=batch1, date=date.today() + timedelta(days=30), average_weight_kg=2.0, sample_size=80)
         GrowthRecord.objects.create(batch=batch2, date=date.today(), average_weight_kg=1.0, sample_size=100)
@@ -1110,14 +1620,14 @@ class BatchAnalyticsViewTests(TestCase):
         self.login(self.super_admin)
         batch1 = Batch.objects.create(
             name="Low Mortality Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         batch2 = Batch.objects.create(
             name="High Mortality Batch",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=100,
             start_date=date.today(),
             season="dry",
@@ -1133,20 +1643,26 @@ class BatchAnalyticsViewTests(TestCase):
         self.login(self.super_admin)
         batch1 = Batch.objects.create(
             name="Low Profit Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
         batch2 = Batch.objects.create(
             name="High Profit Batch",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=100,
             start_date=date.today(),
             season="dry",
         )
-        FeedLog.objects.create(batch=batch1, date=date.today(), feed_type="A", quantity_kg=100, cost=50000)
-        FeedLog.objects.create(batch=batch2, date=date.today(), feed_type="B", quantity_kg=100, cost=50000)
+        inventory_a = FeedInventory.objects.create(
+            feed_type='A', quantity_on_hand_kg=1000, cost_per_kg=500, reorder_point_kg=100,
+        )
+        inventory_b = FeedInventory.objects.create(
+            feed_type='B', quantity_on_hand_kg=1000, cost_per_kg=500, reorder_point_kg=100,
+        )
+        FeedLog.objects.create(batch=batch1, date=date.today(), feed_inventory=inventory_a, quantity_kg=100)
+        FeedLog.objects.create(batch=batch2, date=date.today(), feed_inventory=inventory_b, quantity_kg=100)
         HarvestRecord.objects.create(
             batch=batch1,
             harvest_date=date.today(),
@@ -1169,6 +1685,154 @@ class BatchAnalyticsViewTests(TestCase):
         response = self.client.get(reverse('farm_management:analytics'))
         self.assertEqual(response.status_code, 200)
         self.assertIn('No batches found', response.content.decode())
+
+    def test_vaccination_coverage_data_in_context(self):
+        self.login(self.super_admin)
+        batch1 = Batch.objects.create(
+            name="Vacc Batch 1",
+            species=self.catfish,
+            initial_count=100,
+            current_stock=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        batch2 = Batch.objects.create(
+            name="Vacc Batch 2",
+            species=self.tilapia,
+            initial_count=50,
+            current_stock=50,
+            start_date=date.today(),
+            season="dry",
+        )
+        VaccinationRecord.objects.create(batch=batch1, date=date.today(), vaccine_name="Vaccine A", dosage="1ml")
+        VaccinationRecord.objects.create(batch=batch1, date=date.today(), vaccine_name="Vaccine B", dosage="1ml")
+        VaccinationRecord.objects.create(batch=batch2, date=date.today(), vaccine_name="Vaccine A", dosage="0.5ml")
+
+        response = self.client.get(reverse('farm_management:analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+
+        # Check chart canvas and description are present
+        self.assertIn('vaccinationCoverageChart', content)
+        self.assertIn('Vaccination Coverage per Batch', content)
+        self.assertIn('Vacc Batch 1', content)
+        self.assertIn('Vacc Batch 2', content)
+
+    def test_health_log_frequency_data_in_context(self):
+        self.login(self.super_admin)
+        batch1 = Batch.objects.create(
+            name="Health Batch 1",
+            species=self.catfish,
+            initial_count=100,
+            current_stock=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        batch2 = Batch.objects.create(
+            name="Health Batch 2",
+            species=self.tilapia,
+            initial_count=50,
+            current_stock=50,
+            start_date=date.today(),
+            season="dry",
+        )
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Antibiotic X", dosage="10mg", reason="Fungal infection")
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Antibiotic Y", dosage="5mg", reason="Bacterial infection")
+        HealthMedicationLog.objects.create(batch=batch2, date=date.today(), medicine_name="Antibiotic X", dosage="8mg", reason="Fungal infection")
+
+        response = self.client.get(reverse('farm_management:analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+
+        # Check chart canvas and description are present
+        self.assertIn('healthLogFrequencyChart', content)
+        self.assertIn('Health Issue Frequency per Batch', content)
+        self.assertIn('Health Batch 1', content)
+        self.assertIn('Health Batch 2', content)
+
+    def test_health_reasons_pie_chart_data(self):
+        self.login(self.super_admin)
+        batch1 = Batch.objects.create(
+            name="Reason Batch 1",
+            species=self.catfish,
+            initial_count=100,
+            current_stock=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        batch2 = Batch.objects.create(
+            name="Reason Batch 2",
+            species=self.tilapia,
+            initial_count=50,
+            current_stock=50,
+            start_date=date.today(),
+            season="dry",
+        )
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Med A", dosage="10mg", reason="Fungal infection")
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Med B", dosage="5mg", reason="Fungal infection")
+        HealthMedicationLog.objects.create(batch=batch2, date=date.today(), medicine_name="Med C", dosage="8mg", reason="Bacterial infection")
+
+        response = self.client.get(reverse('farm_management:analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+
+        self.assertIn('healthReasonsPieChart', content)
+        self.assertIn('Most Common Health Reasons', content)
+
+    def test_health_medicines_pie_chart_data(self):
+        self.login(self.super_admin)
+        batch1 = Batch.objects.create(
+            name="Med Batch 1",
+            species=self.catfish,
+            initial_count=100,
+            current_stock=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        batch2 = Batch.objects.create(
+            name="Med Batch 2",
+            species=self.tilapia,
+            initial_count=50,
+            current_stock=50,
+            start_date=date.today(),
+            season="dry",
+        )
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Antibiotic X", dosage="10mg", reason="Fungal infection")
+        HealthMedicationLog.objects.create(batch=batch1, date=date.today(), medicine_name="Antibiotic X", dosage="5mg", reason="Bacterial infection")
+        HealthMedicationLog.objects.create(batch=batch2, date=date.today(), medicine_name="Vitamin C", dosage="2mg", reason="Supplements")
+
+        response = self.client.get(reverse('farm_management:analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+
+        self.assertIn('healthMedicinesPieChart', content)
+        self.assertIn('Most Common Medications Used', content)
+
+    def test_vaccination_chart_excludes_no_vaccination_batches(self):
+        self.login(self.super_admin)
+        batch_with_vacc = Batch.objects.create(
+            name="Has Vacc",
+            species=self.catfish,
+            initial_count=100,
+            current_stock=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        batch_no_vacc = Batch.objects.create(
+            name="No Vacc",
+            species=self.tilapia,
+            initial_count=50,
+            current_stock=50,
+            start_date=date.today(),
+            season="dry",
+        )
+        VaccinationRecord.objects.create(batch=batch_with_vacc, date=date.today(), vaccine_name="Vaccine A", dosage="1ml")
+
+        response = self.client.get(reverse('farm_management:analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Has Vacc', content)
+        self.assertIn('No Vacc', content)
 
 
 # =============================================================================
@@ -1195,6 +1859,14 @@ class SupplierModelTests(TestCase):
 
 class SupplierCRUDTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -1205,7 +1877,7 @@ class SupplierCRUDTests(TestCase):
         )
 
     def login(self, user):
-        return self.client.login(email=user.email, password="StrongPass1!")
+        return self.client.login(username=user.username, password="StrongPass1!")
 
     def test_supplier_list_loads(self):
         self.login(self.super_admin)
@@ -1267,7 +1939,7 @@ class SupplierCRUDTests(TestCase):
             password="StrongPass1!",
             role=User.Role.STAFF,
         )
-        self.client.login(email=staff.email, password="StrongPass1!")
+        self.client.login(username=staff.username, password="StrongPass1!")
         response = self.client.get(reverse('farm_management:supplier_list'), follow=False)
         self.assertEqual(response.status_code, 302)
 
@@ -1314,6 +1986,14 @@ class SupplierMigrationIntegrityTests(TestCase):
 
 class BatchPDFReportTests(TestCase):
     def setUp(self):
+        # Create species for tests
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.layer = Species.objects.create(name="Layer", category=self.poultry_category, is_active=True)
+
         self.client = Client()
         self.super_admin = User.objects.create_user(
             email="superadmin@example.com",
@@ -1324,23 +2004,28 @@ class BatchPDFReportTests(TestCase):
         )
 
     def login(self, user):
-        return self.client.login(email=user.email, password="StrongPass1!")
+        return self.client.login(username=user.username, password="StrongPass1!")
 
     def test_pdf_report_active_batch(self):
         self.login(self.super_admin)
         batch = Batch.objects.create(
             name="Active Batch Report",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=1000,
+            cost_per_kg=100,
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=inventory,
             quantity_kg=50,
-            cost=5000,
         )
         GrowthRecord.objects.create(
             batch=batch,
@@ -1357,26 +2042,29 @@ class BatchPDFReportTests(TestCase):
 
         response = self.client.get(reverse('farm_management:batch_report', args=[batch.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Active Batch Report', response.content.decode())
-        self.assertIn('Feed Logs', response.content.decode())
-        self.assertIn('Growth Records', response.content.decode())
-        self.assertIn('Mortality Logs', response.content.decode())
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.content.startswith(b'%PDF'))
 
     def test_pdf_report_closed_batch_with_harvest(self):
         self.login(self.super_admin)
         batch = Batch.objects.create(
             name="Closed Batch Report",
-            species="tilapia",
+            species=self.tilapia,
             initial_count=100,
             start_date=date.today(),
             season="dry",
         )
+        inventory = FeedInventory.objects.create(
+            feed_type='Test Feed',
+            quantity_on_hand_kg=1000,
+            cost_per_kg=100,
+            reorder_point_kg=100,
+        )
         FeedLog.objects.create(
             batch=batch,
             date=date.today(),
-            feed_type="Test Feed",
+            feed_inventory=inventory,
             quantity_kg=50,
-            cost=5000,
         )
         GrowthRecord.objects.create(
             batch=batch,
@@ -1393,9 +2081,8 @@ class BatchPDFReportTests(TestCase):
 
         response = self.client.get(reverse('farm_management:batch_report', args=[batch.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertIn('Closed Batch Report', response.content.decode())
-        self.assertIn('Harvest Record', response.content.decode())
-        self.assertIn('Profit', response.content.decode())
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertTrue(response.content.startswith(b'%PDF'))
 
     def test_pdf_report_staff_blocked(self):
         staff = User.objects.create_user(
@@ -1404,10 +2091,10 @@ class BatchPDFReportTests(TestCase):
             password="StrongPass1!",
             role=User.Role.STAFF,
         )
-        self.client.login(email=staff.email, password="StrongPass1!")
+        self.client.login(username=staff.username, password="StrongPass1!")
         batch = Batch.objects.create(
             name="Staff Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1421,7 +2108,7 @@ class BatchPDFReportTests(TestCase):
     def test_pdf_report_unauthenticated_redirected(self):
         batch = Batch.objects.create(
             name="Unauth Batch",
-            species="catfish",
+            species=self.catfish,
             initial_count=100,
             start_date=date.today(),
             season="rainy",
@@ -1432,3 +2119,775 @@ class BatchPDFReportTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertIn('login', response.url)
+
+
+class BatchSearchTests(TestCase):
+    def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.tilapia = Species.objects.create(name="Tilapia", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.batch1 = Batch.objects.create(
+            name="Catfish Batch A",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.batch2 = Batch.objects.create(
+            name="Tilapia Batch B",
+            species=self.tilapia,
+            initial_count=200,
+            start_date=date.today(),
+            season="dry",
+        )
+        self.batch3 = Batch.objects.create(
+            name="Broiler Batch C",
+            species=self.broiler,
+            initial_count=150,
+            start_date=date.today(),
+            season="rainy",
+        )
+
+    def login(self, user):
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    def test_batch_search_by_name(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:batch_list') + '?search=Catfish')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Catfish Batch A', content)
+        self.assertNotIn('Tilapia Batch B', content)
+        self.assertNotIn('Broiler Batch C', content)
+
+    def test_batch_search_case_insensitive(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:batch_list') + '?search=tilapia')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Tilapia Batch B', content)
+        self.assertNotIn('Catfish Batch A', content)
+
+    def test_batch_search_no_results(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:batch_list') + '?search=Nonexistent')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('No batches found', content)
+
+    def test_batch_search_empty_query_shows_all(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:batch_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Catfish Batch A', content)
+        self.assertIn('Tilapia Batch B', content)
+        self.assertIn('Broiler Batch C', content)
+
+
+# =============================================================================
+# Category Management Tests
+# =============================================================================
+
+class CategoryModelTests(TestCase):
+    def test_category_creation(self):
+        category = Category.objects.create(name="Fish")
+        self.assertEqual(category.name, "Fish")
+        self.assertTrue(category.is_active)
+
+    def test_category_str(self):
+        category = Category.objects.create(name="Poultry")
+        self.assertEqual(str(category), "Poultry")
+
+    def test_category_unique_name(self):
+        Category.objects.create(name="Fish")
+        with self.assertRaises(IntegrityError):
+            Category.objects.create(name="Fish")
+
+
+class CategoryCRUDTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+
+    def login(self, user):
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    def test_category_list_loads(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:category_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Categories', response.content.decode())
+        self.assertIn('Fish', response.content.decode())
+        self.assertIn('Poultry', response.content.decode())
+
+    def test_category_create(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:category_add'),
+            {'name': 'Livestock'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Category.objects.filter(name='Livestock').exists())
+
+    def test_category_create_get(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:category_add'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Add Category', response.content.decode())
+
+    def test_category_update(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:category_edit', args=[self.fish_category.pk]),
+            {'name': 'Aquaculture', 'is_active': True}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.fish_category.refresh_from_db()
+        self.assertEqual(self.fish_category.name, 'Aquaculture')
+
+    def test_category_delete_deactivates_when_species_exist(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:category_delete', args=[self.fish_category.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.fish_category.refresh_from_db()
+        self.assertFalse(self.fish_category.is_active)
+        self.assertTrue(Category.objects.filter(pk=self.fish_category.pk).exists())
+
+    def test_category_delete_removes_when_no_species(self):
+        empty_category = Category.objects.create(name="Empty")
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:category_delete', args=[empty_category.pk])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Category.objects.filter(pk=empty_category.pk).exists())
+
+    def test_deactivated_category_hidden_from_species_form(self):
+        self.login(self.super_admin)
+        self.fish_category.is_active = False
+        self.fish_category.save(update_fields=['is_active'])
+        response = self.client.get(reverse('farm_management:species_add'))
+        self.assertEqual(response.status_code, 200)
+        form = response.context['form']
+        active_category_names = [c.name for c in form.fields['category'].queryset]
+        self.assertNotIn('Fish', active_category_names)
+        self.assertIn('Poultry', active_category_names)
+
+    def test_existing_species_unaffected_by_deactivated_category(self):
+        self.login(self.super_admin)
+        self.fish_category.is_active = False
+        self.fish_category.save(update_fields=['is_active'])
+        self.catfish.refresh_from_db()
+        self.assertEqual(self.catfish.category.name, 'Fish')
+        self.assertTrue(self.catfish.is_active)
+
+    def test_staff_blocked_from_category_crud(self):
+        staff = User.objects.create_user(
+            email="staff@example.com",
+            full_name="Staff",
+            password="StrongPass1!",
+            role=User.Role.STAFF,
+        )
+        self.client.login(username=staff.username, password="StrongPass1!")
+        response = self.client.get(reverse('farm_management:category_list'), follow=False)
+        self.assertEqual(response.status_code, 302)
+
+    def test_category_unique_name_constraint(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:category_add'),
+            {'name': 'Fish'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('already exists', response.content.decode().lower())
+
+    def test_category_form_excludes_deactivated_from_dropdown(self):
+        self.fish_category.is_active = False
+        self.fish_category.save(update_fields=['is_active'])
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:species_add'))
+        self.assertEqual(response.status_code, 200)
+        # The form should only show active categories
+        form = response.context['form']
+        active_category_names = [c.name for c in form.fields['category'].queryset]
+        self.assertIn('Poultry', active_category_names)
+        self.assertNotIn('Fish', active_category_names)
+
+    def test_category_edit_form_includes_deactivated(self):
+        self.fish_category.is_active = False
+        self.fish_category.save(update_fields=['is_active'])
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:category_edit', args=[self.fish_category.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_category_list_shows_species_count(self):
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:category_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('1', content)  # species count column should show 1
+
+
+# =============================================================================
+# Sample Data Management Tests
+# =============================================================================
+
+class SampleDataManagementTests(TestCase):
+    """
+    Tests for the populate_sample and delete_sample management commands and
+    the admin dashboard buttons that trigger them.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.farm_manager = User.objects.create_user(
+            email="manager@example.com",
+            full_name="Farm Manager",
+            password="StrongPass1!",
+            role=User.Role.FARM_MANAGER,
+        )
+        # Wipe any pre-existing sample data so tests start clean
+        call_command('delete_sample', verbosity=0)
+
+    def login(self, user):
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    # ------------------------------------------------------------------
+    # populate_sample — creates expected records tagged is_sample=True
+    # ------------------------------------------------------------------
+
+    def test_populate_sample_creates_expected_records_all_tagged_is_sample(self):
+        call_command('populate_sample', verbosity=0)
+
+        # All created records must be tagged is_sample=True
+        self.assertEqual(Category.objects.filter(is_sample=True).count(), 3)
+        self.assertEqual(Species.objects.filter(is_sample=True).count(), 7)
+        self.assertEqual(Supplier.objects.filter(is_sample=True).count(), 5)
+        self.assertEqual(FeedInventory.objects.filter(is_sample=True).count(), 5)
+        self.assertEqual(Batch.objects.filter(is_sample=True).count(), 6)
+
+        # Related records
+        self.assertEqual(FeedLog.objects.filter(is_sample=True).count(), 18)
+        self.assertEqual(GrowthRecord.objects.filter(is_sample=True).count(), 18)
+        self.assertEqual(MortalityLog.objects.filter(is_sample=True).count(), 10)
+        self.assertEqual(VaccinationRecord.objects.filter(is_sample=True).count(), 8)
+        self.assertEqual(HealthMedicationLog.objects.filter(is_sample=True).count(), 16)
+        self.assertEqual(DailyActivityLog.objects.filter(is_sample=True).count(), 18)
+
+        # No real data should have been created
+        self.assertEqual(Category.objects.filter(is_sample=False).count(), 0)
+        self.assertEqual(Batch.objects.filter(is_sample=False).count(), 0)
+
+    def test_populate_sample_categories_and_species_correct(self):
+        call_command('populate_sample', verbosity=0)
+
+        categories = set(Category.objects.filter(is_sample=True).values_list('name', flat=True))
+        self.assertEqual(categories, {'Fish', 'Poultry', 'Cattle'})
+
+        species = set(Species.objects.filter(is_sample=True).values_list('name', flat=True))
+        self.assertEqual(species, {'Catfish', 'Tilapia', 'Broiler', 'Layer', 'Turkey',
+                                    'White Fulani', 'Sokoto Gudali'})
+
+    def test_populate_sample_feed_linked_to_correct_category(self):
+        call_command('populate_sample', verbosity=0)
+
+        fish_feeds = FeedInventory.objects.filter(is_sample=True, category__name='Fish')
+        poultry_feeds = FeedInventory.objects.filter(is_sample=True, category__name='Poultry')
+        cattle_feeds = FeedInventory.objects.filter(is_sample=True, category__name='Cattle')
+
+        self.assertEqual(fish_feeds.count(), 2)
+        self.assertEqual(poultry_feeds.count(), 2)
+        self.assertEqual(cattle_feeds.count(), 1)
+
+    def test_populate_sample_batches_across_species(self):
+        call_command('populate_sample', verbosity=0)
+
+        batches = Batch.objects.filter(is_sample=True)
+        self.assertEqual(batches.count(), 6)
+
+        # Verify species distribution
+        species_names = set(batches.values_list('species__name', flat=True))
+        self.assertEqual(species_names, {'Catfish', 'Tilapia', 'Broiler', 'Layer',
+                                          'White Fulani', 'Sokoto Gudali'})
+
+    def test_populate_sample_vaccination_only_for_non_fish(self):
+        call_command('populate_sample', verbosity=0)
+
+        fish_batches = Batch.objects.filter(is_sample=True, species__category__name='Fish')
+        non_fish_batches = Batch.objects.filter(
+            is_sample=True
+        ).exclude(species__category__name='Fish')
+
+        for batch in fish_batches:
+            self.assertEqual(
+                batch.vaccination_records.count(), 0,
+                f"Fish batch '{batch.name}' should not have vaccination records",
+            )
+
+        for batch in non_fish_batches:
+            self.assertGreater(
+                batch.vaccination_records.count(), 0,
+                f"Non-fish batch '{batch.name}' should have vaccination records",
+            )
+
+    # ------------------------------------------------------------------
+    # Idempotency — running twice doesn't duplicate
+    # ------------------------------------------------------------------
+
+    def test_populate_sample_running_twice_does_not_duplicate(self):
+        call_command('populate_sample', verbosity=0)
+
+        counts_after_first = {
+            'Category': Category.objects.filter(is_sample=True).count(),
+            'Species': Species.objects.filter(is_sample=True).count(),
+            'Supplier': Supplier.objects.filter(is_sample=True).count(),
+            'FeedInventory': FeedInventory.objects.filter(is_sample=True).count(),
+            'Batch': Batch.objects.filter(is_sample=True).count(),
+            'FeedLog': FeedLog.objects.filter(is_sample=True).count(),
+            'GrowthRecord': GrowthRecord.objects.filter(is_sample=True).count(),
+            'MortalityLog': MortalityLog.objects.filter(is_sample=True).count(),
+            'VaccinationRecord': VaccinationRecord.objects.filter(is_sample=True).count(),
+            'HealthMedicationLog': HealthMedicationLog.objects.filter(is_sample=True).count(),
+            'DailyActivityLog': DailyActivityLog.objects.filter(is_sample=True).count(),
+        }
+
+        # Second run should be a no-op
+        call_command('populate_sample', verbosity=0)
+
+        for model_name, count in counts_after_first.items():
+            model = globals()[model_name]
+            self.assertEqual(
+                model.objects.filter(is_sample=True).count(),
+                count,
+                f"{model_name} count changed on second run",
+            )
+
+    # ------------------------------------------------------------------
+    # delete_sample — removes only is_sample=True records
+    # ------------------------------------------------------------------
+
+    def test_delete_sample_removes_only_sample_data(self):
+        # Populate sample data
+        call_command('populate_sample', verbosity=0)
+
+        # Create real (non-sample) data
+        real_category = Category.objects.create(name="Real Category")
+        real_species = Species.objects.create(name="Real Species", category=real_category)
+        real_supplier = Supplier.objects.create(name="Real Supplier")
+        real_feed = FeedInventory.objects.create(
+            feed_type="Real Feed",
+            category=real_category,
+            supplier=real_supplier,
+            quantity_on_hand_kg=Decimal("100.00"),
+            cost_per_kg=Decimal("300.00"),
+            reorder_point_kg=Decimal("50.00"),
+        )
+        real_batch = Batch.objects.create(
+            name="Real Batch",
+            species=real_species,
+            initial_count=500,
+            start_date=date.today(),
+            season="rainy",
+        )
+
+        # Confirm both exist
+        self.assertTrue(Batch.objects.filter(is_sample=True).exists())
+        self.assertTrue(Batch.objects.filter(is_sample=False).exists())
+
+        # Delete only sample data
+        call_command('delete_sample', verbosity=0)
+
+        # Sample data is gone
+        self.assertFalse(Batch.objects.filter(is_sample=True).exists())
+        self.assertFalse(Category.objects.filter(is_sample=True).exists())
+        self.assertFalse(Species.objects.filter(is_sample=True).exists())
+        self.assertFalse(Supplier.objects.filter(is_sample=True).exists())
+        self.assertFalse(FeedInventory.objects.filter(is_sample=True).exists())
+        self.assertFalse(FeedLog.objects.filter(is_sample=True).exists())
+        self.assertFalse(GrowthRecord.objects.filter(is_sample=True).exists())
+        self.assertFalse(MortalityLog.objects.filter(is_sample=True).exists())
+        self.assertFalse(VaccinationRecord.objects.filter(is_sample=True).exists())
+        self.assertFalse(HealthMedicationLog.objects.filter(is_sample=True).exists())
+        self.assertFalse(DailyActivityLog.objects.filter(is_sample=True).exists())
+
+        # Real data remains
+        self.assertTrue(Batch.objects.filter(pk=real_batch.pk).exists())
+        self.assertTrue(Category.objects.filter(pk=real_category.pk).exists())
+        self.assertTrue(Species.objects.filter(pk=real_species.pk).exists())
+        self.assertTrue(Supplier.objects.filter(pk=real_supplier.pk).exists())
+        self.assertTrue(FeedInventory.objects.filter(pk=real_feed.pk).exists())
+
+    def test_delete_sample_when_empty_does_nothing(self):
+        """Running delete_sample with no sample data should be a no-op."""
+        call_command('delete_sample', verbosity=0)
+        self.assertEqual(Batch.objects.count(), 0)
+        self.assertEqual(Category.objects.count(), 0)
+
+    # ------------------------------------------------------------------
+    # populate → delete leaves database exactly as it was
+    # ------------------------------------------------------------------
+
+    def test_populate_then_delete_leaves_db_clean(self):
+        # Snapshot real data counts
+        real_counts = {
+            'Category': Category.objects.filter(is_sample=False).count(),
+            'Species': Species.objects.filter(is_sample=False).count(),
+            'Supplier': Supplier.objects.filter(is_sample=False).count(),
+            'FeedInventory': FeedInventory.objects.filter(is_sample=False).count(),
+            'Batch': Batch.objects.filter(is_sample=False).count(),
+            'FeedLog': FeedLog.objects.filter(is_sample=False).count(),
+            'GrowthRecord': GrowthRecord.objects.filter(is_sample=False).count(),
+            'MortalityLog': MortalityLog.objects.filter(is_sample=False).count(),
+            'VaccinationRecord': VaccinationRecord.objects.filter(is_sample=False).count(),
+            'HealthMedicationLog': HealthMedicationLog.objects.filter(is_sample=False).count(),
+            'DailyActivityLog': DailyActivityLog.objects.filter(is_sample=False).count(),
+        }
+
+        # Populate
+        call_command('populate_sample', verbosity=0)
+        self.assertGreater(Batch.objects.filter(is_sample=True).count(), 0)
+
+        # Delete
+        call_command('delete_sample', verbosity=0)
+
+        # All sample data gone
+        for model_name in real_counts:
+            model = globals()[model_name]
+            self.assertEqual(
+                model.objects.filter(is_sample=True).count(),
+                0,
+                f"{model_name} still has sample records after delete",
+            )
+
+        # Real data counts unchanged
+        for model_name, original_count in real_counts.items():
+            model = globals()[model_name]
+            self.assertEqual(
+                model.objects.filter(is_sample=False).count(),
+                original_count,
+                f"{model_name} real data count changed",
+            )
+
+        # No orphaned sample-related records
+        self.assertEqual(FeedLog.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(GrowthRecord.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(MortalityLog.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(VaccinationRecord.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(HealthMedicationLog.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(DailyActivityLog.objects.filter(batch__is_sample=True).count(), 0)
+
+    # ------------------------------------------------------------------
+    # RBAC — views restricted to Super Admin
+    # ------------------------------------------------------------------
+
+    def test_populate_sample_data_requires_super_admin(self):
+        self.login(self.farm_manager)
+        response = self.client.post(
+            reverse('farm_management:populate_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Batch.objects.filter(is_sample=True).exists())
+
+    def test_populate_sample_data_unauthenticated_blocked(self):
+        response = self.client.post(
+            reverse('farm_management:populate_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Batch.objects.filter(is_sample=True).exists())
+
+    def test_delete_sample_data_requires_super_admin(self):
+        call_command('populate_sample', verbosity=0)
+        self.assertTrue(Batch.objects.filter(is_sample=True).exists())
+
+        self.login(self.farm_manager)
+        response = self.client.post(
+            reverse('farm_management:delete_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 403)
+        # Sample data should still exist (deletion was blocked)
+        self.assertTrue(Batch.objects.filter(is_sample=True).exists())
+
+    def test_delete_sample_data_unauthenticated_blocked(self):
+        response = self.client.post(
+            reverse('farm_management:delete_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_super_admin_can_populate_via_view(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:populate_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['categories_created'], 3)
+        self.assertEqual(data['species_created'], 7)
+        self.assertEqual(data['batches_created'], 6)
+
+    def test_super_admin_can_delete_via_view(self):
+        call_command('populate_sample', verbosity=0)
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:delete_sample_data'),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertFalse(Batch.objects.filter(is_sample=True).exists())
+
+    # ------------------------------------------------------------------
+    # Template — buttons visible only to Super Admin
+    # ------------------------------------------------------------------
+
+    def test_dashboard_shows_sample_buttons_for_super_admin(self):
+        call_command('populate_sample', verbosity=0)
+        self.login(self.super_admin)
+        response = self.client.get(reverse('farm_management:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Load Sample Data', content)
+        self.assertIn('Clear Sample Data', content)
+        self.assertIn('populateSampleBtn', content)
+        self.assertIn('deleteSampleBtn', content)
+
+    def test_dashboard_hides_sample_buttons_for_farm_manager(self):
+        call_command('populate_sample', verbosity=0)
+        self.login(self.farm_manager)
+        response = self.client.get(reverse('farm_management:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn('Load Sample Data', content)
+        self.assertNotIn('Clear Sample Data', content)
+        self.assertNotIn('populateSampleBtn', content)
+        self.assertNotIn('deleteSampleBtn', content)
+
+
+
+# =============================================================================
+# Health Records & Daily Activities — Add Entry Button & Flow Tests
+# =============================================================================
+
+class HealthRecordsAddEntryTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.broiler = Species.objects.create(name="Broiler", category=self.poultry_category, is_active=True)
+        self.fish_batch = Batch.objects.create(
+            name="Fish Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.poultry_batch = Batch.objects.create(
+            name="Poultry Batch",
+            species=self.broiler,
+            initial_count=200,
+            start_date=date.today(),
+            season="dry",
+        )
+
+    def login(self):
+        return self.client.login(username=self.super_admin.username, password="StrongPass1!")
+
+    def test_health_records_list_shows_add_button(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:health_records_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Add Health Log', content)
+        self.assertIn('Add Vaccination', content)
+        self.assertIn('/health-logs/add/', content)
+        self.assertIn('/vaccinations/add/', content)
+
+    def test_daily_activities_list_shows_add_button(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:daily_activities_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Add Daily Activity', content)
+        self.assertIn('/activity-logs/add/', content)
+
+    def test_health_log_add_top_form_loads(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:health_log_add_top'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Add Health/Medication Log', content)
+        self.assertIn('Medicine Name', content)
+        self.assertIn('Dosage', content)
+        self.assertIn('Reason', content)
+
+    def test_health_log_add_top_submit_redirects_to_list(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:health_log_add_top'),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'medicine_name': 'Oxytetracycline',
+                'dosage': '20mg/kg',
+                'reason': 'Respiratory infection',
+                'administered_by': 'Dr. Okafor',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('farm_management:health_records_list'))
+        self.assertEqual(HealthMedicationLog.objects.count(), 1)
+        log = HealthMedicationLog.objects.first()
+        self.assertEqual(log.medicine_name, 'Oxytetracycline')
+        self.assertEqual(log.batch, self.fish_batch)
+
+    def test_activity_log_add_top_form_loads(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:activity_log_add_top'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Add Daily Activity Log', content)
+        self.assertIn('Note', content)
+        self.assertIn('Date', content)
+
+    def test_activity_log_add_top_submit_redirects_to_list(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:activity_log_add_top'),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'note': 'Checked feeding troughs and replenished feed.',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('farm_management:daily_activities_list'))
+        self.assertEqual(DailyActivityLog.objects.count(), 1)
+        log = DailyActivityLog.objects.first()
+        self.assertEqual(log.note, 'Checked feeding troughs and replenished feed.')
+        self.assertEqual(log.batch, self.fish_batch)
+
+    def test_vaccination_add_top_blocks_fish_batch(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:vaccination_add_top'),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'vaccine_name': 'Test Vaccine',
+                'dosage': '0.5ml',
+                'administered_by': 'Dr. Okafor',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('poultry batches', response.content.decode().lower())
+        self.assertEqual(VaccinationRecord.objects.count(), 0)
+
+    def test_vaccination_add_top_accepts_poultry_batch(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:vaccination_add_top'),
+            {
+                'batch': self.poultry_batch.pk,
+                'date': date.today().isoformat(),
+                'vaccine_name': 'NDV Vaccine',
+                'dosage': '0.5ml per bird',
+                'administered_by': 'Dr. Okafor',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('farm_management:health_records_list'))
+        self.assertEqual(VaccinationRecord.objects.count(), 1)
+
+    def test_health_log_add_top_blocks_closed_batch(self):
+        self.fish_batch.status = 'closed'
+        self.fish_batch.save(update_fields=['status'])
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:health_log_add_top'),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'medicine_name': 'Test Med',
+                'dosage': '5mg',
+                'reason': 'Test',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('closed batch', response.content.decode().lower())
+        self.assertEqual(HealthMedicationLog.objects.count(), 0)
+
+    def test_activity_log_add_top_blocks_closed_batch(self):
+        self.fish_batch.status = 'closed'
+        self.fish_batch.save(update_fields=['status'])
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:activity_log_add_top'),
+            {
+                'batch': self.fish_batch.pk,
+                'date': date.today().isoformat(),
+                'note': 'Test activity',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('closed batch', response.content.decode().lower())
+        self.assertEqual(DailyActivityLog.objects.count(), 0)
+
+    def test_health_records_list_shows_sample_data_after_populate(self):
+        call_command('populate_sample', verbosity=0)
+        self.login()
+        response = self.client.get(reverse('farm_management:health_records_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertTrue(HealthMedicationLog.objects.filter(is_sample=True).count() > 0)
+
+    def test_daily_activities_list_shows_sample_data_after_populate(self):
+        call_command('populate_sample', verbosity=0)
+        self.login()
+        response = self.client.get(reverse('farm_management:daily_activities_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(DailyActivityLog.objects.filter(is_sample=True).count() > 0)

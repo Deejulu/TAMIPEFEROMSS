@@ -2,16 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-SPECIES_CHOICES = [
-    ('catfish', 'Catfish'),
-    ('tilapia', 'Tilapia'),
-    ('broiler', 'Broiler (Poultry)'),
-    ('layer', 'Layer (Poultry)'),
-]
-
-FISH_SPECIES = ['catfish', 'tilapia']
-POULTRY_SPECIES = ['broiler', 'layer']
-
 STATUS_CHOICES = [
     ('active', 'Active'),
     ('closed', 'Closed'),
@@ -23,19 +13,51 @@ SEASON_CHOICES = [
 ]
 
 
+class Category(models.Model):
+    """Category for species (e.g. Fish, Poultry)"""
+    name = models.CharField(_("name"), max_length=100, unique=True)
+    is_active = models.BooleanField(_("is active"), default=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("category")
+        verbose_name_plural = _("categories")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Species(models.Model):
+    name = models.CharField(_("name"), max_length=100, unique=True)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name=_("category"), related_name='species')
+    is_active = models.BooleanField(_("is active"), default=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("species")
+        verbose_name_plural = _("species")
+        ordering = ['category__name', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Batch(models.Model):
-    SPECIES_CHOICES = SPECIES_CHOICES
     STATUS_CHOICES = STATUS_CHOICES
     SEASON_CHOICES = SEASON_CHOICES
 
     name = models.CharField(_("name"), max_length=100)
-    species = models.CharField(_("species"), max_length=20, choices=SPECIES_CHOICES)
+    species = models.ForeignKey(Species, on_delete=models.PROTECT, verbose_name=_("species"), related_name='batches')
     initial_count = models.PositiveIntegerField(_("initial count"))
     current_stock = models.PositiveIntegerField(_("current stock"))
     start_date = models.DateField(_("start date"))
     season = models.CharField(_("season"), max_length=10, choices=SEASON_CHOICES)
     status = models.CharField(_("status"), max_length=10, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("batch")
@@ -49,11 +71,11 @@ class Batch(models.Model):
 
     @property
     def is_fish(self):
-        return self.species in FISH_SPECIES
+        return self.species.category.name.lower() == 'fish'
 
     @property
     def is_poultry(self):
-        return self.species in POULTRY_SPECIES
+        return self.species.category.name.lower() == 'poultry'
 
     @property
     def mortality_rate(self):
@@ -75,21 +97,31 @@ class Batch(models.Model):
         return round(total_feed / weight_gain, 2) if weight_gain > 0 else None
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.species.category.name} — {self.species.name})"
 
 
 class FeedLog(models.Model):
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='feed_logs', verbose_name=_("batch"))
     date = models.DateField(_("date"))
-    feed_type = models.CharField(_("feed type"), max_length=100)
+    feed_inventory = models.ForeignKey('FeedInventory', on_delete=models.SET_NULL, verbose_name=_("feed inventory"), null=True, blank=True, related_name='feed_logs')
     quantity_kg = models.DecimalField(_("quantity (kg)"), max_digits=8, decimal_places=2)
     cost = models.DecimalField(_("cost"), max_digits=10, decimal_places=2)
     notes = models.TextField(_("notes"), blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("feed log")
         verbose_name_plural = _("feed logs")
         ordering = ['-date']
+
+    def save(self, *args, **kwargs):
+        if self.feed_inventory and not self.pk:
+            self.cost = self.quantity_kg * self.feed_inventory.cost_per_kg
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        feed_name = self.feed_inventory.feed_type if self.feed_inventory else "No feed"
+        return f"{self.batch} — {feed_name} ({self.date})"
 
 
 class GrowthRecord(models.Model):
@@ -97,11 +129,15 @@ class GrowthRecord(models.Model):
     date = models.DateField(_("date"))
     average_weight_kg = models.DecimalField(_("average weight (kg)"), max_digits=6, decimal_places=3)
     sample_size = models.PositiveIntegerField(_("sample size"), help_text=_("Number of animals sampled for this average"))
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("growth record")
         verbose_name_plural = _("growth records")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date}"
 
 
 class MortalityLog(models.Model):
@@ -110,11 +146,15 @@ class MortalityLog(models.Model):
     count = models.PositiveIntegerField(_("count"))
     cause = models.CharField(_("cause"), max_length=200, blank=True)
     notes = models.TextField(_("notes"), blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("mortality log")
         verbose_name_plural = _("mortality logs")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date} — {self.count} deaths"
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -137,11 +177,15 @@ class WaterQualityLog(models.Model):
     temperature_c = models.DecimalField(_("temperature (°C)"), max_digits=4, decimal_places=1, null=True, blank=True)
     oxygen_level = models.DecimalField(_("oxygen level (mg/L)"), max_digits=5, decimal_places=2, null=True, blank=True)
     notes = models.TextField(_("notes"), blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("water quality log")
         verbose_name_plural = _("water quality logs")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date}"
 
 
 class VaccinationRecord(models.Model):
@@ -150,11 +194,15 @@ class VaccinationRecord(models.Model):
     vaccine_name = models.CharField(_("vaccine name"), max_length=150)
     dosage = models.CharField(_("dosage"), max_length=100)
     administered_by = models.CharField(_("administered by"), max_length=150, blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("vaccination record")
         verbose_name_plural = _("vaccination records")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date} — {self.vaccine_name}"
 
 
 class HealthMedicationLog(models.Model):
@@ -165,11 +213,15 @@ class HealthMedicationLog(models.Model):
     reason = models.CharField(_("reason"), max_length=200)
     administered_by = models.CharField(_("administered by"), max_length=150, blank=True)
     photo = models.ImageField(_("photo"), upload_to='health_logs/', null=True, blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("health/medication log")
         verbose_name_plural = _("health/medication logs")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date} — {self.medicine_name}"
 
 
 class DailyActivityLog(models.Model):
@@ -179,11 +231,15 @@ class DailyActivityLog(models.Model):
     photo = models.ImageField(_("photo"), upload_to='activity_logs/', null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name=_("created by"))
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("daily activity log")
         verbose_name_plural = _("daily activity logs")
         ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.batch} — {self.date}"
 
 
 class Supplier(models.Model):
@@ -193,6 +249,7 @@ class Supplier(models.Model):
     address = models.TextField(_("address"), blank=True)
     notes = models.TextField(_("notes"), blank=True)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("supplier")
@@ -205,6 +262,14 @@ class Supplier(models.Model):
 
 class FeedInventory(models.Model):
     feed_type = models.CharField(_("feed type"), max_length=100)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        verbose_name=_("category"),
+        null=True,
+        blank=True,
+        related_name='feed_inventory',
+    )
     supplier = models.ForeignKey(
         Supplier,
         on_delete=models.SET_NULL,
@@ -213,9 +278,17 @@ class FeedInventory(models.Model):
         blank=True,
         related_name='feed_inventory',
     )
+    compatible_batches = models.ManyToManyField(
+        Batch,
+        blank=True,
+        related_name='compatible_feed_inventory',
+        verbose_name=_("compatible batches"),
+        help_text=_("Batches this feed is suitable for. Based on category/species match."),
+    )
     quantity_on_hand_kg = models.DecimalField(_("quantity on hand (kg)"), max_digits=8, decimal_places=2)
     cost_per_kg = models.DecimalField(_("cost per kg"), max_digits=8, decimal_places=2)
     reorder_point_kg = models.DecimalField(_("reorder point (kg)"), max_digits=8, decimal_places=2, default=0)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("feed inventory")
@@ -226,6 +299,11 @@ class FeedInventory(models.Model):
     def needs_reorder(self):
         return self.quantity_on_hand_kg <= self.reorder_point_kg
 
+    def __str__(self):
+        if self.category:
+            return f"{self.feed_type} ({self.category.name})"
+        return self.feed_type
+
 
 class HarvestRecord(models.Model):
     batch = models.OneToOneField(Batch, on_delete=models.CASCADE, related_name='harvest', verbose_name=_("batch"))
@@ -233,6 +311,7 @@ class HarvestRecord(models.Model):
     quantity_sold = models.PositiveIntegerField(_("quantity sold"))
     total_revenue = models.DecimalField(_("total revenue"), max_digits=12, decimal_places=2)
     notes = models.TextField(_("notes"), blank=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("harvest record")
@@ -247,3 +326,6 @@ class HarvestRecord(models.Model):
     @property
     def profit(self):
         return self.total_revenue - self.batch.total_feed_cost
+
+    def __str__(self):
+        return f"{self.batch} — {self.harvest_date}"

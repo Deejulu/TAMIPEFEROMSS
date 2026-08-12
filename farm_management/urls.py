@@ -1,12 +1,11 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
 from . import views
 
 app_name = 'farm_management'
 
 urlpatterns = [
-    path('', views.FarmManagementDashboard.as_view(), name='dashboard'),
+    path('dashboard/', views.FarmManagementDashboard.as_view(), name='dashboard'),
     path('batches/', views.BatchListView.as_view(), name='batch_list'),
     path('batches/add/', views.BatchCreateView.as_view(), name='batch_add'),
     path('batches/<int:pk>/', views.BatchDetailView.as_view(), name='batch_detail'),
@@ -20,6 +19,16 @@ urlpatterns = [
     path('suppliers/add/', views.SupplierCreateView.as_view(), name='supplier_add'),
     path('suppliers/<int:pk>/edit/', views.SupplierUpdateView.as_view(), name='supplier_edit'),
     path('suppliers/<int:pk>/delete/', views.SupplierDeleteView.as_view(), name='supplier_delete'),
+
+    path('species/', views.SpeciesListView.as_view(), name='species_list'),
+    path('species/add/', views.SpeciesCreateView.as_view(), name='species_add'),
+    path('species/<int:pk>/edit/', views.SpeciesUpdateView.as_view(), name='species_edit'),
+    path('species/<int:pk>/delete/', views.SpeciesDeleteView.as_view(), name='species_delete'),
+
+    path('categories/', views.CategoryListView.as_view(), name='category_list'),
+    path('categories/add/', views.CategoryCreateView.as_view(), name='category_add'),
+    path('categories/<int:pk>/edit/', views.CategoryUpdateView.as_view(), name='category_edit'),
+    path('categories/<int:pk>/delete/', views.CategoryDeleteView.as_view(), name='category_delete'),
 
     path('batches/<int:batch_pk>/feed-logs/add/', views.FeedLogCreateView.as_view(), name='feed_log_add'),
     path('feed-logs/<int:pk>/edit/', views.FeedLogUpdateView.as_view(), name='feed_log_edit'),
@@ -47,11 +56,18 @@ urlpatterns = [
     path('vaccinations/<int:pk>/edit/', views.VaccinationRecordUpdateView.as_view(), name='vaccination_edit'),
     path('vaccinations/<int:pk>/delete/', views.VaccinationRecordDeleteView.as_view(), name='vaccination_delete'),
 
-    path('batches/<int:batch_pk>/water-quality/add/', views.WaterQualityLogCreateView.as_view(), name='water_quality_add'),
-    path('water-quality/<int:pk>/edit/', views.WaterQualityLogUpdateView.as_view(), name='water_quality_edit'),
-    path('water-quality/<int:pk>/delete/', views.WaterQualityLogDeleteView.as_view(), name='water_quality_delete'),
+    path('vaccinations/add/', views.VaccinationRecordCreateView.as_view(), name='vaccination_add_top'),
+
+    path('health-records/', views.HealthRecordsListView.as_view(), name='health_records_list'),
+    path('health-logs/add/', views.HealthMedicationLogCreateView.as_view(), name='health_log_add_top'),
 
     path('batches/<int:batch_pk>/activity-logs/add/', views.DailyActivityLogCreateView.as_view(), name='activity_log_add'),
     path('activity-logs/<int:pk>/edit/', views.DailyActivityLogUpdateView.as_view(), name='activity_log_edit'),
     path('activity-logs/<int:pk>/delete/', views.DailyActivityLogDeleteView.as_view(), name='activity_log_delete'),
+    path('activity-logs/add/', views.DailyActivityLogCreateView.as_view(), name='activity_log_add_top'),
+
+    path('daily-activities/', views.DailyActivitiesListView.as_view(), name='daily_activities_list'),
+
+    path('sample-data/load/', views.populate_sample_data, name='populate_sample_data'),
+    path('sample-data/clear/', views.delete_sample_data, name='delete_sample_data'),
 ]

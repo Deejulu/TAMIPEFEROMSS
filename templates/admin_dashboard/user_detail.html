@@ -230,7 +230,7 @@ body {
 .history-table-container {
     border: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     margin-bottom: 2rem;
     border: 1px solid rgba(229, 231, 235, 0.6);
@@ -245,6 +245,7 @@ body {
 }
 
 .history-table thead th {
+    background: transparent;
     color: white;
     font-weight: 600;
     text-transform: uppercase;
@@ -542,6 +543,8 @@ body {
                         <span class="info-value">
                             {% if viewed_user.role == 'SUPER_ADMIN' %}
                             <span class="badge bg-danger">{{ viewed_user.get_role_display }}</span>
+                            {% elif viewed_user.role == 'SUPER_STAFF' %}
+                            <span class="badge bg-dark">{{ viewed_user.get_role_display }}</span>
                             {% elif viewed_user.role == 'FARM_MANAGER' %}
                             <span class="badge bg-warning text-dark">{{ viewed_user.get_role_display }}</span>
                             {% elif viewed_user.role == 'STAFF' %}
@@ -596,22 +599,30 @@ body {
                 </div>
                 
                 <div class="p-3 bg-light">
-                    <div class="action-buttons">
-                        <a href="{% url 'admin_dashboard:user_edit' viewed_user.pk %}" class="btn btn-primary">
-                            <i class="bi bi-pencil"></i> Edit User
-                        </a>
-                        {% if viewed_user.pk != request.user.pk %}
-                        {% if can_delete %}
-                        <a href="{% url 'admin_dashboard:user_delete' viewed_user.pk %}" class="btn btn-danger">
-                            <i class="bi bi-trash"></i> Delete User
-                        </a>
-                        {% else %}
-                        <button class="btn btn-danger" disabled title="Cannot delete user with order history">
-                            <i class="bi bi-trash"></i> Delete User (Has Orders)
+                <div class="action-buttons">
+                    <a href="{% url 'admin_dashboard:user_edit' viewed_user.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit User
+                    </a>
+                    {% if viewed_user.pk != request.user.pk %}
+                    <form method="post" action="{% url 'admin_dashboard:force_password_reset' viewed_user.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to force a password reset for {{ viewed_user.full_name }}? A temporary password will be generated and shown once.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-key"></i> Force Password Reset
                         </button>
-                        {% endif %}
-                        {% endif %}
-                    </div>
+                    </form>
+                    {% endif %}
+                    {% if viewed_user.pk != request.user.pk %}
+                    {% if can_delete %}
+                    <a href="{% url 'admin_dashboard:user_delete' viewed_user.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User
+                    </a>
+                    {% else %}
+                    <button class="btn btn-danger" disabled title="Cannot delete user with order history">
+                        <i class="bi bi-trash"></i> Delete User (Has Orders)
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                </div>
                 </div>
             </div>
         </div>
@@ -668,7 +679,7 @@ body {
                                 <td>
                                     {% if order.status == 'pending' %}
                                     <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
-                                    {% elif order.status == 'paid' %}
+                                    {% elif order.status == 'confirmed' %}
                                     <span class="badge bg-success">{{ order.get_status_display }}</span>
                                     {% elif order.status == 'shipped' %}
                                     <span class="badge bg-info">{{ order.get_status_display }}</span>
@@ -697,7 +708,7 @@ body {
                             <div class="history-card-badge">
                                 {% if order.status == 'pending' %}
                                 <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
-                                {% elif order.status == 'paid' %}
+                                {% elif order.status == 'confirmed' %}
                                 <span class="badge bg-success">{{ order.get_status_display }}</span>
                                 {% elif order.status == 'shipped' %}
                                 <span class="badge bg-info">{{ order.get_status_display }}</span>

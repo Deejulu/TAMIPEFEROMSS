@@ -1,0 +1,207 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="farm-management-page health-records-list-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-heart-pulse"></i> Health Records</h2>
+            <p class="text-muted mb-0">Health logs and vaccination records across all batches</p>
+            <p class="text-muted small mb-0">{{ total_count }} total records ({{ health_count }} health logs, {{ vaccination_count }} vaccinations)</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'farm_management:health_log_add_top' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Health Log
+            </a>
+            <a href="{% url 'farm_management:vaccination_add_top' %}" class="btn btn-outline-success">
+                <i class="bi bi-syringe"></i> Add Vaccination
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card farm-search-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="record_type" class="form-label">Record Type</label>
+                    <select class="form-select" id="record_type" name="record_type">
+                        <option value="">All Types</option>
+                        <option value="health" {% if selected_record_type == 'health' %}selected{% endif %}>Health Logs</option>
+                        <option value="vaccination" {% if selected_record_type == 'vaccination' %}selected{% endif %}>Vaccinations</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="batch" class="form-label">Batch</label>
+                    <select class="form-select" id="batch" name="batch">
+                        <option value="">All Batches</option>
+                        {% for batch in batches %}
+                        <option value="{{ batch.pk }}" {% if selected_batch == batch.pk|stringformat:"s" %}selected{% endif %}>{{ batch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filter</button>
+                    <a href="{% url 'farm_management:health_records_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Records Table/Cards -->
+    {% if records %}
+    <div class="card farm-table-card">
+        <div class="card-body p-0">
+            <!-- Desktop Table -->
+            <div class="table-responsive farm-desktop-table">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Batch</th>
+                            <th>Date</th>
+                            <th>Details</th>
+                            <th>Administered By</th>
+                            <th>Photo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td>
+                                {% if record.record_type == 'health' %}
+                                <span class="farm-badge farm-badge-primary">Health Log</span>
+                                {% else %}
+                                <span class="farm-badge farm-badge-success">Vaccination</span>
+                                {% endif %}
+                            </td>
+                            <td><a href="{% url 'farm_management:batch_detail' record.batch.pk %}" class="fw-semibold text-decoration-none">{{ record.batch.name }}</a></td>
+                            <td>{{ record.date|date:"M d, Y" }}</td>
+                            <td>
+                                {% if record.record_type == 'health' %}
+                                    <strong>{{ record.medicine_name }}</strong> ({{ record.dosage }})<br>
+                                    <small class="text-muted">{{ record.reason }}</small>
+                                {% else %}
+                                    <strong>{{ record.vaccine_name }}</strong> ({{ record.dosage }})
+                                {% endif %}
+                            </td>
+                            <td>{{ record.administered_by|default:"—" }}</td>
+                            <td>
+                                {% if record.record_type == 'health' and record.photo %}
+                                <a href="{{ record.photo.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-image"></i></a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div class="farm-mobile-cards">
+                {% for record in records %}
+                <div class="farm-mobile-card">
+                    <div class="farm-mobile-card-header">
+                        <div class="farm-mobile-card-title">
+                            {% if record.record_type == 'health' %}
+                            <span class="farm-badge farm-badge-primary">Health Log</span>
+                            {% else %}
+                            <span class="farm-badge farm-badge-success">Vaccination</span>
+                            {% endif %}
+                        </div>
+                        <div class="farm-mobile-card-subtitle">{{ record.batch.name }} | {{ record.date|date:"M d, Y" }}</div>
+                    </div>
+                    <div class="farm-mobile-card-body">
+                        {% if record.record_type == 'health' %}
+                            <div class="farm-mobile-row">
+                                <span class="farm-mobile-label">Medicine</span>
+                                <span class="farm-mobile-value">{{ record.medicine_name }}</span>
+                            </div>
+                            <div class="farm-mobile-row">
+                                <span class="farm-mobile-label">Dosage</span>
+                                <span class="farm-mobile-value">{{ record.dosage }}</span>
+                            </div>
+                            <div class="farm-mobile-row">
+                                <span class="farm-mobile-label">Reason</span>
+                                <span class="farm-mobile-value">{{ record.reason }}</span>
+                            </div>
+                        {% else %}
+                            <div class="farm-mobile-row">
+                                <span class="farm-mobile-label">Vaccine</span>
+                                <span class="farm-mobile-value">{{ record.vaccine_name }}</span>
+                            </div>
+                            <div class="farm-mobile-row">
+                                <span class="farm-mobile-label">Dosage</span>
+                                <span class="farm-mobile-value">{{ record.dosage }}</span>
+                            </div>
+                        {% endif %}
+                        {% if record.administered_by %}
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Administered By</span>
+                            <span class="farm-mobile-value">{{ record.administered_by }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="farm-mobile-card-actions">
+                        <a href="{% url 'farm_management:batch_detail' record.batch.pk %}" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-eye"></i> View Batch</a>
+                        {% if record.record_type == 'health' and record.photo %}
+                        <a href="{{ record.photo.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-image"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_record_type %}&record_type={{ selected_record_type }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if selected_record_type %}&record_type={{ selected_record_type }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="card farm-table-card">
+        <div class="card-body farm-empty-state">
+            <i class="bi bi-heart-pulse"></i>
+            <p class="text-muted">No health records yet.</p>
+            <a href="{% url 'farm_management:health_log_add_top' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle"></i> Add Health Log
+            </a>
+            <a href="{% url 'farm_management:vaccination_add_top' %}" class="btn btn-outline-success mt-3 ms-2">
+                <i class="bi bi-syringe"></i> Add Vaccination
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -4,96 +4,113 @@
 {% block title %}Cart - TAMIPEE{% endblock %}
 
 {% block content %}
-<div class="cart-wrapper">
-  <div class="cart-container">
+<div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: clamp(1.5rem, 4vw, 2.5rem) 0;">
+  <div class="container-custom">
 
     <!-- Cart Header -->
-    <div class="cart-header">
-      <div class="cart-header-content">
-        <h1>Shopping Cart</h1>
-        <p>{{ cart.item_count }} item{{ cart.item_count|pluralize }} in your cart</p>
+    <div class="card shadow-lg border-0 mb-4 overflow-hidden animate-fade-in-up" style="border-radius: var(--radius-xl); border: 1px solid var(--farm-border-light);">
+      <div class="card-body p-4 p-md-5" style="background: linear-gradient(135deg, var(--farm-forest) 0%, var(--farm-primary-dark) 50%, var(--farm-primary) 100%); color: #FFFFFF; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; right: -10%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div style="position: absolute; bottom: -40%; left: -5%; width: 250px; height: 250px; background: radial-gradient(circle, rgba(46,125,50,0.15) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3" style="position: relative; z-index: 1;">
+          <div>
+            <span class="eyebrow" style="color: var(--farm-accent);">Your Selection</span>
+            <h1 class="h3 mb-1" style="color: #FFFFFF; font-weight: 800; letter-spacing: -0.02em;">Shopping Cart</h1>
+            <p class="mb-0" style="color: rgba(255,255,255,0.88); font-size: 0.9375rem;">{{ cart.item_count }} item{{ cart.item_count|pluralize }} in your cart</p>
+          </div>
+          <a href="{% url 'shop:product_list' %}" class="btn btn-outline btn-sm">
+            <i class="bi bi-arrow-left"></i> Continue Shopping
+          </a>
+        </div>
       </div>
-      <a href="{% url 'shop:product_list' %}" class="continue-shopping-btn">
-        <i class="bi bi-arrow-left"></i> Continue Shopping
-      </a>
     </div>
 
     {% if cart.is_empty %}
-    <div class="empty-cart">
-      <i class="bi bi-cart-x"></i>
-      <h3>Your cart is empty</h3>
-      <p>Browse our farm shop to add fresh products to your cart.</p>
-      <a href="{% url 'shop:product_list' %}" class="btn-browse">
+    <div class="empty-state animate-fade-in-up" style="text-align: center; padding: 80px 20px; background: var(--farm-white); border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+      <i class="bi bi-cart-x" style="font-size: 4rem; color: #C8D6C8; margin-bottom: 1.5rem;"></i>
+      <h3 style="color: var(--farm-forest); font-weight: 700; margin-bottom: 0.75rem;">Your cart is empty</h3>
+      <p style="color: var(--farm-text-muted); margin-bottom: 1.5rem;">Browse our farm shop to add fresh products to your cart.</p>
+      <a href="{% url 'shop:product_list' %}" class="btn btn-accent btn-lg btn-shimmer">
         <i class="bi bi-shop"></i> Browse Products
       </a>
     </div>
     {% else %}
-    <div class="cart-layout">
+    <div class="cart-layout animate-fade-in-up" style="animation-delay: 0.1s;">
       <!-- Cart Items -->
       <div class="cart-items">
         {% for item in cart.items.select_related %}
-        <div class="cart-item" data-item-id="{{ item.pk }}">
-          <div class="cart-item-image">
-            {% if item.product.image %}
-              <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-            {% else %}
-              <div class="cart-item-placeholder">
-                <i class="bi bi-box-seam"></i>
+        <div class="card shadow-sm border-0 mb-3 animate-fade-in-up" style="border-radius: var(--radius-xl); border: 1px solid var(--farm-border-light); transition: all var(--transition-base);" data-item-id="{{ item.pk }}">
+          <div class="card-body">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+              <div class="cart-item-image" style="width: 90px; height: 90px; border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0; background: var(--farm-bg-alt); box-shadow: var(--shadow-sm);">
+                {% if item.product.image %}
+                  <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="cart-item-img" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                  <div class="cart-item-placeholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #C8D6C8; font-size: 32px;">
+                    <i class="bi bi-box-seam"></i>
+                  </div>
+                {% endif %}
               </div>
-            {% endif %}
-          </div>
 
-          <div class="cart-item-details">
-            <h3 class="cart-item-name">{{ item.product.name }}</h3>
-            <p class="cart-item-price">₦{{ item.product.price|floatformat:2 }} each</p>
-          </div>
+              <div class="cart-item-details flex-grow-1" style="min-width: 200px;">
+                <h5 class="cart-item-name mb-1" style="font-weight: 700; color: var(--farm-forest);">{{ item.product.name }}</h5>
+                <p class="cart-item-price mb-0" style="color: var(--farm-text-muted); font-size: 0.9rem;">₦{{ item.product.price|floatformat:2 }} each</p>
+              </div>
 
-          <div class="cart-item-quantity">
-            <form method="post" action="{% url 'shop:update_cart_item' item.pk %}" class="qty-form">
-              {% csrf_token %}
-              <button type="button" class="qty-btn qty-minus" data-item-id="{{ item.pk }}">−</button>
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock_quantity }}" class="qty-input" data-item-id="{{ item.pk }}">
-              <button type="button" class="qty-btn qty-plus" data-item-id="{{ item.pk }}">+</button>
-            </form>
-          </div>
+              <div class="cart-item-quantity">
+                <form method="post" action="{% url 'shop:update_cart_item' item.pk %}" class="qty-form">
+                  {% csrf_token %}
+                  <button type="button" class="qty-btn qty-minus" data-item-id="{{ item.pk }}" style="background: var(--farm-bg-alt); border: none; padding: 10px 16px; cursor: pointer; font-size: 16px; color: var(--farm-primary); transition: all var(--transition-fast); font-weight: 600;">−</button>
+                  <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock_quantity }}" class="qty-input" data-item-id="{{ item.pk }}" style="width: 55px; text-align: center; border: none; border-left: 2px solid var(--farm-border-light); border-right: 2px solid var(--farm-border-light); padding: 10px 4px; font-size: 14px; font-weight: 600; color: var(--farm-forest);">
+                  <button type="button" class="qty-btn qty-plus" data-item-id="{{ item.pk }}" style="background: var(--farm-bg-alt); border: none; padding: 10px 16px; cursor: pointer; font-size: 16px; color: var(--farm-primary); transition: all var(--transition-fast); font-weight: 600;">+</button>
+                </form>
+              </div>
 
-          <div class="cart-item-subtotal">
-            <span class="subtotal-label">Subtotal:</span>
-            <span class="subtotal-value" id="subtotal-{{ item.pk }}">₦{{ item.subtotal|floatformat:2 }}</span>
-          </div>
+              <div class="cart-item-subtotal text-end" style="min-width: 120px;">
+                <span class="subtotal-label small text-muted">Subtotal</span>
+                <span class="subtotal-value d-block fw-semibold" id="subtotal-{{ item.pk }}" style="color: var(--farm-forest); font-size: 1.1rem; font-weight: 700;">₦{{ item.subtotal|floatformat:2 }}</span>
+              </div>
 
-          <form method="post" action="{% url 'shop:remove_from_cart' item.pk %}" class="remove-form">
-            {% csrf_token %}
-            <button type="submit" class="btn-remove" title="Remove item">
-              <i class="bi bi-trash"></i>
-            </button>
-          </form>
+              <form method="post" action="{% url 'shop:remove_from_cart' item.pk %}" class="remove-form">
+                {% csrf_token %}
+                <button type="submit" class="btn-remove" title="Remove item" style="background: none; border: none; cursor: pointer; padding: 0.6rem; font-size: 1.1rem; transition: all var(--transition-fast); border-radius: var(--radius-sm); color: var(--farm-danger); display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
         {% endfor %}
       </div>
 
       <!-- Cart Summary -->
-      <div class="cart-summary">
-        <h3>Order Summary</h3>
-        <div class="summary-row">
-          <span>Items ({{ cart.item_count }})</span>
-          <span>₦{{ cart.total|floatformat:2 }}</span>
+      <div class="cart-summary animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="card shadow-md border-0" style="border-radius: var(--radius-xl); border: 1px solid var(--farm-border-light);">
+          <div class="card-header bg-white border-0 py-3" style="border-bottom: 2px solid var(--farm-border-light);">
+            <h3 class="mb-0 text-primary" style="color: var(--farm-forest); font-weight: 700;">Order Summary</h3>
+          </div>
+          <div class="card-body">
+            <div class="summary-row" style="display: flex; justify-content: space-between; padding: 10px 0; color: var(--farm-text-muted); font-size: 0.9375rem;">
+              <span>Items ({{ cart.item_count }})</span>
+              <span>₦{{ cart.total|floatformat:2 }}</span>
+            </div>
+            <div class="summary-row" style="display: flex; justify-content: space-between; padding: 10px 0; color: var(--farm-text-muted); font-size: 0.9375rem;">
+              <span>Shipping</span>
+              <span class="text-success fw-semibold">Free</span>
+            </div>
+            <div class="summary-divider" style="border-top: 1px solid var(--farm-border-light); margin: 12px 0;"></div>
+            <div class="summary-total" style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 700; color: var(--farm-forest);">
+              <span>Total</span>
+              <span class="total-amount" style="font-size: 1.5rem; font-weight: 800;">₦{{ cart.total|floatformat:2 }}</span>
+            </div>
+            <a href="{% url 'shop:checkout' %}" class="btn btn-accent btn-lg btn-block mt-3 btn-shimmer">
+              <i class="bi bi-lock"></i> Proceed to Checkout
+            </a>
+            <p class="secure-note text-center mt-3" style="color: var(--farm-text-muted); font-size: 0.8125rem;">
+              <i class="bi bi-shield-check"></i> Secure checkout with Paystack
+            </p>
+          </div>
         </div>
-        <div class="summary-row">
-          <span>Shipping</span>
-          <span class="text-success">Free</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-total">
-          <span>Total</span>
-          <span class="total-amount">₦{{ cart.total|floatformat:2 }}</span>
-        </div>
-        <a href="{% url 'shop:checkout' %}" class="btn-checkout">
-          <i class="bi bi-lock"></i> Proceed to Checkout
-        </a>
-        <p class="secure-note">
-          <i class="bi bi-shield-check"></i> Secure checkout with Paystack
-        </p>
       </div>
     </div>
     {% endif %}
@@ -102,103 +119,6 @@
 </div>
 
 <style>
-  .cart-wrapper {
-    background: #F5F7F2;
-    min-height: 100vh;
-    padding: 24px;
-  }
-
-  .cart-container {
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  .cart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
-    padding: 28px 36px;
-    border-radius: 16px;
-    margin-bottom: 24px;
-  }
-
-  .cart-header-content h1 {
-    color: #FFFFFF;
-    font-weight: 700;
-    font-size: 24px;
-    margin: 0;
-  }
-
-  .cart-header-content p {
-    color: rgba(255,255,255,0.85);
-    font-size: 14px;
-    margin: 4px 0 0 0;
-  }
-
-  .continue-shopping-btn {
-    color: #D4AF37;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: 2px solid rgba(212,175,55,0.3);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-  }
-
-  .continue-shopping-btn:hover {
-    background: rgba(212,175,55,0.1);
-    border-color: #D4AF37;
-    color: #D4AF37;
-  }
-
-  .empty-cart {
-    text-align: center;
-    padding: 80px 20px;
-    background: #FFFFFF;
-    border-radius: 16px;
-  }
-
-  .empty-cart i {
-    font-size: 72px;
-    color: #C8D6C8;
-    margin-bottom: 16px;
-  }
-
-  .empty-cart h3 {
-    color: #1B5E20;
-    font-weight: 600;
-    margin: 0 0 8px 0;
-  }
-
-  .empty-cart p {
-    color: #6B7A6B;
-    margin: 0 0 24px 0;
-  }
-
-  .btn-browse {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 28px;
-    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
-    color: #FFFFFF;
-    text-decoration: none;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .btn-browse:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(27,94,32,0.3);
-    color: #FFFFFF;
-  }
-
   .cart-layout {
     display: grid;
     grid-template-columns: 1fr 340px;
@@ -206,33 +126,16 @@
     align-items: start;
   }
 
-  .cart-items {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .cart-item {
-    background: #FFFFFF;
-    border-radius: 14px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.04);
-  }
-
   .cart-item-image {
     width: 80px;
     height: 80px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     flex-shrink: 0;
-    background: #F8FAF8;
+    background: var(--farm-bg-alt);
   }
 
-  .cart-item-image img {
+  .cart-item-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -248,57 +151,35 @@
     font-size: 32px;
   }
 
-  .cart-item-details {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .cart-item-name {
-    font-weight: 600;
-    font-size: 16px;
-    color: #1B5E20;
-    margin: 0 0 4px 0;
-  }
-
-  .cart-item-price {
-    font-size: 13px;
-    color: #6B7A6B;
-    margin: 0;
-  }
-
-  .cart-item-quantity {
-    flex-shrink: 0;
-  }
-
   .qty-form {
     display: flex;
     align-items: center;
     gap: 0;
-    border: 2px solid #E8EDE8;
-    border-radius: 10px;
+    border: 2px solid var(--farm-border-light);
+    border-radius: var(--radius-md);
     overflow: hidden;
   }
 
   .qty-btn {
-    background: #F8FAF8;
+    background: var(--farm-bg-alt);
     border: none;
     padding: 8px 14px;
     cursor: pointer;
     font-size: 16px;
-    color: #1B5E20;
-    transition: background 0.2s ease;
+    color: var(--farm-primary);
+    transition: background var(--transition-fast);
   }
 
   .qty-btn:hover {
-    background: #E8EDE8;
+    background: var(--farm-border-light);
   }
 
   .qty-input {
     width: 50px;
     text-align: center;
     border: none;
-    border-left: 2px solid #E8EDE8;
-    border-right: 2px solid #E8EDE8;
+    border-left: 2px solid var(--farm-border-light);
+    border-right: 2px solid var(--farm-border-light);
     padding: 8px 4px;
     font-size: 14px;
     -moz-appearance: textfield;
@@ -313,84 +194,50 @@
   .btn-remove {
     background: none;
     border: none;
-    color: #C62828;
     cursor: pointer;
-    padding: 8px;
-    font-size: 16px;
-    transition: color 0.2s ease;
+    padding: 0.5rem;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+    border-radius: var(--radius-sm);
+    color: var(--farm-danger);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .btn-remove:hover {
+    background: var(--farm-bg-alt);
     color: #B71C1C;
-  }
-
-  .cart-summary {
-    background: #FFFFFF;
-    border-radius: 14px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    border: 1px solid rgba(0,0,0,0.04);
-  }
-
-  .cart-summary h3 {
-    color: #1B5E20;
-    font-size: 18px;
-    margin: 0 0 16px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #E8EDE8;
   }
 
   .summary-row {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
-    color: #6B7A6B;
-    font-size: 14px;
+    color: var(--farm-text-muted);
+    font-size: 0.9375rem;
   }
 
   .summary-divider {
-    border-top: 1px solid #E8EDE8;
+    border-top: 1px solid var(--farm-border-light);
     margin: 12px 0;
   }
 
   .summary-total {
     display: flex;
     justify-content: space-between;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 700;
-    color: #1B5E20;
+    color: var(--farm-primary);
   }
 
   .total-amount {
-    font-size: 22px;
-  }
-
-  .btn-checkout {
-    display: block;
-    width: 100%;
-    background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%);
-    color: #1B5E20;
-    text-decoration: none;
-    text-align: center;
-    padding: 14px 24px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 16px;
-    margin-top: 16px;
-    transition: all 0.3s ease;
-  }
-
-  .btn-checkout:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(212,175,55,0.4);
-    color: #1B5E20;
+    font-size: 1.5rem;
   }
 
   .secure-note {
-    text-align: center;
-    color: #6B7A6B;
-    font-size: 12px;
-    margin-top: 12px;
+    color: var(--farm-text-muted);
+    font-size: 0.8125rem;
   }
 
   @media (max-width: 768px) {
@@ -399,4 +246,94 @@
     }
   }
 </style>
-{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCsrfToken() {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (input) return input.value;
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '';
+    }
+
+    async function updateQuantity(itemId, newQuantity) {
+        const url = `/shop/update/${itemId}/`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ quantity: newQuantity }),
+        });
+        return response.json();
+    }
+
+    function updateCartTotals(data, itemId) {
+        const itemCountEls = document.querySelectorAll('.cart-header-content p');
+        itemCountEls.forEach(el => {
+            el.textContent = `${data.item_count} item${data.item_count === 1 ? '' : 's'} in your cart`;
+        });
+
+        const summaryItemsEl = document.querySelector('.summary-row span:first-child');
+        if (summaryItemsEl && data.item_count !== undefined) {
+            summaryItemsEl.textContent = `Items (${data.item_count})`;
+        }
+
+        const totalEl = document.querySelector('.total-amount');
+        if (totalEl && data.cart_total !== undefined) {
+            totalEl.textContent = `₦${parseFloat(data.cart_total).toFixed(2)}`;
+        }
+
+        if (itemId && data.item_subtotal !== undefined) {
+            const subtotalEl = document.getElementById(`subtotal-${itemId}`);
+            if (subtotalEl) {
+                subtotalEl.textContent = `₦${parseFloat(data.item_subtotal).toFixed(2)}`;
+            }
+        }
+
+        if (data.is_empty) {
+            window.location.reload();
+        }
+    }
+
+    document.querySelectorAll('.qty-plus').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const itemId = this.dataset.itemId;
+            const input = document.querySelector(`.qty-input[data-item-id="${itemId}"]`);
+            const max = parseInt(input.max || 9999, 10);
+            let newQty = parseInt(input.value, 10) + 1;
+            if (newQty > max) newQty = max;
+            input.value = newQty;
+
+            const data = await updateQuantity(itemId, newQty);
+            if (data.success) {
+                updateCartTotals(data, itemId);
+            } else if (data.error) {
+                alert(data.error);
+                input.value = Math.max(1, newQty - 1);
+            }
+        });
+    });
+
+    document.querySelectorAll('.qty-minus').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const itemId = this.dataset.itemId;
+            const input = document.querySelector(`.qty-input[data-item-id="${itemId}"]`);
+            let newQty = parseInt(input.value, 10) - 1;
+            if (newQty < 1) newQty = 1;
+            input.value = newQty;
+
+            const data = await updateQuantity(itemId, newQty);
+            if (data.success) {
+                updateCartTotals(data, itemId);
+            } else if (data.error) {
+                alert(data.error);
+                input.value = Math.max(1, newQty + 1);
+            }
+        });
+    });
+});
+</script>
+ {% endblock %}

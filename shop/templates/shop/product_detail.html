@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ product.name }} - TAMIPEE{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: clamp(1.5rem, 4vw, 2.5rem) 0;">
+  <div class="container-custom">
+    <nav aria-label="breadcrumb" class="animate-fade-in-up">
+      <ol class="breadcrumb" style="background: transparent; padding: 0; margin-bottom: 1.5rem;">
+        <li class="breadcrumb-item"><a href="{% url 'shop:product_list' %}">{% trans "Shop" %}</a></li>
+        <li class="breadcrumb-item active" aria-current="page" style="color: var(--farm-text-muted);">{{ product.name }}</li>
+      </ol>
+    </nav>
+    <div class="card shadow-lg border-0 animate-fade-in-up" style="border-radius: var(--radius-xl); border: 1px solid var(--farm-border-light); overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="row g-0">
+          <div class="col-lg-6">
+            <div class="product-detail-image-wrapper" style="position: relative; min-height: 450px;">
+              {% if product.image %}
+                  <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-detail-image" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
+              {% else %}
+                  <div class="product-detail-placeholder" style="background: linear-gradient(135deg, #F5F7F2 0%, #E8EDE8 100%);"><i class="bi bi-box-seam"></i></div>
+              {% endif %}
+              {% if not product.in_stock %}
+              <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2;">
+                <span style="background: rgba(198,40,40,0.95); color: white; padding: 12px 24px; border-radius: var(--radius-full); font-weight: 700; font-size: 1.1rem;">Out of Stock</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="p-4 p-md-5" style="min-height: 100%; display: flex; flex-direction: column;">
+              <div class="mb-3">
+                {% if product.category %}<span class="product-category-badge" style="font-size: 0.75rem; padding: 6px 14px;">{{ product.category.name }}</span>{% endif %}
+                {% if not product.in_stock %}<span class="badge badge-danger ms-1" style="background: #DC3545; color: white; padding: 6px 14px; border-radius: var(--radius-full); font-weight: 600;">Out of Stock</span>{% endif %}
+              </div>
+              <h1 class="h3 mb-3" style="font-weight: 800; color: var(--farm-forest); letter-spacing: -0.02em; line-height: 1.2;">{{ product.name }}</h1>
+              <p class="fs-2 fw-bold mb-3" style="color: var(--farm-primary); font-size: 2rem;">₦{{ product.price|floatformat:2 }}</p>
+              {% if product.in_stock %}
+                  <p class="text-success mb-3" style="font-weight: 600;"><i class="bi bi-check-circle-fill me-1"></i>{% trans "In stock" %} ({{ product.stock_quantity }})</p>
+              {% else %}
+                  <p class="text-danger mb-3" style="font-weight: 600;"><i class="bi bi-x-circle-fill me-1"></i>{% trans "Out of stock" %}</p>
+              {% endif %}
+              <div class="mb-4" style="font-size: 1rem; line-height: 1.7; color: var(--farm-text); flex: 1;">{{ product.description|linebreaks }}</div>
+              {% if product.in_stock %}
+                  <form method="post" action="{% url 'shop:add_to_cart' product.pk %}" class="d-flex flex-wrap gap-2" data-product-id="{{ product.pk }}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-accent btn-lg btn-shimmer">
+                          <i class="bi bi-cart-plus me-1"></i> Add to Cart
+                          {% if is_in_cart %}
+                          <span class="cart-qty-badge" data-product-id="{{ product.pk }}">{{ cart_quantity }}</span>
+                          {% endif %}
+                      </button>
+                      <a href="{% url 'shop:cart' %}" class="btn btn-outline btn-lg">{% trans "View Cart" %}</a>
+                  </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .product-detail-image-wrapper {
+    background: linear-gradient(135deg, #F5F7F2 0%, #E8EDE8 100%);
+    min-height: 450px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .product-detail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: 4 / 3;
+    transition: transform var(--transition-slow);
+  }
+
+  .product-detail-image-wrapper:hover .product-detail-image {
+    transform: scale(1.03);
+  }
+
+  .product-detail-placeholder {
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    font-size: 5rem;
+    color: #9ca3af;
+    width: 100%;
+    background: linear-gradient(135deg, #F5F7F2 0%, #E8EDE8 100%);
+  }
+
+  @media (max-width: 768px) {
+    .product-detail-image-wrapper {
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      min-height: 280px;
+    }
+  }
+</style>
+
+<script>
+function getCsrfToken() {
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+
+document.querySelectorAll('form[data-product-id]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = form.querySelector('.btn-add-to-cart');
+        const productId = form.dataset.productId;
+        
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: new URLSearchParams(new FormData(form)),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let qtyBadge = btn.querySelector('.cart-qty-badge');
+                if (!qtyBadge) {
+                    qtyBadge = document.createElement('span');
+                    qtyBadge.className = 'cart-qty-badge';
+                    qtyBadge.dataset.productId = productId;
+                    btn.appendChild(qtyBadge);
+                }
+                qtyBadge.textContent = data.quantity;
+            } else {
+                alert(data.error || 'Failed to add to cart');
+            }
+        })
+        .catch(() => {
+            form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -4,38 +4,44 @@
 {% block title %}{% trans "Verify Email" %}{% endblock %}
 
 {% block content %}
-<div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="card-body p-5 text-center">
-            <div class="auth-icon-header">
-                <div class="auth-icon">
-                    <i class="bi bi-envelope-exclamation"></i>
-                </div>
-                <h2>{% trans "Email Not Verified" %}</h2>
-                <p class="text-muted">
-                    {% trans "Please verify your email address to access all features." %}
-                </p>
-                <p class="text-muted">
-                    {% trans "We'll send a verification link to:" %}
-                    <strong>{{ user.email }}</strong>
-                </p>
+<div class="page-wrapper d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 200px); padding: 40px 0;">
+  <div class="container-custom">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-5">
+        <div class="auth-wrapper">
+          <div class="auth-card card card-header-accent">
+            <div class="card-header text-center py-4">
+              <i class="bi bi-envelope-exclamation" style="font-size: 2.5rem; color: var(--farm-accent);"></i>
+              <h2 class="mt-3 mb-1">{% trans "Email Not Verified" %}</h2>
+              <p class="text-muted mb-0">
+                  {% trans "Please verify your email address to access all features." %}
+              </p>
             </div>
+            <div class="card-body p-4 p-md-5 text-center">
+              <p class="text-muted">
+                  {% trans "We'll send a verification link to:" %}
+                  <strong>{{ user.email }}</strong>
+              </p>
 
-            <form method="post" novalidate class="mt-4">
-                {% csrf_token %}
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="bi bi-send me-2"></i>{% trans "Resend Verification Email" %}
-                    </button>
-                </div>
-            </form>
+              <form method="post" novalidate class="mt-4">
+                  {% csrf_token %}
+                  <div class="d-grid">
+                      <button type="submit" class="btn btn-primary btn-lg">
+                          <i class="bi bi-send me-2"></i>{% trans "Resend Verification Email" %}
+                      </button>
+                  </div>
+              </form>
 
-            <div class="mt-4">
-                <a href="{% url 'accounts:dashboard' %}" class="text-decoration-none">
-                    <i class="bi bi-arrow-left me-1"></i> {% trans "Back to Dashboard" %}
-                </a>
+              <div class="mt-4">
+                  <a href="{% url 'accounts:dashboard' %}" class="text-decoration-none">
+                      <i class="bi bi-arrow-left me-1"></i> {% trans "Back to Dashboard" %}
+                  </a>
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

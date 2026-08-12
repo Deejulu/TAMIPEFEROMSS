@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, WaterQualityLog, DailyActivityLog
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
 
 
 class BatchForm(forms.ModelForm):
@@ -25,27 +25,24 @@ class BatchForm(forms.ModelForm):
             'season': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active species in the dropdown
+        self.fields['species'].queryset = Species.objects.filter(is_active=True)
+
 
 class FeedLogForm(forms.ModelForm):
     class Meta:
         model = FeedLog
-        fields = ['batch', 'date', 'feed_type', 'quantity_kg', 'cost', 'notes']
+        fields = ['batch', 'date', 'feed_inventory', 'quantity_kg', 'notes']
         widgets = {
             'batch': forms.Select(attrs={'class': 'form-select'}),
             'date': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'feed_type': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g. Coppens 4mm'
-            }),
+            'feed_inventory': forms.Select(attrs={'class': 'form-select'}),
             'quantity_kg': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0'
-            }),
-            'cost': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0'
@@ -56,11 +53,33 @@ class FeedLogForm(forms.ModelForm):
             }),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def clean_batch(self):
         batch = self.cleaned_data.get('batch')
         if batch and batch.status == 'closed':
             raise forms.ValidationError(_('Cannot log feed for a closed batch.'))
         return batch
+
+    def clean(self):
+        cleaned_data = super().clean()
+        batch = cleaned_data.get('batch')
+        feed_inventory = cleaned_data.get('feed_inventory')
+
+        if batch and feed_inventory:
+            batch_category = batch.species.category
+            feed_category = feed_inventory.category
+
+            if feed_category and batch_category and feed_category != batch_category:
+                raise forms.ValidationError(
+                    _('This feed is intended for %(feed_cat)s but the selected batch is %(batch_cat)s — please select a matching feed item.') % {
+                        'feed_cat': feed_category.name,
+                        'batch_cat': batch_category.name,
+                    }
+                )
+
+        return cleaned_data
 
 
 class GrowthRecordForm(forms.ModelForm):
@@ -173,12 +192,13 @@ class HarvestRecordForm(forms.ModelForm):
 class FeedInventoryForm(forms.ModelForm):
     class Meta:
         model = FeedInventory
-        fields = ['feed_type', 'supplier', 'quantity_on_hand_kg', 'cost_per_kg', 'reorder_point_kg']
+        fields = ['feed_type', 'category', 'supplier', 'quantity_on_hand_kg', 'cost_per_kg', 'reorder_point_kg', 'compatible_batches']
         widgets = {
             'feed_type': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'e.g. Coppens 4mm'
             }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'supplier': forms.Select(attrs={
                 'class': 'form-select',
                 'placeholder': 'Select supplier'
@@ -199,6 +219,13 @@ class FeedInventoryForm(forms.ModelForm):
                 'min': '0'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+        self.fields['category'].required = False
+        self.fields['compatible_batches'].queryset = Batch.objects.filter(status='active').order_by('-start_date')
+        self.fields['compatible_batches'].help_text = "Select batches this feed is suitable for. Batches are grouped by species and category."
 
 
 class SupplierForm(forms.ModelForm):
@@ -332,48 +359,6 @@ class VaccinationRecordForm(forms.ModelForm):
         return batch
 
 
-class WaterQualityLogForm(forms.ModelForm):
-    class Meta:
-        model = WaterQualityLog
-        fields = ['batch', 'date', 'ph_level', 'temperature_c', 'oxygen_level', 'notes']
-        widgets = {
-            'batch': forms.Select(attrs={'class': 'form-select'}),
-            'date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'ph_level': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-                'max': '14'
-            }),
-            'temperature_c': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.1',
-                'min': '-10',
-                'max': '50'
-            }),
-            'oxygen_level': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0'
-            }),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2
-            }),
-        }
-
-    def clean_batch(self):
-        batch = self.cleaned_data.get('batch')
-        if batch and batch.status == 'closed':
-            raise forms.ValidationError(_('Cannot log water quality for a closed batch.'))
-        if batch and not batch.is_fish:
-            raise forms.ValidationError(_('Water quality logs are only for fish batches.'))
-        return batch
-
-
 class DailyActivityLogForm(forms.ModelForm):
     class Meta:
         model = DailyActivityLog
@@ -399,3 +384,65 @@ class DailyActivityLogForm(forms.ModelForm):
         if batch and batch.status == 'closed':
             raise forms.ValidationError(_('Cannot log activity for a closed batch.'))
         return batch
+
+
+class SpeciesForm(forms.ModelForm):
+    class Meta:
+        model = Species
+        fields = ['name', 'category']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Species name (e.g. Catfish, Broiler)'
+            }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active categories in the dropdown
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+
+
+class SpeciesUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Species
+        fields = ['name', 'category', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Species name (e.g. Catfish, Broiler)'
+            }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active categories in the dropdown
+        self.fields['category'].queryset = Category.objects.filter(is_active=True)
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Category name (e.g. Fish, Poultry, Livestock)'
+            }),
+        }
+
+
+class CategoryUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Category name (e.g. Fish, Poultry, Livestock)'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }

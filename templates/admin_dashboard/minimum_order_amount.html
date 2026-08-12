@@ -1,0 +1,228 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+.min-order-container {
+    max-width: 700px;
+    margin: 0 auto;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.min-order-header {
+    margin-bottom: 2rem;
+}
+
+.min-order-header h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.min-order-header h1 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.min-order-header p {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.min-order-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.min-order-card .card-gold-bar-top {
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #C5A028);
+}
+
+.min-order-card .card-body {
+    padding: 2rem;
+}
+
+.design-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.design-form-label {
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+    display: block;
+}
+
+.design-form-control,
+.design-form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+}
+
+.design-form-control:focus,
+.design-form-select:focus {
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    outline: none;
+}
+
+.form-text-custom {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-top: 0.25rem;
+}
+
+.alert-info-custom {
+    background-color: rgba(59, 130, 246, 0.08);
+    border-left: 4px solid #3B82F6;
+    color: #1E40AF;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-info-custom strong {
+    font-weight: 700;
+}
+
+.design-form-actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #E8F5E9;
+    flex-wrap: wrap;
+}
+
+.design-form-actions .design-btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .min-order-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .min-order-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .design-form-actions {
+        flex-direction: column;
+    }
+    
+    .design-form-actions .design-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .min-order-card .card-body {
+        padding: 1rem;
+    }
+    
+    .min-order-header h1 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="min-order-container">
+    <div class="min-order-header">
+        <h1><i class="bi bi-cart-check"></i> Minimum Order Amount</h1>
+        <p>Set minimum order amount requirement for checkout</p>
+    </div>
+
+    <div class="card min-order-card">
+        <div class="card-gold-bar-top"></div>
+        <div class="card-body">
+            <form id="minOrderForm">
+                {% csrf_token %}
+                <div class="design-form-group">
+                    <label for="enabled" class="design-form-label">
+                        <input type="checkbox" id="enabled" name="enabled" {% if min_order.enabled %}checked{% endif %}>
+                        Enable Minimum Order Amount
+                    </label>
+                    <p class="form-text-custom">When enabled, customers must meet the minimum order amount to proceed to checkout</p>
+                </div>
+
+                <div class="design-form-group">
+                    <label for="minimum_amount">Minimum Amount (₦)</label>
+                    <input type="number" step="0.01" min="0" class="design-form-control" id="minimum_amount" name="minimum_amount" value="{{ min_order.minimum_amount }}">
+                    <p class="form-text-custom">Set to 0 to effectively disable minimum order enforcement</p>
+                </div>
+
+                <div class="alert-info-custom">
+                    <strong>Current Status:</strong>
+                    {% if min_order.enabled and min_order.minimum_amount > 0 %}
+                        Minimum order of ₦{{ min_order.minimum_amount|floatformat:2 }} is enforced
+                    {% else %}
+                        No minimum order amount enforced
+                    {% endif %}
+                </div>
+
+                <div class="design-form-actions">
+                    <button type="submit" class="design-btn design-btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Update Settings
+                    </button>
+                    <a href="{% url 'admin_dashboard:overview' %}" class="design-btn design-btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('minOrderForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        enabled: document.getElementById('enabled').checked,
+        minimum_amount: parseFloat(document.getElementById('minimum_amount').value)
+    };
+    
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    try {
+        const response = await fetch('{% url "admin_dashboard:update_minimum_order_amount" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error updating settings: ' + error);
+    }
+});
+</script>
+{% endblock %}

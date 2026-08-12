@@ -1,130 +1,129 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
-    <!-- Lighter, vibrant green gradient background -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    <!-- Clean white background with subtle shadow -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.2"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Professional green gradient for primary elements -->
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E7D32;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1B5E20;stop-opacity:1" />
     </linearGradient>
     
-    <!-- Bright sun gradient -->
-    <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+    <!-- Premium gold gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFC107;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#FFA000;stop-opacity:1" />
     </linearGradient>
     
-    <!-- Warm barn gradient -->
+    <!-- Rich brown gradient for barn -->
     <linearGradient id="barnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8D6E63;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6D4C41;stop-opacity:1" />
-    </linearGradient>
-    
-    <!-- Plant gradient -->
-    <linearGradient id="plantGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#66BB6A;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#6D4C41;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4E342E;stop-opacity:1" />
     </linearGradient>
   </defs>
 
   <!-- ==========================================
-       BACKGROUND - Vibrant Green Circle
+       BACKGROUND - Clean White Circle with Border
        ========================================== -->
-  <circle cx="100" cy="100" r="95" fill="url(#bgGrad)" />
+  <circle cx="100" cy="100" r="95" fill="#FFFFFF" filter="url(#shadow)" />
   
-  <!-- Outer accent ring - Bright Gold -->
-  <circle cx="100" cy="100" r="85" fill="none" stroke="#FFD700" stroke-width="3.5" />
+  <!-- Professional border ring -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#greenGrad)" stroke-width="4" />
   
-  <!-- Inner accent ring - Lighter Gold -->
-  <circle cx="100" cy="100" r="75" fill="none" stroke="#FFE082" stroke-width="1.5" opacity="0.4" />
+  <!-- Inner accent ring - Gold -->
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.6" />
 
   <!-- ==========================================
-       BARN - Warm Brown Filled Shape
+       BARN - Professional Refined Design
        ========================================== -->
-  <!-- Barn Body (main rectangle) -->
-  <rect x="55" y="85" width="90" height="70" rx="3" fill="url(#barnGrad)" />
+  <!-- Barn Body (main structure) -->
+  <rect x="58" y="90" width="84" height="65" rx="2" fill="url(#barnGrad)" />
   
-  <!-- Barn Roof (triangle) -->
-  <path d="M50 85 L100 45 L150 85 Z" fill="#5D4037" />
+  <!-- Barn Roof (cleaner triangle) -->
+  <path d="M52 90 L100 52 L148 90 Z" fill="#4E342E" />
   
-  <!-- Barn Roof Trim (gold accent) -->
-  <path d="M50 85 L100 45 L150 85" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" />
+  <!-- Roof highlight -->
+  <path d="M100 52 L148 90 L142 90 L100 58 Z" fill="#3E2723" opacity="0.3" />
   
-  <!-- Barn Door (large) -->
-  <rect x="80" y="105" width="40" height="50" rx="2" fill="#4E342E" />
+  <!-- Roof edge trim (gold accent) -->
+  <path d="M52 90 L100 52 L148 90" fill="none" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round" />
   
-  <!-- Barn Door Arch -->
-  <path d="M80 105 Q100 95 120 105" fill="none" stroke="#FFD700" stroke-width="2" />
+  <!-- Barn Door (refined) -->
+  <rect x="82" y="108" width="36" height="47" rx="1.5" fill="#3E2723" />
   
-  <!-- Barn Door Handle -->
-  <circle cx="105" cy="130" r="3" fill="#FFD700" />
+  <!-- Door panels -->
+  <line x1="100" y1="108" x2="100" y2="155" stroke="#2C1E1A" stroke-width="2" />
+  <line x1="82" y1="131" x2="118" y2="131" stroke="#2C1E1A" stroke-width="1.5" />
   
-  <!-- Barn Windows (left and right) -->
-  <rect x="62" y="95" width="14" height="14" rx="1" fill="#FFD700" opacity="0.8" />
-  <rect x="124" y="95" width="14" height="14" rx="1" fill="#FFD700" opacity="0.8" />
+  <!-- Door handles -->
+  <circle cx="94" cy="131" r="2" fill="url(#goldGrad)" />
+  <circle cx="106" cy="131" r="2" fill="url(#goldGrad)" />
   
-  <!-- Window details (crosses) -->
-  <line x1="69" y1="95" x2="69" y2="109" stroke="#6D4C41" stroke-width="2" />
-  <line x1="62" y1="102" x2="76" y2="102" stroke="#6D4C41" stroke-width="2" />
-  <line x1="131" y1="95" x2="131" y2="109" stroke="#6D4C41" stroke-width="2" />
-  <line x1="124" y1="102" x2="138" y2="102" stroke="#6D4C41" stroke-width="2" />
+  <!-- Barn Windows (professional style) -->
+  <rect x="64" y="98" width="12" height="12" rx="1" fill="#FFC107" opacity="0.9" />
+  <rect x="124" y="98" width="12" height="12" rx="1" fill="#FFC107" opacity="0.9" />
+  
+  <!-- Window frames -->
+  <rect x="64" y="98" width="12" height="12" rx="1" fill="none" stroke="#4E342E" stroke-width="1.5" />
+  <rect x="124" y="98" width="12" height="12" rx="1" fill="none" stroke="#4E342E" stroke-width="1.5" />
+  <line x1="70" y1="98" x2="70" y2="110" stroke="#4E342E" stroke-width="1.5" />
+  <line x1="64" y1="104" x2="76" y2="104" stroke="#4E342E" stroke-width="1.5" />
+  <line x1="130" y1="98" x2="130" y2="110" stroke="#4E342E" stroke-width="1.5" />
+  <line x1="124" y1="104" x2="136" y2="104" stroke="#4E342E" stroke-width="1.5" />
 
   <!-- ==========================================
-       SUN - Bright Yellow/Gold Filled
+       SUN - Modern Minimalist Design
        ========================================== -->
   <!-- Sun Body -->
-  <circle cx="130" cy="45" r="22" fill="url(#sunGrad)" />
+  <circle cx="135" cy="50" r="18" fill="url(#goldGrad)" />
   
-  <!-- Sun Rays (bold) -->
-  <!-- Top -->
-  <line x1="130" y1="15" x2="130" y2="25" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
-  <!-- Bottom -->
-  <line x1="130" y1="65" x2="130" y2="55" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
-  <!-- Left -->
-  <line x1="100" y1="45" x2="110" y2="45" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
-  <!-- Right -->
-  <line x1="160" y1="45" x2="150" y2="45" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+  <!-- Sun Rays (refined) -->
+  <line x1="135" y1="25" x2="135" y2="32" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
+  <line x1="135" y1="68" x2="135" y2="61" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
+  <line x1="110" y1="50" x2="117" y2="50" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
+  <line x1="160" y1="50" x2="153" y2="50" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
   
   <!-- Diagonal Rays -->
-  <line x1="110" y1="25" x2="117" y2="32" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
-  <line x1="150" y1="25" x2="143" y2="32" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
-  <line x1="110" y1="65" x2="117" y2="58" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
-  <line x1="150" y1="65" x2="143" y2="58" stroke="#FFD700" stroke-width="3.5" stroke-linecap="round" />
-  
-  <!-- Sun Face (simple smile) -->
-  <!-- Eyes -->
-  <circle cx="124" cy="42" r="3" fill="#E65100" />
-  <circle cx="136" cy="42" r="3" fill="#E65100" />
-  <!-- Smile -->
-  <path d="M125 50 Q130 55 135 50" fill="none" stroke="#E65100" stroke-width="2" stroke-linecap="round" />
+  <line x1="118" y1="32" x2="124" y2="38" stroke="#FFC107" stroke-width="2.5" stroke-linecap="round" />
+  <line x1="152" y1="32" x2="146" y2="38" stroke="#FFC107" stroke-width="2.5" stroke-linecap="round" />
+  <line x1="118" y1="68" x2="124" y2="62" stroke="#FFC107" stroke-width="2.5" stroke-linecap="round" />
+  <line x1="152" y1="68" x2="146" y2="62" stroke="#FFC107" stroke-width="2.5" stroke-linecap="round" />
 
   <!-- ==========================================
-       PLANT - Bright Green Filled
+       PLANT - Refined Green Growth Symbol
        ========================================== -->
-  <!-- Stem -->
-  <line x1="85" y1="155" x2="85" y2="130" stroke="url(#plantGrad)" stroke-width="6" stroke-linecap="round" />
+  <!-- Main stem -->
+  <line x1="75" y1="155" x2="75" y2="130" stroke="url(#greenGrad)" stroke-width="5" stroke-linecap="round" />
   
-  <!-- Left Leaf -->
-  <path d="M85 140 C70 130 65 140 75 145 C80 147 85 143 85 140" fill="url(#plantGrad)" />
+  <!-- Left leaf (professional curve) -->
+  <path d="M75 142 C65 137 60 140 68 145 C72 147 75 144 75 142" fill="url(#greenGrad)" />
+  <path d="M75 142 C65 137 60 140 68 145" fill="none" stroke="#1B5E20" stroke-width="1" opacity="0.5" />
   
-  <!-- Right Leaf -->
-  <path d="M85 135 C100 125 105 135 95 140 C90 142 85 138 85 135" fill="url(#plantGrad)" />
+  <!-- Right leaf (professional curve) -->
+  <path d="M75 137 C85 132 90 135 82 140 C78 142 75 139 75 137" fill="url(#greenGrad)" />
+  <path d="M75 137 C85 132 90 135 82 140" fill="none" stroke="#1B5E20" stroke-width="1" opacity="0.5" />
   
-  <!-- Top Leaf/Bud -->
-  <path d="M85 125 C80 115 75 120 82 122 C85 123 88 121 88 118 C88 115 85 120 85 125" fill="#66BB6A" />
+  <!-- Top leaves -->
+  <ellipse cx="75" cy="128" rx="6" ry="8" fill="#2E7D32" />
+  <ellipse cx="72" cy="126" rx="4" ry="6" fill="#43A047" />
 
   <!-- ==========================================
-       GROUND - Subtle Base
+       GROUND LINE - Clean Professional Base
        ========================================== -->
-  <path d="M45 160 C60 155 80 157 100 160 C120 163 140 157 155 160" fill="none" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" opacity="0.6" />
+  <line x1="45" y1="160" x2="155" y2="160" stroke="url(#greenGrad)" stroke-width="3" stroke-linecap="round" opacity="0.7" />
   
-  <!-- Small grass details -->
-  <path d="M55 158 L58 152 L61 158" fill="none" stroke="#66BB6A" stroke-width="2" stroke-linecap="round" opacity="0.7" />
-  <path d="M140 158 L143 152 L146 158" fill="none" stroke="#66BB6A" stroke-width="2" stroke-linecap="round" opacity="0.7" />
-
-  <!-- ==========================================
-       DECORATIVE SPARKLES
-       ========================================== -->
-  <circle cx="160" cy="80" r="2.5" fill="#FFD700" opacity="0.6" />
-  <circle cx="40" cy="70" r="2" fill="#FFD700" opacity="0.5" />
-  <circle cx="50" cy="120" r="1.5" fill="#FFD700" opacity="0.4" />
-  <circle cx="150" cy="130" r="1.5" fill="#FFD700" opacity="0.4" />
+  <!-- Refined grass accents -->
+  <path d="M55 160 L57 154 L59 160" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" />
+  <path d="M145 160 L147 154 L149 160" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" />
+  <path d="M95 160 L97 154 L99 160" fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" />
 </svg>

@@ -1,16 +1,251 @@
 {% extends "admin_dashboard/base_admin.html" %}
 {% load static notification_tags %}
 
+{% block extra_head %}
+{{ block.super }}
+<style>
+.notifications-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.notifications-header {
+    margin-bottom: 2rem;
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.notifications-header h1 {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1B5E20;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+}
+
+.notifications-header h1 i {
+    color: #D4AF37;
+    margin-right: 0.5rem;
+}
+
+.notifications-subtitle {
+    font-family: "Inter", sans-serif;
+    color: #6b7280 !important;
+    font-size: 0.95rem;
+}
+
+.notification-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4B5563;
+    background: white;
+    border: 1px solid #d1d5db;
+    text-decoration: none;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-btn:hover {
+    background: #E8F5E9;
+    border-color: #2E7D32;
+    color: #1B5E20;
+    text-decoration: none;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: white;
+    border-color: #1B5E20;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(27, 94, 32, 0.15);
+    transform: translateY(-2px);
+    border-color: rgba(46, 125, 50, 0.3);
+}
+
+.notification-item.unread {
+    border-left: 4px solid #D4AF37;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.04), #ffffff);
+}
+
+.notification-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    background: rgba(46, 125, 50, 0.1);
+    color: #2E7D32;
+}
+
+.notification-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    font-size: 0.9375rem;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.notification-message.fw-semibold {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.notification-time {
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+.mark-read-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.mark-read-btn:hover {
+    background: #E8F5E9;
+    border-color: #2E7D32;
+    color: #2E7D32;
+}
+
+.design-empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.design-empty-state i {
+    font-size: 4rem;
+    color: #D1D5DB;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.design-empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+}
+
+.design-empty-state p {
+    color: #9CA3AF;
+    margin-bottom: 1.5rem;
+}
+
+.design-pagination {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
+.design-pagination .page-link {
+    color: #2E7D32;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.design-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border-color: #1B5E20;
+}
+
+.design-pagination .page-link:hover {
+    background-color: #E8F5E9;
+    color: #1B5E20;
+    border-color: #4CAF50;
+}
+
+@media (max-width: 768px) {
+    .notifications-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .notification-item {
+        padding: 1rem;
+    }
+    
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .notifications-header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .notification-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .mark-read-btn {
+        align-self: flex-end;
+    }
+}
+</style>
+{% endblock %}
+
 {% block admin_content %}
 <div class="notifications-container">
     <div class="notifications-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
-                <h1 class="h3 mb-1">Notifications</h1>
-                <p class="text-muted small mb-0">Stay updated with system alerts and activities</p>
+                <h1 class="h3 mb-1"><i class="bi bi-bell"></i> Notifications</h1>
+                <p class="notifications-subtitle mb-0">Stay updated with system alerts and activities</p>
             </div>
             {% if notifications %}
-            <button class="btn btn-primary btn-sm" id="markAllReadBtn">
+            <button class="design-btn design-btn-primary design-btn-sm" id="markAllReadBtn">
                 <i class="bi bi-check2-all"></i> Mark all as read
             </button>
             {% endif %}
@@ -47,7 +282,7 @@
                     <p class="notification-message mb-0 {% if not notification.is_read %}fw-semibold{% endif %}">
                         {{ notification.message }}
                     </p>
-                    <small class="text-muted">{{ notification.created_at|time_ago }}</small>
+                    <small class="notification-time">{{ notification.created_at|time_ago }}</small>
                 </div>
                 {% if not notification.is_read %}
                 <button class="mark-read-btn" data-id="{{ notification.pk }}" title="Mark as read">
@@ -59,7 +294,7 @@
 
             {% if is_paginated %}
             <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mt-3">
+                <ul class="pagination design-pagination">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link" href="?type={{ filter_type }}&page={{ page_obj.previous_page_number }}">Previous</a>
@@ -77,9 +312,10 @@
             </nav>
             {% endif %}
         {% else %}
-            <div class="empty-state text-center py-5">
-                <i class="bi bi-bell-slash display-4 text-muted"></i>
-                <p class="text-muted mt-2">No notifications yet</p>
+            <div class="design-empty-state text-center">
+                <i class="bi bi-bell-slash"></i>
+                <h3>No notifications yet</h3>
+                <p>You will see system alerts and activities here.</p>
             </div>
         {% endif %}
     </div>

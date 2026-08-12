@@ -5,11 +5,14 @@
 
 {% block content %}
 <div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="card-header">
-            <i class="bi bi-shield-lock" style="font-size: 2rem;"></i>
-            <h2 class="mt-2">{% trans "Update Security Questions" %}</h2>
-            <p>{% trans "Choose three different security questions and provide answers" %}</p>
+    <div class="auth-card design-card">
+        <div class="card-gold-bar-top"></div>
+        <div class="card-header card-header-accent">
+            <div class="text-center">
+                <i class="bi bi-shield-lock" style="font-size: 2rem; color: var(--farm-accent);"></i>
+                <h2 class="mt-2">{% trans "Update Security Questions" %}</h2>
+                <p>{% trans "Choose three different security questions and provide answers" %}</p>
+            </div>
         </div>
         <div class="card-body">
             <form method="post" novalidate>
@@ -27,8 +30,8 @@
                 {% endif %}
 
                 <!-- Current Password Confirmation -->
-                <div class="mb-4">
-                    <label for="{{ form.current_password.id_for_label }}" class="form-label">
+                <div class="design-form-group">
+                    <label for="{{ form.current_password.id_for_label }}" class="design-form-label">
                         <i class="bi bi-lock me-1"></i>{{ form.current_password.label }}
                     </label>
                     {{ form.current_password }}
@@ -47,7 +50,7 @@
                 <!-- Security Question 1 -->
                 <div class="security-card mb-3">
                     <div class="card-title mb-2">{{ form.security_question_1.label }}</div>
-                    <div class="mb-3">
+                    <div class="design-form-group mb-3">
                         {{ form.security_question_1 }}
                         {% if form.security_question_1.errors %}
                             <div class="invalid-feedback d-block">
@@ -57,8 +60,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div>
-                        <label class="form-label small">{{ form.security_answer_1.label }}</label>
+                    <div class="design-form-group mb-0">
+                        <label for="{{ form.security_answer_1.id_for_label }}" class="design-form-label">{{ form.security_answer_1.label }}</label>
                         {{ form.security_answer_1 }}
                         {% if form.security_answer_1.errors %}
                             <div class="invalid-feedback d-block">
@@ -73,7 +76,7 @@
                 <!-- Security Question 2 -->
                 <div class="security-card mb-3">
                     <div class="card-title mb-2">{{ form.security_question_2.label }}</div>
-                    <div class="mb-3">
+                    <div class="design-form-group mb-3">
                         {{ form.security_question_2 }}
                         {% if form.security_question_2.errors %}
                             <div class="invalid-feedback d-block">
@@ -83,8 +86,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div>
-                        <label class="form-label small">{{ form.security_answer_2.label }}</label>
+                    <div class="design-form-group mb-0">
+                        <label for="{{ form.security_answer_2.id_for_label }}" class="design-form-label">{{ form.security_answer_2.label }}</label>
                         {{ form.security_answer_2 }}
                         {% if form.security_answer_2.errors %}
                             <div class="invalid-feedback d-block">
@@ -99,7 +102,7 @@
                 <!-- Security Question 3 -->
                 <div class="security-card mb-4">
                     <div class="card-title mb-2">{{ form.security_question_3.label }}</div>
-                    <div class="mb-3">
+                    <div class="design-form-group mb-3">
                         {{ form.security_question_3 }}
                         {% if form.security_question_3.errors %}
                             <div class="invalid-feedback d-block">
@@ -109,8 +112,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div>
-                        <label class="form-label small">{{ form.security_answer_3.label }}</label>
+                    <div class="design-form-group mb-0">
+                        <label for="{{ form.security_answer_3.id_for_label }}" class="design-form-label">{{ form.security_answer_3.label }}</label>
                         {{ form.security_answer_3 }}
                         {% if form.security_answer_3.errors %}
                             <div class="invalid-feedback d-block">
@@ -122,11 +125,11 @@
                     </div>
                 </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success btn-lg">
+                <div class="design-form-actions">
+                    <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-check-circle me-2"></i>{% trans "Save Security Questions" %}
                     </button>
-                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline btn-lg">
                         <i class="bi bi-x-circle me-2"></i>{% trans "Cancel" %}
                     </a>
                 </div>

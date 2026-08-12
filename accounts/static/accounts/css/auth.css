@@ -4,7 +4,7 @@
    ===================================================== */
 
 /* === Google Fonts Import (loaded in base.html) === */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
 
 /* === Color Variables === */
 :root {
@@ -43,6 +43,54 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* === Site-Wide Type Scale === */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700 !important;
+    line-height: 1.22;
+    color: var(--text-dark);
+}
+
+h1 {
+    font-size: clamp(2rem, 3.5vw, 2.75rem);
+    font-weight: 800 !important;
+    letter-spacing: -0.035em;
+}
+
+h2 {
+    font-size: clamp(1.55rem, 2.5vw, 2rem);
+    font-weight: 800 !important;
+    letter-spacing: -0.025em;
+}
+
+h3 {
+    font-size: clamp(1.3rem, 2vw, 1.6rem);
+}
+
+h4,
+h5 {
+    font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+}
+
+h6 {
+    font-size: 1rem;
+}
+
+.card-title,
+.card-header,
+.section-title,
+.form-label,
+label,
+button,
+.btn {
+    font-weight: 600;
+}
+
 /* === Navbar Styling === */
 .navbar {
     background: linear-gradient(135deg, var(--primary-dark-green) 0%, var(--primary-green) 100%) !important;
@@ -52,13 +100,14 @@ body {
 }
 
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.35rem;
-    letter-spacing: -0.3px;
     color: #fff !important;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.navbar-brand .brand-wordmark {
+    color: #FFFFFF;
 }
 
 .navbar-brand i {
@@ -164,8 +213,9 @@ footer a:hover {
 .auth-card .card-header h2,
 .auth-card .card-header h3 {
     margin: 0;
-    font-weight: 600;
+    font-weight: 800;
     font-size: 1.4rem;
+    color: #FFFFFF;
 }
 
 .auth-card .card-header p {
@@ -278,11 +328,49 @@ footer a:hover {
 /* === Button Styling === */
 .btn {
     font-weight: 600;
-    padding: 0.7rem 1.5rem;
-    border-radius: var(--radius-sm);
+    padding: 0.6875rem 1.5rem;
+    border-radius: 8px;
     transition: all var(--transition-fast);
-    font-size: 0.95rem;
+    font-size: 0.9375rem;
     letter-spacing: 0.1px;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    border-radius: 6px;
+}
+
+.btn-lg {
+    padding: 0.875rem 2rem;
+    font-size: 1.0625rem;
+    border-radius: 10px;
+}
+
+.btn-block {
+    display: flex;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-mobile-full {
+        width: 100%;
+    }
 }
 
 .btn-success {

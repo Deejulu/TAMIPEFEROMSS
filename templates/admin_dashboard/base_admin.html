@@ -7,6 +7,8 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_design.css' %}">
+{% block extra_css %}{% endblock %}
 {% if user.is_authenticated %}
 <meta name="csrf-token" content="{{ csrf_token }}">
 {% endif %}
@@ -43,6 +45,10 @@
       padding: 6px 10px;
     }
   }
+
+  .nav-group-header {
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
@@ -58,22 +64,17 @@
                  height="36"
                  style="object-fit: contain; flex-shrink: 0;">
             <div>
-                <span>TAMIPEE</span>
+                <span class="brand-wordmark">TAMIPEE</span>
             </div>
         </div>
 
         <nav class="admin-sidebar-nav">
+            <!-- Main (ungrouped) -->
             <p class="nav-section-title">Main</p>
             <div class="nav-item">
                 <a href="{% url 'admin_dashboard:overview' %}" class="nav-link {% if request.resolver_match.url_name == 'overview' %}active{% endif %}">
                     <i class="bi bi-speedometer2"></i>
                     <span>Overview</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{% url 'admin_dashboard:payments' %}" class="nav-link {% if request.resolver_match.url_name == 'payments' %}active{% endif %}">
-                    <i class="bi bi-credit-card"></i>
-                    <span>Payments</span>
                 </a>
             </div>
             <div class="nav-item">
@@ -83,60 +84,65 @@
                 </a>
             </div>
 
+            <!-- Management -->
             <p class="nav-section-title">Management</p>
             <div class="nav-item">
-                <a href="{% url 'admin_dashboard:content' %}" class="nav-link {% if request.resolver_match.url_name == 'content' %}active{% endif %}">
+                <a href="{% url 'admin_dashboard:website_content' %}" class="nav-link nav-group-header {% if request.resolver_match.url_name == 'website_content' %}active{% endif %}">
                     <i class="bi bi-window-stack"></i>
                     <span>Website Content</span>
                 </a>
             </div>
+
+            <!-- Farm Management -->
             <div class="nav-item">
-                <a href="{% url 'admin_dashboard:users' %}" class="nav-link {% if request.resolver_match.url_name == 'users' %}active{% endif %}">
-                    <i class="bi bi-people"></i>
-                    <span>User Management</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{% url 'admin_dashboard:orders' %}" class="nav-link {% if request.resolver_match.url_name == 'orders' %}active{% endif %}">
-                    <i class="bi bi-truck"></i>
-                    <span>Orders & Delivery</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{% url 'admin_dashboard:inventory' %}" class="nav-link {% if request.resolver_match.url_name == 'inventory' or request.resolver_match.url_name == 'product_list' %}active{% endif %}">
-                    <i class="bi bi-box-seam"></i>
-                    <span>Products / Inventory</span>
-                </a>
-            </div>
-<div class="nav-item">
-                <a href="{% url 'farm_management:dashboard' %}" class="nav-link {% if request.resolver_match.namespace == 'farm_management' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <a href="{% url 'admin_dashboard:farm_management' %}" class="nav-link nav-group-header {% if request.resolver_match.namespace == 'farm_management' or request.resolver_match.url_name == 'farm_management' %}active{% endif %}">
                     <i class="bi bi-basket"></i>
                     <span>Farm Management</span>
                 </a>
             </div>
+
+            <!-- Shop / Orders -->
             <div class="nav-item">
-                <a href="{% url 'farm_management:analytics' %}" class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
-                    <i class="bi bi-bar-chart-line"></i>
-                    <span>Batch Analytics</span>
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{% url 'farm_management:supplier_list' %}" class="nav-link {% if request.resolver_match.url_name == 'supplier_list' %}active{% endif %}">
-                    <i class="bi bi-truck"></i>
-                    <span>Suppliers</span>
+                <a href="{% url 'admin_dashboard:shop_orders' %}" class="nav-link nav-group-header {% if request.resolver_match.url_name == 'shop_orders' %}active{% endif %}">
+                    <i class="bi bi-shop"></i>
+                    <span>Shop / Orders</span>
                 </a>
             </div>
 
+            <!-- Staff Management -->
+            {% if request.user.is_authenticated and request.user.role == 'SUPER_ADMIN' or request.user.role == 'SUPER_STAFF' %}
+            <div class="nav-item">
+                <a href="{% url 'admin_dashboard:staff_management' %}" class="nav-link {% if request.resolver_match.url_name == 'staff_management' or request.resolver_match.url_name == 'staff_create' or request.resolver_match.url_name == 'staff_edit' %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Staff Management</span>
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- User Management -->
             <p class="nav-section-title">Insights</p>
+            <div class="nav-item">
+                <a href="{% url 'admin_dashboard:users' %}" class="nav-link {% if request.resolver_match.url_name == 'users' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_detail' or request.resolver_match.url_name == 'user_edit' %}active{% endif %}">
+                    <i class="bi bi-people"></i>
+                    <span>User Management</span>
+                </a>
+            </div>
             <div class="nav-item">
                 <a href="{% url 'admin_dashboard:reports' %}" class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
                     <i class="bi bi-bar-chart-line"></i>
                     <span>Reports</span>
                 </a>
             </div>
+            <div class="nav-item">
+                <a href="{% url 'admin_dashboard:audit_log' %}" class="nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Activity Timeline</span>
+                </a>
+            </div>
         </nav>
 
     </aside>
+    <div class="admin-sidebar-overlay" id="adminSidebarOverlay"></div>
 
     <!-- Main Panel -->
     <div class="admin-main">
@@ -145,6 +151,9 @@
         <header class="admin-topbar">
             <!-- Left -->
             <div class="admin-topbar-left">
+                <button class="admin-hamburger-btn" id="adminHamburgerBtn" aria-label="Toggle menu">
+                    <i class="bi bi-list"></i>
+                </button>
                 <nav class="admin-topbar-breadcrumb" aria-label="breadcrumb">
                     <a href="{% url 'admin_dashboard:overview' %}" class="breadcrumb-link">
                         <i class="bi bi-house"></i>
@@ -238,7 +247,93 @@
             {% block admin_content %}{% endblock %}
         </main>
 
+        <footer id="admin-footer">
+            <div class="container">
+                <div class="footer-content">
+                    {% if business_hours_content %}
+                    <div class="footer-section">
+                        <h4><i class="bi bi-clock"></i> {{ business_hours_content.title }}</h4>
+                        <div class="footer-text">{{ business_hours_content.content|safe }}</div>
+                    </div>
+                    {% endif %}
+                    {% if social_media_content %}
+                    {% with social_links=social_media_content.social_links %}
+                    {% if social_links %}
+                    <div class="footer-section">
+                        <h4><i class="bi bi-share"></i> {{ social_media_content.title }}</h4>
+                        <div class="social-links" aria-label="Social media links">
+                            {% for social_link in social_links %}
+                            <a class="social-link social-link-{{ social_link.name|slugify }}" href="{{ social_link.url }}" target="_blank" rel="noopener noreferrer" aria-label="Visit us on {{ social_link.name }}">
+                                <i class="fa-brands {{ social_link.icon }}" aria-hidden="true"></i><span>{{ social_link.name }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    {% endif %}
+                    <div class="footer-section">
+                        <h4><i class="bi bi-link-45deg"></i> Quick Links</h4>
+                        <ul class="footer-links">
+                            <li><a href="{% url 'shop:about' %}">About</a></li>
+                            <li><a href="{% url 'shop:contact' %}">Contact</a></li>
+                            <li><a href="{% url 'shop:faq' %}">FAQ</a></li>
+                            <li><a href="{% url 'shop:delivery_info' %}">Delivery</a></li>
+                            <li><a href="{% url 'shop:terms_privacy' %}">Terms &amp; Privacy</a></li>
+                            <li><a href="{% url 'shop:return_refund' %}">Returns</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-copyright"><p class="mb-0">&copy; {% now "Y" %} TAMIPEE. All rights reserved.</p></div>
+            </div>
+        </footer>
     </div>
 </div>
+{% endblock %}
 
+{% block site_footer %}{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'admin_dashboard/js/admin_dashboard.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerBtn = document.getElementById('adminHamburgerBtn');
+    const sidebar = document.getElementById('adminSidebar');
+    const overlay = document.getElementById('adminSidebarOverlay');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (hamburgerBtn && sidebar && overlay) {
+        hamburgerBtn.addEventListener('click', function() {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeSidebar();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
