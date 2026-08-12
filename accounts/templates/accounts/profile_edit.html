@@ -4,9 +4,13 @@
 {% block title %}{% trans "Edit Profile" %}{% endblock %}
 
 {% block content %}
-<div class="auth-wrapper">
-    <div class="auth-card design-card">
-        <div class="card-gold-bar-top"></div>
+<div class="page-wrapper d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 200px); padding: 40px 0; background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%);">
+  <div class="container-custom">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8">
+        <div class="auth-wrapper animate-fade-in-up">
+          <div class="auth-card design-card">
+            <div class="card-gold-bar-top"></div>
         <div class="card-header card-header-accent">
             <div class="text-center">
                 <i class="bi bi-pencil-square" style="font-size: 2rem; color: var(--farm-accent);"></i>
@@ -130,7 +134,10 @@
                     </a>
                 </div>
             </form>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

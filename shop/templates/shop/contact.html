@@ -125,6 +125,23 @@
       padding: 1.5rem;
     }
   }
+
+  @media (max-width: 390px) {
+    .contact-card {
+      padding: 1.25rem;
+    }
+    .contact-card-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 1.5rem;
+    }
+    .contact-card h3 {
+      font-size: 1.05rem;
+    }
+    .contact-card p {
+      font-size: 0.9rem;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -152,7 +169,7 @@
     </div>
     {% else %}
     <div class="row g-4 mt-2">
-      <div class="col-md-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+      <div class="col-12 col-md-4 animate-fade-in-up" style="animation-delay: 0.1s;">
         <div class="contact-card">
           <div class="contact-card-icon">
             <i class="bi bi-envelope-fill"></i>
@@ -161,7 +178,7 @@
           <p>info@tamipee.com</p>
         </div>
       </div>
-      <div class="col-md-4 animate-fade-in-up" style="animation-delay: 0.2s;">
+      <div class="col-12 col-md-4 animate-fade-in-up" style="animation-delay: 0.2s;">
         <div class="contact-card">
           <div class="contact-card-icon">
             <i class="bi bi-telephone-fill"></i>
@@ -172,7 +189,7 @@
       </div>
       {% with bh=business_hours_detail %}
       {% if bh %}
-      <div class="col-md-4 animate-fade-in-up" style="animation-delay: 0.3s;">
+      <div class="col-12 col-md-4 animate-fade-in-up" style="animation-delay: 0.3s;">
         <div class="contact-card">
           <div class="contact-card-icon">
             <i class="bi bi-clock-fill"></i>
@@ -189,7 +206,7 @@
         </div>
       </div>
       {% else %}
-      <div class="col-md-4 animate-fade-in-up" style="animation-delay: 0.3s;">
+      <div class="col-12 col-md-4 animate-fade-in-up" style="animation-delay: 0.3s;">
         <div class="contact-card">
           <div class="contact-card-icon">
             <i class="bi bi-clock-fill"></i>

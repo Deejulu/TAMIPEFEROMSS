@@ -15,7 +15,7 @@
         </nav>
     </div>
 
-    <div class="col-lg-4">
+    <div class="col-12 col-lg-4">
         <!-- Profile Picture Card -->
         <div class="design-card text-center">
             <div class="card-gold-bar-top"></div>
@@ -71,7 +71,7 @@
         </div>
     </div>
 
-    <div class="col-lg-8">
+    <div class="col-12 col-lg-8">
         <!-- Account Information Card -->
         <div class="design-card">
             <div class="card-gold-bar-top"></div>
@@ -98,7 +98,7 @@
                                 <span class="design-badge design-badge-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
                             {% else %}
                                 <span class="design-badge design-badge-warning ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
-                                <a href="{% url 'accounts:resend_verification' %}" class="btn btn-sm btn-outline ms-2 mt-1 mt-sm-0">{% trans "Resend Verification" %}</a>
+                                <a href="{% url 'accounts:resend_verification' %}" class="btn btn-sm btn-outline ms-2 mt-1 mt-sm-0" style="min-height: 44px;">{% trans "Resend Verification" %}</a>
                             {% endif %}
                         </dd>
                     </div>

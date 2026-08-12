@@ -31,7 +31,7 @@
     </div>
 
     <!-- User Information Card -->
-    <div class="col-lg-8 col-xl-7 mx-auto">
+    <div class="col-12 col-lg-8 col-xl-7 mx-auto">
         <div class="row g-4">
             <!-- Account Information Card -->
             <div class="col-12 animate-fade-in-up" style="animation-delay: 0.1s;">
@@ -99,15 +99,15 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                    <a href="{% url 'accounts:profile_edit' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                    <a href="{% url 'accounts:profile_edit' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; min-height: 44px;">
                         <i class="bi bi-pencil-square" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Edit Profile" %}
                         <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
                     </a>
-                    <a href="{% url 'accounts:password_change' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem;">
+                    <a href="{% url 'accounts:password_change' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0.75rem; min-height: 44px;">
                         <i class="bi bi-shield-lock" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Change Password" %}
                         <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
                     </a>
-                    <a href="{% url 'accounts:change_security_questions' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0; margin-bottom: 0.75rem;">
+                    <a href="{% url 'accounts:change_security_questions' %}" class="quick-action-link" style="display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; color: var(--farm-text); text-decoration: none; transition: all 0.2s; background: #FAFBFC; border: 1px solid #E5E7EB; border-radius: var(--radius-md); margin-bottom: 0; margin-bottom: 0.75rem; min-height: 44px;">
                         <i class="bi bi-question-circle" style="color: var(--farm-primary); font-size: 1.1rem;"></i>{% trans "Update Security Questions" %}
                         <i class="bi bi-chevron-right ms-auto quick-action-chevron" style="color: var(--farm-text-muted);"></i>
                     </a>

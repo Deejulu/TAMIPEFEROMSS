@@ -41,21 +41,21 @@
                 {% endif %}
 
                 <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
                         {{ form.date }}
                         {% if form.date.errors %}
                         <div class="text-danger mt-1">{% for error in form.date.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.medicine_name.id_for_label }}" class="form-label">Medicine Name</label>
                         {{ form.medicine_name }}
                         {% if form.medicine_name.errors %}
                         <div class="text-danger mt-1">{% for error in form.medicine_name.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.dosage.id_for_label }}" class="form-label">Dosage</label>
                         {{ form.dosage }}
                         {% if form.dosage.errors %}
@@ -65,14 +65,14 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 col-12 mb-3">
                         <label for="{{ form.reason.id_for_label }}" class="form-label">Reason</label>
                         {{ form.reason }}
                         {% if form.reason.errors %}
                         <div class="text-danger mt-1">{% for error in form.reason.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 col-12 mb-3">
                         <label for="{{ form.administered_by.id_for_label }}" class="form-label">Administered By</label>
                         {{ form.administered_by }}
                         {% if form.administered_by.errors %}
@@ -89,7 +89,7 @@
                     {% endif %}
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Save Health Log
                     </button>

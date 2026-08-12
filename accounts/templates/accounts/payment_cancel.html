@@ -6,7 +6,7 @@
 {% block content %}
 <div class="container-custom page-wrapper">
   <div class="row justify-content-center">
-    <div class="col-lg-6">
+    <div class="col-12 col-lg-6">
       <div class="card shadow-lg border-0 mx-auto rounded-xl">
         <div class="card-body p-5 text-center">
           <div class="mb-4">
@@ -16,7 +16,7 @@
           </div>
           <h3 class="fw-bold">Payment Cancelled</h3>
           <p class="text-muted">Your payment was not processed. You can try again anytime.</p>
-          <div class="d-flex gap-3 justify-content-center mt-4">
+          <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3 justify-content-center mt-4">
             <a href="{% url 'accounts:payment' %}" class="btn btn-primary">
               <i class="bi bi-credit-card me-2"></i> Try Again
             </a>

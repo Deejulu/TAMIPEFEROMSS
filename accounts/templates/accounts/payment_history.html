@@ -33,30 +33,30 @@
                     {% trans "All Payments" %} ({{ payments|length }})
                 </h5>
             </div>
-            <div class="table-responsive">
+            <div class="table-wrapper d-none d-sm-block">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
                             <th>{% trans "Transaction Ref" %}</th>
-                            <th>{% trans "Date" %}</th>
-                            <th>{% trans "Order" %}</th>
+                            <th class="d-none d-md-table-cell">{% trans "Date" %}</th>
+                            <th class="d-none d-lg-table-cell">{% trans "Order" %}</th>
                             <th>{% trans "Amount" %}</th>
-                            <th>{% trans "Status" %}</th>
+                            <th class="d-none d-sm-table-cell">{% trans "Status" %}</th>
                             <th>{% trans "Receipt" %}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for payment in payments %}
                         <tr>
-                            <td><code>{{ payment.reference|truncatechars:15 }}</code></td>
-                            <td>{{ payment.created_at|date:"M d, Y" }}<br><span class="text-muted small">{{ payment.created_at|date:"H:i" }}</span></td>
-                            <td>
+                            <td><code class="text-break">{{ payment.reference|truncatechars:15 }}</code></td>
+                            <td class="d-none d-md-table-cell">{{ payment.created_at|date:"M d, Y" }}<br><span class="text-muted small">{{ payment.created_at|date:"H:i" }}</span></td>
+                            <td class="d-none d-lg-table-cell">
                                 <a href="{% url 'accounts:order_detail' payment.order.pk %}">
                                     {% trans "Order" %} #{{ payment.order.pk }}
                                 </a>
                             </td>
                             <td><strong>₦{{ payment.amount|floatformat:2 }}</strong></td>
-                            <td>
+                            <td class="d-none d-sm-table-cell">
                                 {% if payment.status == 'success' %}
                                     <span class="design-badge design-badge-success">{% trans "Successful" %}</span>
                                 {% elif payment.status == 'failed' %}
@@ -67,7 +67,7 @@
                             </td>
                             <td>
                                 {% if payment.status == 'success' %}
-                                    <a href="{% url 'accounts:payment_receipt' payment.pk %}" class="btn btn-sm btn-outline" target="_blank">
+                                    <a href="{% url 'accounts:payment_receipt' payment.pk %}" class="btn btn-sm btn-outline" target="_blank" style="min-height: 44px;">
                                         <i class="bi bi-printer me-1"></i>{% trans "Print Receipt" %}
                                     </a>
                                 {% else %}
@@ -78,6 +78,47 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="mobile-card-view d-block d-sm-none">
+                {% for payment in payments %}
+                <a href="{% url 'accounts:order_detail' payment.order.pk %}" class="mobile-card">
+                    <div class="mobile-card-header">
+                        <div class="mobile-card-title">
+                            <i class="bi bi-receipt"></i>
+                            {{ payment.reference|truncatechars:12 }}
+                        </div>
+                        {% if payment.status == 'success' %}
+                            <span class="design-badge design-badge-success">{{ payment.status|title }}</span>
+                        {% elif payment.status == 'failed' %}
+                            <span class="design-badge design-badge-danger">{{ payment.status|title }}</span>
+                        {% else %}
+                            <span class="design-badge design-badge-warning">{{ payment.status|title }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mobile-card-body">
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-calendar me-2"></i>{% trans "Date" %}</span>
+                            <span class="mobile-card-value">{{ payment.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-currency-dollar me-2"></i>{% trans "Amount" %}</span>
+                            <span class="mobile-card-value">₦{{ payment.amount|floatformat:2 }}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label"><i class="bi bi-bag-check me-2"></i>{% trans "Order" %}</span>
+                            <span class="mobile-card-value">{% trans "Order" %} #{{ payment.order.pk }}</span>
+                        </div>
+                    </div>
+                    <div class="mobile-card-actions">
+                        {% if payment.status == 'success' %}
+                        <a href="{% url 'accounts:payment_receipt' payment.pk %}" class="design-btn design-btn-primary" target="_blank" style="flex: 1 1 auto; min-width: 0; justify-content: center; text-decoration: none;">
+                            <i class="bi bi-printer me-1"></i>{% trans "Receipt" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
             </div>
         </div>
     {% else %}

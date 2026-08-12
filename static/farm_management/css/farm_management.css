@@ -943,6 +943,271 @@
     }
 }
 
+/* ==========================================   RESPONSIVE - VERY SMALL PHONES ========================================== */
+@media (max-width: 414px) {
+    .farm-stats-card .card-body {
+        padding: 0.875rem;
+    }
+
+    .farm-stats-card h3 {
+        font-size: 1.125rem;
+    }
+
+    .farm-stats-card h6 {
+        font-size: 0.7rem;
+    }
+
+    .farm-table-card thead th {
+        font-size: 0.65rem;
+        padding: 0.5rem 0.3rem;
+        letter-spacing: 0.3px;
+    }
+
+    .farm-table-card tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    .farm-form-card .card-body {
+        padding: 0.875rem;
+    }
+
+    .farm-search-card .card-body {
+        padding: 0.875rem;
+    }
+
+    .farm-nav-card {
+        padding: 1rem;
+    }
+
+    .farm-nav-card .nav-icon {
+        font-size: 1.5rem;
+    }
+
+    .farm-nav-card h4 {
+        font-size: 1rem;
+    }
+
+    .farm-mobile-card-actions .btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .farm-action-group {
+        gap: 0.25rem;
+    }
+
+    .farm-action-group .btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .farm-stats-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .farm-stats-card h3 {
+        font-size: 1rem;
+    }
+
+    .farm-table-card thead th {
+        font-size: 0.6rem;
+        padding: 0.4rem 0.25rem;
+    }
+
+    .farm-table-card tbody td {
+        padding: 0.4rem 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    .farm-form-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .farm-search-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .farm-mobile-card-header {
+        padding: 0.6rem;
+    }
+
+    .farm-mobile-card-body {
+        padding: 0.6rem;
+    }
+
+    .farm-mobile-card-actions {
+        padding: 0.6rem;
+    }
+
+    .farm-nav-card {
+        padding: 0.875rem;
+    }
+
+    .farm-nav-card .nav-icon {
+        font-size: 1.35rem;
+    }
+
+    .farm-nav-card h4 {
+        font-size: 0.95rem;
+    }
+
+    .farm-nav-card p {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .farm-stats-card .card-body {
+        padding: 0.625rem;
+    }
+
+    .farm-stats-card h3 {
+        font-size: 0.9375rem;
+    }
+
+    .farm-stats-card h6 {
+        font-size: 0.65rem;
+    }
+
+    .farm-table-card thead th {
+        font-size: 0.55rem;
+        padding: 0.35rem 0.2rem;
+        letter-spacing: 0.2px;
+    }
+
+    .farm-table-card tbody td {
+        padding: 0.35rem 0.2rem;
+        font-size: 0.7rem;
+    }
+
+    .farm-form-card .card-body {
+        padding: 0.625rem;
+    }
+
+    .farm-search-card .card-body {
+        padding: 0.625rem;
+    }
+
+    .farm-mobile-card-header {
+        padding: 0.5rem;
+    }
+
+    .farm-mobile-card-body {
+        padding: 0.5rem;
+    }
+
+    .farm-mobile-card-actions {
+        padding: 0.5rem;
+    }
+
+    .farm-nav-card {
+        padding: 0.75rem;
+    }
+
+    .farm-nav-card .nav-icon {
+        font-size: 1.25rem;
+    }
+
+    .farm-nav-card h4 {
+        font-size: 0.9rem;
+    }
+
+    .farm-nav-card p {
+        font-size: 0.8rem;
+    }
+
+    .farm-action-group {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .farm-action-group .btn {
+        width: 100%;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.4rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .farm-stats-card .card-body {
+        padding: 0.5rem;
+    }
+
+    .farm-stats-card h3 {
+        font-size: 0.875rem;
+    }
+
+    .farm-stats-card h6 {
+        font-size: 0.6rem;
+    }
+
+    .farm-table-card thead th {
+        font-size: 0.5rem;
+        padding: 0.3rem 0.15rem;
+    }
+
+    .farm-table-card tbody td {
+        padding: 0.3rem 0.15rem;
+        font-size: 0.65rem;
+    }
+
+    .farm-form-card .card-body {
+        padding: 0.5rem;
+    }
+
+    .farm-search-card .card-body {
+        padding: 0.5rem;
+    }
+
+    .farm-mobile-card-header {
+        padding: 0.4rem;
+    }
+
+    .farm-mobile-card-body {
+        padding: 0.4rem;
+    }
+
+    .farm-mobile-card-actions {
+        padding: 0.4rem;
+    }
+
+    .farm-nav-card {
+        padding: 0.625rem;
+    }
+
+    .farm-nav-card .nav-icon {
+        font-size: 1.1rem;
+    }
+
+    .farm-nav-card h4 {
+        font-size: 0.85rem;
+    }
+
+    .farm-nav-card p {
+        font-size: 0.75rem;
+    }
+
+    .farm-mobile-card-actions {
+        flex-direction: column;
+    }
+
+    .farm-mobile-card-actions .btn {
+        width: 100%;
+        font-size: 0.7rem;
+    }
+
+    .farm-empty-state {
+        padding: 1.5rem 0.75rem;
+    }
+
+    .farm-empty-state i {
+        font-size: 2rem;
+    }
+}
+
 /* ==========================================   PRINT STYLES   ========================================== */
 @media print {
     .farm-action-group,

@@ -360,6 +360,100 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 414px) {
+    .orders-header h2 {
+        font-size: 1.2rem;
+    }
+    .orders-stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .order-stat-card {
+        padding: 0.875rem;
+    }
+    .order-stat-value {
+        font-size: 1.4rem;
+    }
+    .order-stat-label {
+        font-size: 0.7rem;
+    }
+    .orders-filter-card {
+        padding: 1rem;
+    }
+    .design-table thead th {
+        font-size: 0.65rem;
+        padding: 0.6rem 0.4rem;
+    }
+    .design-table tbody td {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .orders-header h2 {
+        font-size: 1.1rem;
+    }
+    .order-stat-value {
+        font-size: 1.3rem;
+    }
+    .orders-stats-grid {
+        gap: 0.4rem;
+    }
+    .design-table thead th {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.3rem;
+    }
+    .design-table tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .orders-header h2 {
+        font-size: 1rem;
+    }
+    .order-stat-value {
+        font-size: 1.2rem;
+    }
+    .orders-stats-grid {
+        gap: 0.3rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .orders-header h2 {
+        font-size: 0.95rem;
+    }
+    .order-stat-value {
+        font-size: 1.1rem;
+    }
+    .order-stat-label {
+        font-size: 0.65rem;
+    }
+    .design-table thead th {
+        font-size: 0.55rem;
+        padding: 0.4rem 0.25rem;
+    }
+    .design-table tbody td {
+        padding: 0.4rem 0.25rem;
+        font-size: 0.7rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.65rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -400,7 +494,7 @@
     <!-- Filter Card -->
     <div class="orders-filter-card">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-4 col-12">
                 <label for="statusFilter" class="design-form-label">Filter by Status</label>
                 <select id="statusFilter" class="design-form-select" name="status" onchange="this.form.submit()">
                     <option value="">All Statuses</option>
@@ -409,7 +503,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 col-12">
                 <a href="{% url 'admin_dashboard:orders' %}" class="design-btn design-btn-outline-secondary w-100">
                     <i class="bi bi-x-circle"></i> Clear
                 </a>

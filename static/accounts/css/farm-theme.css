@@ -415,11 +415,13 @@ img {
   .btn {
     padding: 0.625rem 1.25rem;
     font-size: 0.9rem;
+    min-height: 44px;
   }
 
   .btn-lg {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
+    min-height: 48px;
   }
 
   .btn-sm {
@@ -1774,6 +1776,7 @@ textarea.form-control {
 
 /* ==========================================   DESIGN SYSTEM - BUTTONS ========================================== */
 .design-btn {
+  min-height: 44px;
   padding: 0.625rem 1.25rem;
   border-radius: 8px;
   font-weight: 600;
@@ -1936,6 +1939,215 @@ textarea.form-control {
 .design-empty-state-mini i {
   color: #2E7D32;
   font-size: 1rem;
+}
+
+/* ==========================================   RESPONSIVE - SMALL PHONES ========================================== */
+@media (max-width: 480px) {
+  .container-custom {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .auth-card {
+    max-width: 100%;
+  }
+
+  .auth-wrapper {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-lg {
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  .design-btn-group {
+    flex-direction: column;
+  }
+
+  .design-btn-group .design-btn {
+    min-width: 100%;
+  }
+
+  /* Reduce hero pseudo-elements on small phones */
+  .hero::before,
+  .hero::after,
+  .about-hero::before,
+  .about-hero::after,
+  .contact-hero::before,
+  .contact-hero::after,
+  .faq-hero::before,
+  .faq-hero::after,
+  .delivery-hero::before,
+  .delivery-hero::after,
+  .terms-hero::before,
+  .terms-hero::after,
+  .returns-hero::before,
+  .returns-hero::after {
+    width: 260px !important;
+    height: 260px !important;
+  }
+
+  .hero::before,
+  .about-hero::before,
+  .contact-hero::before,
+  .faq-hero::before,
+  .delivery-hero::before,
+  .terms-hero::before,
+  .returns-hero::before {
+    right: -20% !important;
+  }
+
+  .hero::after,
+  .about-hero::after,
+  .contact-hero::after,
+  .faq-hero::after,
+  .delivery-hero::after,
+  .terms-hero::after,
+  .returns-hero::after {
+    left: -20% !important;
+    bottom: -30% !important;
+  }
+
+  .hero-content,
+  .about-hero-content,
+  .contact-hero-content,
+  .faq-hero-content,
+  .delivery-hero-content,
+  .terms-hero-content,
+  .returns-hero-content {
+    padding: 0 16px;
+  }
+
+  .auth-wrapper {
+    min-height: auto;
+    padding: 1rem 0.5rem;
+  }
+
+  .page-wrapper.d-flex {
+    align-items: flex-start;
+  }
+
+  .btn-sm {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  h1 { font-size: clamp(1.5rem, 6vw, 2rem); }
+  h2 { font-size: clamp(1.25rem, 5vw, 1.75rem); }
+  h3 { font-size: clamp(1.1rem, 4vw, 1.4rem); }
+}
+
+@media (max-width: 360px) {
+  .container-custom {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-lg {
+    min-height: 48px;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-sm {
+    min-height: 44px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .brand-wordmark {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .dropdown-menu {
+    min-width: 150px;
+    padding: 4px;
+  }
+
+  .dropdown-item {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .container-custom {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .card-body {
+    padding: 10px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .btn-lg {
+    min-height: 48px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-sm {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .brand-wordmark {
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
 }
 
 /* ==========================================   DESIGN SYSTEM - MOBILE CARD VIEWS ========================================== */
@@ -2974,5 +3186,78 @@ textarea.form-control {
 
   .order-item-price {
     margin-left: 0;
+  }
+
+  .payment-method-option label {
+    padding: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .payment-method-option label i {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .checkout-layout {
+    gap: 12px;
+  }
+
+  .delivery-option-card label {
+    padding: 12px;
+  }
+
+  .delivery-option-card label .delivery-name {
+    font-size: 0.9rem;
+  }
+
+  .delivery-option-card label .delivery-price {
+    font-size: 0.95rem;
+  }
+
+  .order-item-name {
+    font-size: 0.85rem;
+  }
+
+  .order-item-price {
+    font-size: 0.9rem;
+  }
+
+  .order-total {
+    font-size: 1rem;
+  }
+
+  .total-amount {
+    font-size: 1.1rem;
+  }
+
+  .btn-accent {
+    font-size: 0.85rem;
+    padding: 0.625rem 1rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .delivery-option-card label {
+    padding: 10px;
+  }
+
+  .delivery-option-card label .delivery-name {
+    font-size: 0.85rem;
+  }
+
+  .payment-method-option label {
+    padding: 12px;
+  }
+
+  .payment-method-option label span {
+    font-size: 0.85rem;
+  }
+
+  .btn-accent {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.875rem;
   }
 }

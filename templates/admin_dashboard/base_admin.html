@@ -49,6 +49,61 @@
   .nav-group-header {
     font-weight: 600;
   }
+
+  @media (max-width: 414px) {
+    .admin-topbar-right .admin-back-link .back-label,
+    .admin-topbar-right .admin-dashboard-link-label {
+      display: none;
+    }
+    .admin-topbar-right {
+      gap: 0.25rem;
+    }
+    .admin-notification-bell {
+      padding: 0.4rem 0.5rem;
+    }
+    .admin-shop-link {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .admin-shop-link i {
+      font-size: 14px;
+    }
+    #adminUserDropdown {
+      padding: 4px 8px !important;
+    }
+    #adminUserDropdown .rounded-circle {
+      width: 30px !important;
+      height: 30px !important;
+      font-size: 12px !important;
+      margin-right: 4px !important;
+    }
+    #adminUserDropdown span {
+      font-size: 12px !important;
+    }
+    #adminUserDropdown small {
+      font-size: 10px !important;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .admin-topbar-left .breadcrumb-link {
+      padding: 0.3rem;
+    }
+    .admin-topbar-right .admin-notification-bell {
+      padding: 0.3rem;
+    }
+    .admin-shop-link {
+      padding: 0.3rem;
+    }
+    #adminUserDropdown {
+      padding: 2px 4px !important;
+    }
+    #adminUserDropdown .rounded-circle {
+      width: 26px !important;
+      height: 26px !important;
+      font-size: 10px !important;
+    }
+  }
 </style>
 {% endblock %}
 

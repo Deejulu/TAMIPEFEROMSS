@@ -33,14 +33,14 @@
                 {% endif %}
 
                 <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.harvest_date.id_for_label }}" class="form-label">Harvest Date</label>
                         {{ form.harvest_date }}
                         {% if form.harvest_date.errors %}
                         <div class="text-danger mt-1">{% for error in form.harvest_date.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.quantity_sold.id_for_label }}" class="form-label">Quantity Sold</label>
                         {{ form.quantity_sold }}
                         {% if form.quantity_sold.errors %}
@@ -48,7 +48,7 @@
                         {% endif %}
                         <small class="text-muted">Current stock: {{ batch.current_stock }}</small>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.total_revenue.id_for_label }}" class="form-label">Total Revenue (&#x20A6;)</label>
                         {{ form.total_revenue }}
                         {% if form.total_revenue.errors %}
@@ -65,7 +65,7 @@
                     {% endif %}
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Record Harvest
                     </button>

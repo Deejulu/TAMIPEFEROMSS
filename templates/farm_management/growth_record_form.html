@@ -30,21 +30,21 @@
                 {{ form.batch }}
 
                 <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
                         {{ form.date }}
                         {% if form.date.errors %}
                         <div class="text-danger mt-1">{% for error in form.date.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.average_weight_kg.id_for_label }}" class="form-label">Average Weight (kg)</label>
                         {{ form.average_weight_kg }}
                         {% if form.average_weight_kg.errors %}
                         <div class="text-danger mt-1">{% for error in form.average_weight_kg.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.sample_size.id_for_label }}" class="form-label">Sample Size</label>
                         {{ form.sample_size }}
                         {% if form.sample_size.errors %}
@@ -53,7 +53,7 @@
                     </div>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Save Growth Record
                     </button>

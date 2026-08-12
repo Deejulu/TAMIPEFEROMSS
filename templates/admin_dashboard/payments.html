@@ -449,6 +449,104 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 414px) {
+    .payments-header h1 {
+        font-size: 1.2rem;
+    }
+    .payments-stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .payment-stat-card {
+        padding: 0.875rem;
+    }
+    .payment-stat-value {
+        font-size: 1.3rem;
+    }
+    .payment-stat-label {
+        font-size: 0.65rem;
+    }
+    .payments-filter-card {
+        padding: 0.875rem;
+    }
+    .design-table thead th {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.3rem;
+    }
+    .design-table tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.7rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .payments-header h1 {
+        font-size: 1.1rem;
+    }
+    .payment-stat-value {
+        font-size: 1.2rem;
+    }
+    .payments-stats-grid {
+        gap: 0.4rem;
+    }
+    .design-table thead th {
+        font-size: 0.55rem;
+        padding: 0.45rem 0.25rem;
+    }
+    .design-table tbody td {
+        padding: 0.45rem 0.25rem;
+        font-size: 0.65rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .payments-header h1 {
+        font-size: 1rem;
+    }
+    .payment-stat-value {
+        font-size: 1.1rem;
+    }
+    .payments-stats-grid {
+        gap: 0.3rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .payments-header h1 {
+        font-size: 0.95rem;
+    }
+    .payment-stat-value {
+        font-size: 1rem;
+    }
+    .payment-stat-label {
+        font-size: 0.6rem;
+    }
+    .design-table thead th {
+        font-size: 0.5rem;
+        padding: 0.4rem 0.2rem;
+    }
+    .design-table tbody td {
+        padding: 0.4rem 0.2rem;
+        font-size: 0.6rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.6rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -493,13 +591,13 @@
     <!-- Filters -->
     <div class="payments-filter-card">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="searchInput" class="design-form-label">Search</label>
                 <input type="text" id="searchInput" class="design-form-control" name="search"
                        placeholder="Customer name, email, or order #"
                        value="{{ search_query }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-12 col-md-2">
                 <label for="statusFilter" class="design-form-label">Status</label>
                 <select id="statusFilter" class="design-form-select" name="status">
                     <option value="">All Statuses</option>
@@ -508,7 +606,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-12 col-md-2">
                 <label for="methodFilter" class="design-form-label">Payment Method</label>
                 <select id="methodFilter" class="design-form-select" name="method">
                     <option value="">All Methods</option>
@@ -517,7 +615,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-12 col-md-2">
                 <label for="dateRange" class="design-form-label">Date Range</label>
                 <select id="dateRange" class="design-form-select" name="date_range">
                     <option value="">All Time</option>
@@ -527,13 +625,13 @@
                     <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>Custom</option>
                 </select>
             </div>
-            <div class="col-md-2" id="customDateFields" style="{% if date_range != 'custom' %}display:none;{% endif %}">
+            <div class="col-12 col-md-2" id="customDateFields" style="{% if date_range != 'custom' %}display:none;{% endif %}">
                 <label for="startDate" class="design-form-label">Start Date</label>
                 <input type="date" id="startDate" class="design-form-control" name="start_date" value="{{ custom_start }}">
                 <label for="endDate" class="design-form-label mt-2">End Date</label>
                 <input type="date" id="endDate" class="design-form-control" name="end_date" value="{{ custom_end }}">
             </div>
-            <div class="col-md-1">
+            <div class="col-12 col-md-1">
                 <label for="sortBy" class="design-form-label">Sort By</label>
                 <select id="sortBy" class="design-form-select" name="sort" onchange="this.form.submit()">
                     <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Newest</option>
@@ -542,7 +640,7 @@
                     <option value="customer_asc" {% if current_sort == 'customer_asc' %}selected{% endif %}>Customer A-Z</option>
                 </select>
             </div>
-            <div class="col-md-1 filter-actions">
+            <div class="col-12 col-md-1 filter-actions">
                 <button type="submit" class="design-btn design-btn-primary design-btn-sm">
                     <i class="bi bi-funnel"></i> Filter
                 </button>

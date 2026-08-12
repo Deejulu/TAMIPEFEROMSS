@@ -24,7 +24,7 @@
             {% endif %}
             <form method="post">
                 {% csrf_token %}
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-danger">Confirm Delete</button>
                     <a href="{% url 'farm_management:supplier_list' %}" class="btn btn-outline-secondary">Cancel</a>
                 </div>

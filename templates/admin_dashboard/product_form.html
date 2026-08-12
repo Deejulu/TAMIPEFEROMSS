@@ -154,6 +154,71 @@
         font-size: 1.25rem;
     }
 }
+
+@media (max-width: 414px) {
+    .product-form-card .card-body {
+        padding: 0.875rem;
+    }
+    .product-form-header h2 {
+        font-size: 1.15rem;
+    }
+    .design-form-control,
+    .design-form-select {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    .design-form-label {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .product-form-card .card-body {
+        padding: 0.75rem;
+    }
+    .product-form-header h2 {
+        font-size: 1.05rem;
+    }
+    .design-form-control,
+    .design-form-select {
+        padding: 0.5rem 0.625rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .product-form-card .card-body {
+        padding: 0.6rem;
+    }
+    .product-form-header h2 {
+        font-size: 1rem;
+    }
+    .design-form-control,
+    .design-form-select {
+        padding: 0.45rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    .design-form-label {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .product-form-card .card-body {
+        padding: 0.5rem;
+    }
+    .product-form-header h2 {
+        font-size: 0.95rem;
+    }
+    .design-form-control,
+    .design-form-select {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .design-form-label {
+        font-size: 0.65rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -181,7 +246,7 @@
                 {% endif %}
 
                 <div class="row">
-                    <div class="col-md-6 design-form-group">
+                    <div class="col-12 col-md-6 design-form-group">
                         <label for="{{ form.name.id_for_label }}" class="design-form-label">Product Name</label>
                         {{ form.name }}
                         {% if form.name.errors %}
@@ -193,7 +258,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-6 design-form-group">
+                    <div class="col-12 col-md-6 design-form-group">
                         <label for="{{ form.category.id_for_label }}" class="design-form-label">Category</label>
                         {{ form.category }}
                         {% if form.category.errors %}
@@ -207,7 +272,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 design-form-group">
+                    <div class="col-12 col-md-6 design-form-group">
                         <label for="{{ form.price.id_for_label }}" class="design-form-label">Price (₦)</label>
                         {{ form.price }}
                         {% if form.price.errors %}
@@ -219,7 +284,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="col-md-6 design-form-group">
+                    <div class="col-12 col-md-6 design-form-group">
                         <label for="{{ form.stock_quantity.id_for_label }}" class="design-form-label">Stock Quantity</label>
                         {{ form.stock_quantity }}
                         {% if form.stock_quantity.errors %}

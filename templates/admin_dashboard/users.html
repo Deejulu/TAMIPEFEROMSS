@@ -25,12 +25,12 @@
 <div class="card search-filter-card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="search" class="form-label">Search</label>
                 <input type="text" class="form-control" id="search" name="search" 
                        placeholder="Search by name, email, or username" value="{{ search_query }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="role" class="form-label">Role</label>
                 <select class="form-select" id="role" name="role">
                     <option value="">All Roles</option>
@@ -39,7 +39,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">All Status</option>
@@ -47,7 +47,7 @@
                     <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-12 col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Search</button>
                 <a href="{% url 'admin_dashboard:users' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
             </div>
@@ -867,6 +867,65 @@ body {
     
     .search-filter-card .d-flex {
         flex-direction: column;
+    }
+}
+
+@media (max-width: 414px) {
+    .user-management-header h2 {
+        font-size: 1.3rem;
+    }
+    .user-table-card .card-body {
+        padding: 0.875rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.5rem;
+    }
+    .pagination .page-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .user-management-header h2 {
+        font-size: 1.2rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.65rem;
+        padding: 0.35rem 0.4rem;
+    }
+    .pagination .page-link {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .user-management-header h2 {
+        font-size: 1.1rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.6rem;
+        padding: 0.3rem 0.35rem;
+    }
+    .pagination .page-link {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .user-management-header h2 {
+        font-size: 1rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.55rem;
+        padding: 0.25rem 0.3rem;
+    }
+    .pagination .page-link {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.65rem;
     }
 }
 

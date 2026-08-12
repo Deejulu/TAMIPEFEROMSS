@@ -122,21 +122,21 @@
                 {% endif %}
 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.feed_type.id_for_label }}" class="form-label">Feed Type</label>
                         {{ form.feed_type }}
                         {% if form.feed_type.errors %}
                         <div class="text-danger mt-1">{% for error in form.feed_type.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
                         {{ form.category }}
                         {% if form.category.errors %}
                         <div class="text-danger mt-1">{% for error in form.category.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier</label>
                         {{ form.supplier }}
                         {% if form.supplier.errors %}
@@ -190,14 +190,14 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 col-12 mb-3">
                         <label for="{{ form.cost_per_kg.id_for_label }}" class="form-label">Cost per kg (&#x20A6;)</label>
                         {{ form.cost_per_kg }}
                         {% if form.cost_per_kg.errors %}
                         <div class="text-danger mt-1">{% for error in form.cost_per_kg.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 col-12 mb-3">
                         <label for="{{ form.reorder_point_kg.id_for_label }}" class="form-label">Reorder Point (kg)</label>
                         {{ form.reorder_point_kg }}
                         {% if form.reorder_point_kg.errors %}
@@ -206,7 +206,7 @@
                     </div>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Save Feed Inventory
                     </button>

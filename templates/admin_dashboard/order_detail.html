@@ -158,6 +158,93 @@
         font-size: 1.25rem;
     }
 }
+
+@media (max-width: 414px) {
+    .order-detail-header h2 {
+        font-size: 1.15rem;
+    }
+    .order-detail-card .card-body {
+        padding: 0.875rem;
+    }
+    .order-detail-row {
+        padding: 0.6rem 0;
+    }
+    .order-detail-label {
+        font-size: 0.7rem;
+    }
+    .order-detail-value {
+        font-size: 0.85rem;
+    }
+    .order-section-title {
+        font-size: 1.1rem;
+    }
+    .design-table thead th {
+        font-size: 0.65rem;
+        padding: 0.6rem 0.4rem;
+    }
+    .design-table tbody td {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .order-detail-header h2 {
+        font-size: 1.05rem;
+    }
+    .order-detail-card .card-body {
+        padding: 0.75rem;
+    }
+    .order-detail-row {
+        padding: 0.5rem 0;
+    }
+    .design-table thead th {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.3rem;
+    }
+    .design-table tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .order-detail-header h2 {
+        font-size: 1rem;
+    }
+    .order-detail-card .card-body {
+        padding: 0.6rem;
+    }
+    .order-detail-label {
+        font-size: 0.65rem;
+    }
+    .order-detail-value {
+        font-size: 0.8rem;
+    }
+    .design-table thead th {
+        font-size: 0.55rem;
+        padding: 0.4rem 0.25rem;
+    }
+    .design-table tbody td {
+        padding: 0.4rem 0.25rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .order-detail-header h2 {
+        font-size: 0.9rem;
+    }
+    .order-detail-card .card-body {
+        padding: 0.5rem;
+    }
+    .order-detail-label {
+        font-size: 0.6rem;
+    }
+    .order-detail-value {
+        font-size: 0.75rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -171,7 +258,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12 col-md-8">
             <!-- Order Details Card -->
             <div class="card order-detail-card">
                 <div class="card-gold-bar-top"></div>
@@ -295,7 +382,7 @@
             {% endif %}
         </div>
 
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
             <!-- Update Status Card -->
             <div class="card status-update-card">
                 <div class="card-gold-bar-top"></div>

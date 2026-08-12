@@ -173,6 +173,75 @@
         font-size: 0.8125rem;
     }
 }
+
+@media (max-width: 414px) {
+    .payment-methods-container .page-header h1 {
+        font-size: 1.3rem;
+    }
+    .payment-methods-container .content-card .card-body {
+        padding: 0.875rem;
+    }
+    .payment-methods-container .design-table thead th,
+    .payment-methods-container .design-table tbody td {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.75rem;
+    }
+    .btn-sm {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .payment-methods-container .page-header h1 {
+        font-size: 1.2rem;
+    }
+    .payment-methods-container .content-card .card-body {
+        padding: 0.75rem;
+    }
+    .payment-methods-container .design-table thead th,
+    .payment-methods-container .design-table tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.7rem;
+    }
+    .btn-sm {
+        padding: 0.3rem 0.4rem;
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .payment-methods-container .page-header h1 {
+        font-size: 1.1rem;
+    }
+    .payment-methods-container .design-table thead th,
+    .payment-methods-container .design-table tbody td {
+        padding: 0.4rem 0.25rem;
+        font-size: 0.65rem;
+    }
+    .btn-sm {
+        padding: 0.25rem 0.35rem;
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .payment-methods-container .page-header h1 {
+        font-size: 1rem;
+    }
+    .payment-methods-container .content-card .card-body {
+        padding: 0.5rem;
+    }
+    .payment-methods-container .design-table thead th,
+    .payment-methods-container .design-table tbody td {
+        padding: 0.35rem 0.2rem;
+        font-size: 0.6rem;
+    }
+    .btn-sm {
+        padding: 0.2rem 0.3rem;
+        font-size: 0.55rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -185,6 +254,7 @@
 
     <div class="content-card">
         <div class="card-body">
+            <div class="table-responsive">
             <table class="table design-table">
                 <thead>
                     <tr>
@@ -222,6 +292,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

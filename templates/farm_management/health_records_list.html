@@ -27,7 +27,7 @@
     <div class="card farm-search-card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-3 col-12">
                     <label for="record_type" class="form-label">Record Type</label>
                     <select class="form-select" id="record_type" name="record_type">
                         <option value="">All Types</option>
@@ -35,7 +35,7 @@
                         <option value="vaccination" {% if selected_record_type == 'vaccination' %}selected{% endif %}>Vaccinations</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3 col-12">
                     <label for="batch" class="form-label">Batch</label>
                     <select class="form-select" id="batch" name="batch">
                         <option value="">All Batches</option>
@@ -44,15 +44,15 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-12">
                     <label for="date_from" class="form-label">From Date</label>
                     <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-12">
                     <label for="date_to" class="form-label">To Date</label>
                     <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
                 </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
+                <div class="col-md-2 col-12 d-flex align-items-end gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filter</button>
                     <a href="{% url 'farm_management:health_records_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
                 </div>

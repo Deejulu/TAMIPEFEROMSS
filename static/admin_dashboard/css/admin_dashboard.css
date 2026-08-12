@@ -182,6 +182,47 @@ body > footer > .container {
     }
 }
 
+@media (max-width: 414px) {
+    .admin-topbar-left .breadcrumb-link span {
+        display: none;
+    }
+    .admin-topbar-right .admin-back-link .back-label,
+    .admin-topbar-right .admin-dashboard-link .admin-dashboard-link-label {
+        display: none;
+    }
+    .admin-topbar-right {
+        gap: 0.25rem;
+    }
+    .admin-notification-bell {
+        padding: 0.4rem 0.5rem;
+    }
+    .admin-shop-link {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .admin-shop-link i {
+        font-size: 14px;
+    }
+    .admin-content {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .admin-topbar-left .breadcrumb-link {
+        padding: 0.3rem;
+    }
+    .admin-topbar-right .admin-notification-bell {
+        padding: 0.3rem;
+    }
+    .admin-shop-link {
+        padding: 0.3rem;
+    }
+    .admin-content {
+        padding: 0.5rem;
+    }
+}
+
 /* ==========================================   TABLET HOVER EXPANSION (768px - 991px)   ========================================== */
 @media (min-width: 769px) and (max-width: 991.98px) {
     .admin-sidebar:hover {

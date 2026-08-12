@@ -41,21 +41,21 @@
                 {% endif %}
 
                 <div class="row mt-3">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
                         {{ form.date }}
                         {% if form.date.errors %}
                         <div class="text-danger mt-1">{% for error in form.date.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.vaccine_name.id_for_label }}" class="form-label">Vaccine Name</label>
                         {{ form.vaccine_name }}
                         {% if form.vaccine_name.errors %}
                         <div class="text-danger mt-1">{% for error in form.vaccine_name.errors %}<small>{{ error }}</small>{% endfor %}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-4 col-12 mb-3">
                         <label for="{{ form.dosage.id_for_label }}" class="form-label">Dosage</label>
                         {{ form.dosage }}
                         {% if form.dosage.errors %}
@@ -72,7 +72,7 @@
                     {% endif %}
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Save Vaccination Record
                     </button>

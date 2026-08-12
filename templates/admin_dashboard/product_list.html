@@ -428,6 +428,99 @@
         gap: 0.5rem;
     }
 }
+
+@media (max-width: 414px) {
+    .product-list-header h2 {
+        font-size: 1.2rem;
+    }
+    .product-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    .product-stat-card {
+        padding: 0.875rem;
+    }
+    .product-stat-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    .product-stat-info h4 {
+        font-size: 1.3rem;
+    }
+    .product-table-card {
+        overflow-x: auto;
+    }
+    .design-table thead th {
+        font-size: 0.65rem;
+        padding: 0.6rem 0.4rem;
+    }
+    .design-table tbody td {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .product-list-header h2 {
+        font-size: 1.1rem;
+    }
+    .product-stat-info h4 {
+        font-size: 1.2rem;
+    }
+    .product-stats-grid {
+        gap: 0.4rem;
+    }
+    .design-table thead th {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.3rem;
+    }
+    .design-table tbody td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .product-list-header h2 {
+        font-size: 1rem;
+    }
+    .product-stat-value {
+        font-size: 1.2rem;
+    }
+    .product-stats-grid {
+        gap: 0.3rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .product-list-header h2 {
+        font-size: 0.95rem;
+    }
+    .product-stat-value {
+        font-size: 1.1rem;
+    }
+    .design-table thead th {
+        font-size: 0.55rem;
+        padding: 0.4rem 0.25rem;
+    }
+    .design-table tbody td {
+        padding: 0.4rem 0.25rem;
+        font-size: 0.7rem;
+    }
+    .design-pagination .page-link {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.65rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -482,7 +575,7 @@
     <!-- Category Filter -->
     <div class="product-filter-card">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-6">
+            <div class="col-md-6 col-12">
                 <label for="category" class="design-form-label">Filter by Category</label>
                 <select class="design-form-select" id="category" name="category" onchange="this.form.submit()">
                     <option value="">All Categories</option>
@@ -493,7 +586,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 col-12">
                 <a href="{% url 'admin_dashboard:product_list' %}" class="design-btn design-btn-outline-secondary w-100">
                     <i class="bi bi-x-circle"></i> Clear
                 </a>

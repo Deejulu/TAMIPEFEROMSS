@@ -27,12 +27,12 @@
 <div class="card search-filter-card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
                 <label for="search" class="form-label">Search</label>
                 <input type="text" class="form-control" id="search" name="search" 
                        placeholder="Search by name, email, or username" value="{{ request.GET.search }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="role" class="form-label">Role</label>
                 <select class="form-select" id="role" name="role">
                     <option value="">All Roles</option>
@@ -42,7 +42,7 @@
                     {% endif %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">All Status</option>
@@ -50,7 +50,7 @@
                     <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-12 col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Search</button>
                 <a href="{% url 'admin_dashboard:staff_management' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
             </div>
@@ -460,9 +460,59 @@
     }
 }
 
-@media (min-width: 577px) {
-    .mobile-card-view {
-        display: none !important;
+@media (max-width: 414px) {
+    .staff-management-header h2 {
+        font-size: 1.3rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.5rem;
+    }
+    .pagination .page-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 390px) {
+    .staff-management-header h2 {
+        font-size: 1.2rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.65rem;
+        padding: 0.35rem 0.4rem;
+    }
+    .pagination .page-link {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .staff-management-header h2 {
+        font-size: 1.1rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.6rem;
+        padding: 0.3rem 0.35rem;
+    }
+    .pagination .page-link {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 320px) {
+    .staff-management-header h2 {
+        font-size: 1rem;
+    }
+    .user-card-actions .btn {
+        font-size: 0.55rem;
+        padding: 0.25rem 0.3rem;
+    }
+    .pagination .page-link {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.65rem;
     }
 }
 </style>
