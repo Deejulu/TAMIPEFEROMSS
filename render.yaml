@@ -11,7 +11,7 @@ services:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_ALLOWED_HOSTS
-        value: tamipee-web.onrender.com
+         value: tamipee-web.onrender.com,tamipeferomss-1.onrender.com
       - key: DJANGO_SUPERUSER_USERNAME
         sync: false
       - key: DJANGO_SUPERUSER_EMAIL
@@ -26,8 +26,8 @@ services:
         sync: false
       - key: PAYSTACK_WEBHOOK_SECRET
         sync: false
-      - key: PAYSTACK_CALLBACK_URL
-        value: https://tamipee-web.onrender.com/shop/paystack-callback/
+       - key: PAYSTACK_CALLBACK_URL
+        value: https://tamipeferomss-1.onrender.com/shop/paystack-callback/
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
