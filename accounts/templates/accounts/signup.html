@@ -349,6 +349,26 @@
             }
         });
     });
+
+    var signupForm = document.querySelector('form[method="post"]');
+    if (signupForm) {
+        signupForm.addEventListener('submit', function(e) {
+            var firstName = document.getElementById('id_first_name');
+            var lastName = document.getElementById('id_last_name');
+            var name = '';
+            if (firstName && lastName) {
+                name = (firstName.value.trim() + ' ' + lastName.value.trim()).trim();
+            }
+            if (name) {
+                e.preventDefault();
+                var hideWelcome = showWelcomeScreen(name);
+                setTimeout(function() {
+                    hideWelcome();
+                    signupForm.submit();
+                }, 2500);
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}

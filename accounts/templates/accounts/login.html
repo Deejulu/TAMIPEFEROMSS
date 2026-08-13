@@ -127,6 +127,22 @@
             }
         });
     });
+
+    var loginForm = document.querySelector('form[method="post"]');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            var usernameInput = document.getElementById('id_username');
+            var username = usernameInput ? usernameInput.value.trim() : '';
+            if (username) {
+                e.preventDefault();
+                var hideWelcome = showWelcomeScreen(username);
+                setTimeout(function() {
+                    hideWelcome();
+                    loginForm.submit();
+                }, 2500);
+            }
+        });
+    }
 })();
 </script>
 {% endblock %}

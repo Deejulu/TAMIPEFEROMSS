@@ -123,6 +123,34 @@
         <i class="bi bi-chevron-down"></i>
     </button>
 
+    <!-- Cart Toast Container -->
+    <div class="cart-toast-container" id="cartToastContainer"></div>
+
+    <!-- Floating Cart Button -->
+    <a href="{% url 'shop:cart' %}" class="floating-cart-btn" id="floatingCartBtn" aria-label="View cart">
+      <i class="bi bi-cart3"></i>
+      <span class="floating-cart-badge" id="floatingCartBadge" style="display: none;">0</span>
+    </a>
+
+    <!-- Admin Back Link (visible on shop pages for admin users) -->
+    {% if user.is_authenticated and user.role in 'SUPER_ADMIN,FARM_MANAGER,SUPER_STAFF' %}
+    <a href="{% url 'admin_dashboard:overview' %}" class="admin-back-link" id="adminBackLink">
+      <i class="bi bi-speedometer2"></i>
+      <span class="back-label">Admin</span>
+    </a>
+    {% endif %}
+
+    <!-- Welcome Screen Overlay -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-content">
+        <div class="welcome-avatar" id="welcomeAvatar">U</div>
+        <div class="welcome-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <h2 class="welcome-title" id="welcomeTitle">Welcome!</h2>
+        <p class="welcome-subtitle" id="welcomeSubtitle">Taking you to your dashboard...</p>
+        <div class="welcome-spinner"></div>
+      </div>
+    </div>
+
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
@@ -197,5 +225,71 @@
     </script>
 
     {% block extra_scripts %}{% endblock %}
+
+    <script>
+    function showWelcomeScreen(name) {
+        var overlay = document.getElementById('welcomeOverlay');
+        var avatar = document.getElementById('welcomeAvatar');
+        var title = document.getElementById('welcomeTitle');
+        var subtitle = document.getElementById('welcomeSubtitle');
+        
+        if (!overlay) return;
+        
+        if (avatar && name) {
+            avatar.textContent = name.charAt(0).toUpperCase();
+        }
+        if (title && name) {
+            title.textContent = 'Welcome, ' + name + '!';
+        } else if (title) {
+            title.textContent = 'Welcome!';
+        }
+        if (subtitle) {
+            subtitle.textContent = 'Taking you to your dashboard...';
+        }
+        
+        overlay.classList.add('active');
+        
+        return function hide() {
+            overlay.classList.remove('active');
+        };
+    }
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Floating cart button visibility on all pages
+        const floatingCartBtn = document.getElementById('floatingCartBtn');
+        const floatingCartBadge = document.getElementById('floatingCartBadge');
+        
+        function updateFloatingCart() {
+            if (!floatingCartBtn) return;
+            const scrollY = window.scrollY;
+            const isShopPage = document.querySelector('.products-grid, .cart-layout, .checkout-layout, .product-detail-image-wrapper');
+            
+            if (isShopPage) {
+                if (scrollY > 300) {
+                    floatingCartBtn.classList.add('visible');
+                } else {
+                    floatingCartBtn.classList.remove('visible');
+                }
+            } else {
+                floatingCartBtn.classList.remove('visible');
+            }
+        }
+        
+        window.addEventListener('scroll', updateFloatingCart);
+        window.addEventListener('resize', updateFloatingCart);
+        updateFloatingCart();
+        
+        // Update floating cart badge on any page if cart count exists in page
+        if (floatingCartBadge) {
+            const cartBadge = document.getElementById('cartBadge');
+            if (cartBadge && cartBadge.textContent && cartBadge.textContent !== '0') {
+                floatingCartBadge.textContent = cartBadge.textContent;
+                floatingCartBadge.style.display = 'flex';
+            }
+        }
+    });
+    </script>
 </body>
 </html>
