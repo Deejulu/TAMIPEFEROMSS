@@ -10,7 +10,7 @@ from django.urls import reverse_lazy, reverse
 from django.http import HttpResponseRedirect
 from django.views.generic import CreateView, TemplateView, RedirectView, UpdateView, FormView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login as auth_login
 from django.utils.translation import gettext_lazy as _
 from django.core.signing import SignatureExpired, BadSignature
 from django.contrib.auth.views import PasswordChangeView, LoginView
@@ -90,23 +90,26 @@ class SignUpView(CreateView):
     Uses the CustomUserCreationForm to handle new user signups.
     All new users are automatically assigned the CUSTOMER role.
     On successful registration, a verification email is sent and
-    the user is redirected to the security questions download page.
+    the user is automatically logged in and redirected to the dashboard.
     """
     form_class = CustomSignupForm
     template_name = "accounts/signup.html"
-    success_url = reverse_lazy("accounts:signup_download")
+    success_url = reverse_lazy("accounts:dashboard")
 
     def form_valid(self, form):
         """
         Called when the form is submitted with valid data.
-        Saves the user, stores security questions in session,
-        and redirects to the download page.
+        Saves the user, logs them in, stores security questions in session,
+        and redirects to the dashboard.
         """
         response = super().form_valid(form)
 
         user = self.object
 
-        # Store the selected security questions in session for the download page
+        # Auto-login the user after successful signup
+        auth_login(self.request, user)
+
+        # Store the selected security questions in session for later access
         questions = [
             form.cleaned_data.get("security_question_1", ""),
             form.cleaned_data.get("security_question_2", ""),

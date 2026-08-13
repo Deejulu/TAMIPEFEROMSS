@@ -362,9 +362,35 @@
             if (name) {
                 e.preventDefault();
                 var hideWelcome = showWelcomeScreen(name);
+                var formData = new FormData(signupForm);
+                var csrfToken = formData.get('csrfmiddlewaretoken');
+                
                 setTimeout(function() {
                     hideWelcome();
-                    signupForm.submit();
+                    
+                    fetch(signupForm.action || window.location.href, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'same-origin',
+                        redirect: 'manual',
+                    })
+                    .then(function(response) {
+                        var location = response.headers.get('Location');
+                        if (location && location.indexOf('/accounts/dashboard/') !== -1) {
+                            window.location.href = '/accounts/dashboard/';
+                        } else if (response.status >= 300 && response.status < 400 && location) {
+                            window.location.href = location;
+                        } else {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function() {
+                        signupForm.submit();
+                    });
                 }, 2500);
             }
         });

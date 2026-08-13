@@ -421,7 +421,7 @@ class SignupViewTests(TestCase):
         """Test that a user can successfully sign up with valid data."""
         response = self.client.post(self.signup_url, data=self.valid_signup_data)
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse("accounts:signup_download"))
+        self.assertRedirects(response, reverse("accounts:dashboard"))
 
         self.assertEqual(User.objects.count(), 1)
         user = User.objects.first()
@@ -1829,6 +1829,21 @@ class ScrollButtonTests(TestCase):
         self.assertContains(response, 'id="scrollToTop"')
         self.assertContains(response, 'id="scrollToBottom"')
 
+    def test_admin_back_link_visible_by_default(self):
+        """Admin back link is rendered and not hidden by scroll-based JS."""
+        admin_user = User.objects.create_user(
+            email="admin2@example.com",
+            full_name="Admin User 2",
+            password="TestPass123!",
+            username="adminuser2",
+            role="SUPER_ADMIN",
+        )
+        self.client.login(username=admin_user.username, password="TestPass123!")
+        response = self.client.get(reverse("shop:product_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="adminBackLink"')
+        self.assertContains(response, 'class="admin-back-link"')
+        self.assertNotContains(response, 'updateAdminBackLink')
 
     def test_authenticated_user_can_access_password_change(self):
         """Test that an authenticated user can access password change."""
@@ -2258,7 +2273,7 @@ class SignupDownloadTests(TestCase):
             "security_answer_3": "Springfield Elementary",
         })
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.download_url)
+        self.assertRedirects(response, reverse("accounts:dashboard"))
         self.assertEqual(self.client.session["signup_security_questions"], ["first_pet", "birth_city", "first_school"])
 
     def test_download_page_requires_session_questions(self):

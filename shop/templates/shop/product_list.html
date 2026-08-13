@@ -185,24 +185,67 @@
   }
 
   .category-tabs-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    scroll-snap-type: x proximity;
+    display: flex;
+    align-items: center;
     flex: 1;
     min-width: 0;
+    position: relative;
   }
 
-  .category-tabs-wrapper::-webkit-scrollbar {
-    display: none;
+  .category-tabs-wrapper.can-scroll::before,
+  .category-tabs-wrapper.can-scroll::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    z-index: 2;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .category-tabs-wrapper.can-scroll::before {
+    left: 0;
+    background: linear-gradient(to right, var(--farm-bg-alt) 0%, transparent 100%);
+    opacity: 0;
+  }
+
+  .category-tabs-wrapper.can-scroll::after {
+    right: 0;
+    background: linear-gradient(to left, var(--farm-bg-alt) 0%, transparent 100%);
+    opacity: 1;
+  }
+
+  .category-tabs-wrapper.scroll-left::before {
+    opacity: 1;
+  }
+
+  .category-tabs-wrapper.scroll-right::after {
+    opacity: 1;
+  }
+
+  .category-tabs-wrapper:not(.scroll-left)::before {
+    opacity: 0;
+  }
+
+  .category-tabs-wrapper:not(.scroll-right)::after {
+    opacity: 0;
   }
 
   .category-tabs {
     display: flex;
     gap: 10px;
-    padding-bottom: 4px;
+    padding: 4px 4px 4px 0;
     scroll-snap-type: x proximity;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .category-tab {
@@ -219,6 +262,7 @@
     transition: all var(--transition-base);
     font-family: var(--font-body);
     box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
   }
 
   .category-tab:hover {
@@ -450,6 +494,11 @@
     opacity: 0.75;
   }
 
+  .btn-add-to-cart {
+    white-space: normal;
+    min-width: 5rem;
+  }
+
   .empty-shop {
     grid-column: 1 / -1;
     text-align: center;
@@ -666,19 +715,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     window.addEventListener('scroll', updateFloatingCart);
     updateFloatingCart();
-
-    // Admin back link visibility
-    const adminBackLink = document.getElementById('adminBackLink');
-    function updateAdminBackLink() {
-      const scrollY = window.scrollY;
-      if (scrollY > 200 && adminBackLink) {
-        adminBackLink.classList.add('visible');
-      } else if (adminBackLink) {
-        adminBackLink.classList.remove('visible');
-      }
-    }
-    window.addEventListener('scroll', updateAdminBackLink);
-    updateAdminBackLink();
 
     function getCsrfToken() {
         const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
