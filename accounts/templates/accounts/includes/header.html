@@ -85,10 +85,17 @@
            <a class="nav-link d-flex align-items-center"
               href="{% url 'accounts:order_list' %}">
              <i class="bi bi-receipt"></i>
-             <span>Orders & Payments</span>
+             <span>Orders &amp; Payments</span>
            </a>
          </li>
          {% endif %}
+
+         <!-- Dark Mode Toggle -->
+         <li class="nav-item">
+           <button type="button" class="public-dark-mode-toggle" id="publicDarkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+             <i class="bi bi-moon-stars toggle-icon" id="publicDarkModeIcon"></i>
+           </button>
+         </li>
 
          {% if user.is_authenticated %}
         <!-- User Dropdown -->

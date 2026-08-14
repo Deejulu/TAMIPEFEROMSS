@@ -1,0 +1,551 @@
+/* ==========================================   PUBLIC DARK MODE VARIABLES   ========================================== */
+body.dark-mode {
+    --farm-bg: #1A1A1A;
+    --farm-bg-alt: #121212;
+    --farm-white: #2D2D2D;
+    --farm-text: #E0E0E0;
+    --farm-text-muted: #808080;
+    --farm-border: #404040;
+    --farm-border-light: #333333;
+    --farm-cream: #1A1A1A;
+    --farm-warm-white: #2D2D2D;
+    --farm-forest: #E0E0E0;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --shadow-gold: 0 4px 16px rgba(201, 168, 76, 0.25);
+}
+
+/* ==========================================   GLOBAL BACKGROUNDS & TEXT   ========================================== */
+body.dark-mode {
+    background-color: var(--farm-bg) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .page-wrapper,
+body.dark-mode main,
+body.dark-mode .main-content,
+body.dark-mode .container,
+body.dark-mode .container-fluid {
+    background-color: var(--farm-bg) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .card,
+body.dark-mode .product-card {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+/* ==========================================   NAVBAR   ========================================== */
+body.dark-mode .navbar {
+    background-color: var(--farm-bg-alt) !important;
+    border-bottom: 1px solid var(--farm-border) !important;
+}
+
+body.dark-mode .navbar-brand,
+body.dark-mode .nav-link {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link:focus {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .navbar-toggler-icon {
+    filter: invert(1);
+}
+
+body.dark-mode .navbar-collapse {
+    background-color: var(--farm-bg-alt) !important;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--farm-border);
+}
+
+body.dark-mode .dropdown-menu {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .dropdown-item {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+    background-color: var(--farm-bg-alt) !important;
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .btn-signup {
+    background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+/* ==========================================   PRODUCT CARDS & GRID   ========================================== */
+body.dark-mode .product-image-wrapper {
+    background: var(--farm-bg-alt) !important;
+}
+
+body.dark-mode .product-image-placeholder {
+    background: linear-gradient(135deg, #2D2D2D 0%, #1A1A1A 100%) !important;
+    color: #555555 !important;
+}
+
+body.dark-mode .product-name {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .product-name a {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .product-name a:hover {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .product-category-badge {
+    background: rgba(201, 168, 76, 0.15) !important;
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .product-description {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .product-price {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .product-footer {
+    border-top: 1px solid var(--farm-border-light) !important;
+}
+
+/* ==========================================   CATEGORY TABS   ========================================== */
+body.dark-mode .category-tab {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .category-tab:hover {
+    background: var(--farm-bg-alt) !important;
+    border-color: var(--farm-accent) !important;
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .category-tab.active {
+    background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%) !important;
+    color: var(--farm-primary-dark) !important;
+    border-color: var(--farm-accent) !important;
+}
+
+body.dark-mode .category-tabs-select {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .category-scroll-arrow {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-primary) !important;
+}
+
+/* ==========================================   BUTTONS   ========================================== */
+body.dark-mode .btn-accent {
+    background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+body.dark-mode .btn-outline-accent {
+    color: var(--farm-accent) !important;
+    border-color: var(--farm-accent) !important;
+}
+
+body.dark-mode .btn-outline-accent:hover {
+    background: var(--farm-accent) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+body.dark-mode .btn-outline-primary {
+    color: var(--farm-secondary) !important;
+    border-color: var(--farm-secondary) !important;
+}
+
+body.dark-mode .btn-outline-primary:hover {
+    background: var(--farm-secondary) !important;
+    color: var(--farm-white) !important;
+}
+
+body.dark-mode .design-btn-secondary {
+    background: var(--farm-white) !important;
+    color: var(--farm-text) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .design-btn-secondary:hover {
+    background: var(--farm-bg-alt) !important;
+    color: var(--farm-accent) !important;
+}
+
+/* ==========================================   FORMS   ========================================== */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode input[type="text"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="tel"],
+body.dark-mode input[type="search"],
+body.dark-mode textarea {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus,
+body.dark-mode input:focus,
+body.dark-mode textarea:focus {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-accent) !important;
+    color: var(--farm-text) !important;
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15) !important;
+}
+
+body.dark-mode .form-label,
+body.dark-mode label {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .form-check-input {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .form-check-input:checked {
+    background-color: var(--farm-accent) !important;
+    border-color: var(--farm-accent-dark) !important;
+}
+
+body.dark-mode .input-group-text {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .invalid-feedback {
+    color: #FCA5A5 !important;
+}
+
+body.dark-mode .form-text {
+    color: var(--farm-text-muted) !important;
+}
+
+/* ==========================================   ALERTS & BADGES   ========================================== */
+body.dark-mode .alert {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .alert-success {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    border-color: rgba(40, 167, 69, 0.3) !important;
+    color: #86EFAC !important;
+}
+
+body.dark-mode .alert-danger {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    border-color: rgba(220, 53, 69, 0.3) !important;
+    color: #FCA5A5 !important;
+}
+
+body.dark-mode .alert-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border-color: rgba(255, 193, 7, 0.3) !important;
+    color: #FCD34D !important;
+}
+
+body.dark-mode .alert-info {
+    background-color: rgba(23, 162, 184, 0.15) !important;
+    border-color: rgba(23, 162, 184, 0.3) !important;
+    color: #93C5FD !important;
+}
+
+body.dark-mode .badge {
+    background-color: var(--farm-white) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .cart-qty-badge,
+body.dark-mode .floating-cart-badge {
+    background: var(--farm-accent) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+/* ==========================================   FOOTER   ========================================== */
+body.dark-mode footer {
+    background-color: var(--farm-bg-alt) !important;
+    border-top: 1px solid var(--farm-border) !important;
+}
+
+body.dark-mode .footer-section h4 {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .footer-text {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .footer-links a {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .footer-links a:hover {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .footer-copyright {
+    color: var(--farm-text-muted) !important;
+    border-top: 1px solid var(--farm-border) !important;
+}
+
+/* ==========================================   HERO SECTIONS   ========================================== */
+body.dark-mode .hero {
+    background: linear-gradient(135deg, #0F2A1D 0%, #1B5E20 50%, #2E7D32 100%) !important;
+}
+
+body.dark-mode .hero-text {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.dark-mode .eyebrow {
+    color: var(--farm-accent) !important;
+}
+
+/* ==========================================   BANNERS & INFO BOXES   ========================================== */
+body.dark-mode .card.shadow-md {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .banner-content strong {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .banner-content span {
+    color: var(--farm-text-muted) !important;
+}
+
+/* ==========================================   MODALS   ========================================== */
+body.dark-mode .modal-content {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: var(--farm-border) !important;
+}
+
+body.dark-mode .modal-footer {
+    border-top-color: var(--farm-border) !important;
+}
+
+body.dark-mode .modal-title {
+    color: var(--farm-forest) !important;
+}
+
+/* ==========================================   TOAST NOTIFICATIONS   ========================================== */
+body.dark-mode .cart-toast {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .cart-toast-title {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .cart-toast-message {
+    color: var(--farm-text-muted) !important;
+}
+
+/* ==========================================   FLOATING CART BUTTON   ========================================== */
+body.dark-mode .floating-cart-btn {
+    background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%) !important;
+}
+
+/* ==========================================   SCROLL BUTTONS   ========================================== */
+body.dark-mode .scroll-button {
+    background: linear-gradient(135deg, var(--farm-primary) 0%, var(--farm-secondary) 100%) !important;
+}
+
+/* ==========================================   WELCOME OVERLAY   ========================================== */
+body.dark-mode .welcome-overlay {
+    background: linear-gradient(135deg, #0F2A1D 0%, #1B5E20 50%, #2E7D32 100%) !important;
+}
+
+/* ==========================================   ADMIN BACK LINK   ========================================== */
+body.dark-mode .admin-back-link {
+    background: rgba(45, 45, 45, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .admin-back-link:hover {
+    background: var(--farm-bg-alt) !important;
+    color: var(--farm-accent) !important;
+}
+
+/* ==========================================   TEXT UTILITIES   ========================================== */
+body.dark-mode .text-muted,
+body.dark-mode .text-secondary,
+body.dark-mode .text-body-secondary {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .text-dark,
+body.dark-mode .text-body {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .text-primary {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .text-success {
+    color: #86EFAC !important;
+}
+
+body.dark-mode .text-danger {
+    color: #FCA5A5 !important;
+}
+
+body.dark-mode .text-warning {
+    color: #FCD34D !important;
+}
+
+body.dark-mode .text-info {
+    color: #93C5FD !important;
+}
+
+body.dark-mode .text-white {
+    color: var(--farm-forest) !important;
+}
+
+/* Override common inline text colors */
+body.dark-mode [style*="color: #2E7D32"],
+body.dark-mode [style*="color:#2E7D32"],
+body.dark-mode [style*="color: #1B5E20"],
+body.dark-mode [style*="color:#1B5E20"],
+body.dark-mode [style*="color: #4CAF50"],
+body.dark-mode [style*="color:#4CAF50"] {
+    color: #4CAF50 !important;
+}
+
+body.dark-mode [style*="color: #C62828"],
+body.dark-mode [style*="color:#C62828"],
+body.dark-mode [style*="color: #dc3545"],
+body.dark-mode [style*="color:#dc3545"],
+body.dark-mode [style*="color: #dc2626"],
+body.dark-mode [style*="color:#dc2626"] {
+    color: #EF4444 !important;
+}
+
+body.dark-mode [style*="color: #374151"],
+body.dark-mode [style*="color:#374151"],
+body.dark-mode [style*="color: #4B5563"],
+body.dark-mode [style*="color:#4B5563"],
+body.dark-mode [style*="color: #6B7280"],
+body.dark-mode [style*="color:#6B7280"],
+body.dark-mode [style*="color: #6b7280"],
+body.dark-mode [style*="color:#6b7280"],
+body.dark-mode [style*="color: #9CA3AF"],
+body.dark-mode [style*="color:#9CA3AF"],
+body.dark-mode [style*="color: #1f2937"],
+body.dark-mode [style*="color:#1f2937"],
+body.dark-mode [style*="color: #263238"],
+body.dark-mode [style*="color:#263238"],
+body.dark-mode [style*="color: #0F2A1D"],
+body.dark-mode [style*="color:#0F2A1D"],
+body.dark-mode [style*="color: #163B19"],
+body.dark-mode [style*="color:#163B19"],
+body.dark-mode [style*="color: #1A1A1A"],
+body.dark-mode [style*="color:#1A1A1A"],
+body.dark-mode [style*="color: #1a1a1a"],
+body.dark-mode [style*="color:#1a1a1a"],
+body.dark-mode [style*="color: #000"],
+body.dark-mode [style*="color:#000"],
+body.dark-mode [style*="color: #000000"],
+body.dark-mode [style*="color:#000000"] {
+    color: #E5E7EB !important;
+}
+
+body.dark-mode [style*="color: #D4AF37"],
+body.dark-mode [style*="color:#D4AF37"],
+body.dark-mode [style*="color: #C5A028"],
+body.dark-mode [style*="color:#C5A028"],
+body.dark-mode [style*="color: #F5D06B"],
+body.dark-mode [style*="color:#F5D06B"] {
+    color: var(--farm-accent) !important;
+}
+
+/* ==========================================   DARK MODE TOGGLE BUTTON   ========================================== */
+.public-dark-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--farm-border);
+    background: var(--farm-white);
+    color: var(--farm-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.public-dark-mode-toggle:hover {
+    background: var(--farm-bg-alt);
+    border-color: var(--farm-accent);
+    color: var(--farm-accent);
+    transform: translateY(-1px);
+}
+
+body.dark-mode .public-dark-mode-toggle {
+    background: var(--farm-bg-alt);
+    border-color: var(--farm-border);
+    color: var(--farm-accent);
+}
+
+body.dark-mode .public-dark-mode-toggle:hover {
+    background: var(--farm-white);
+    color: var(--farm-primary);
+}
+
+.toggle-icon {
+    transition: all 0.2s ease;
+}
+
+/* ==========================================   RESPONSIVE   ========================================== */
+@media (max-width: 768px) {
+    .public-dark-mode-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .public-dark-mode-toggle {
+        width: 34px;
+        height: 34px;
+        font-size: 0.95rem;
+    }
+}
