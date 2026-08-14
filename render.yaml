@@ -32,5 +32,6 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: SUPABASE_BUCKET_NAME
-        value: product-images
+       - key: SUPABASE_BUCKET_NAME
+         value: product-images
+# trigger redeploy
