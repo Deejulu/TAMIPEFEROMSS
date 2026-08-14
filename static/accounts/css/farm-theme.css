@@ -411,7 +411,8 @@ img {
 .btn-add-to-cart {
   white-space: normal;
   min-width: 7rem;
-  width: 150px;
+  width: auto;
+  max-width: 130px;
   text-align: center;
   justify-content: center;
   flex-shrink: 0;
