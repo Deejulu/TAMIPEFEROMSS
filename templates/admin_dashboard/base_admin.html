@@ -4,6 +4,9 @@
 {% block public_navbar %}{% endblock %}
 
 {% block title %}{% if page_title %}{{ page_title }} | {% endif %}Admin Dashboard{% endblock %}
+{% block meta_description %}TAMIPEE Farms admin dashboard — manage products, orders, payments, users, and farm operations.{% endblock %}
+{% block og_title %}{% if page_title %}{{ page_title }} | {% endif %}Admin Dashboard - TAMIPEE{% endblock %}
+{% block og_description %}Manage TAMIPEE Farms operations, products, orders, and users.{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard.css' %}">
@@ -35,6 +38,27 @@
     transform: translateY(-1px);
   }
   .admin-shop-link i {
+    font-size: 16px;
+  }
+
+  .admin-dashboard-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    color: #FFFFFF;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  .admin-dashboard-link:hover {
+    color: #FFFFFF;
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+  .admin-dashboard-link i {
     font-size: 16px;
   }
   @media (max-width: 768px) {

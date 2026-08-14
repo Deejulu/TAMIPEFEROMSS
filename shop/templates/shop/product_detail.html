@@ -2,6 +2,10 @@
 {% load i18n %}
 
 {% block title %}{{ product.name }} - TAMIPEE{% endblock %}
+{% block meta_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+{% block og_title %}{{ product.name }} - TAMIPEE{% endblock %}
+{% block og_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+{% block og_image %}{% if product.image %}{{ product.image.url }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: clamp(1.5rem, 4vw, 2.5rem) 0;">

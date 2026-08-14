@@ -2,6 +2,9 @@
 {% load static %}
 
 {% block title %}Shop - TAMIPEE{% endblock %}
+{% block meta_description %}Browse TAMIPEE Farms shop for fresh catfish, poultry, eggs, and farm supplies in Nigeria. Quality products with fast delivery.{% endblock %}
+{% block og_title %}Shop - TAMIPEE{% endblock %}
+{% block og_description %}Fresh catfish, poultry, and farm supplies delivered across Nigeria.{% endblock %}
 
 {% block content %}
 <div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: 0;">
@@ -152,6 +155,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    overflow: hidden;
   }
 
   .category-scroll-arrow {
@@ -497,6 +501,10 @@
   .btn-add-to-cart {
     white-space: normal;
     min-width: 5rem;
+    width: 110px;
+    text-align: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .empty-shop {

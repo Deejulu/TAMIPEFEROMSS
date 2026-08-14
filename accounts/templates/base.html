@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TAMIPEE - Farm Management{% endblock %}</title>
+    {% block seo_meta %}
+    <meta name="description" content="{% block meta_description %}TAMIPEE Farms — fresh catfish, poultry, and farm supplies delivered across Nigeria. Shop online for quality farm products.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}TAMIPEE - Farm Management{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}TAMIPEE Farms — fresh catfish, poultry, and farm supplies delivered across Nigeria. Shop online for quality farm products.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% static 'accounts/images/logo.svg' %}{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <meta property="og:site_name" content="TAMIPEE Farms">
+    {% endblock %}
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 
@@ -133,7 +142,7 @@
     </a>
 
     <!-- Admin Back Link (visible on shop pages for admin users) -->
-    {% if user.is_authenticated and user.role in 'SUPER_ADMIN,FARM_MANAGER,SUPER_STAFF' %}
+    {% if user.is_authenticated and user.role in 'SUPER_ADMIN,FARM_MANAGER,SUPER_STAFF' and request.resolver_match.namespace != 'admin_dashboard' and request.path|slice:":16" != "/admin-dashboard" %}
     <a href="{% url 'admin_dashboard:overview' %}" class="admin-back-link" id="adminBackLink">
       <i class="bi bi-speedometer2"></i>
       <span class="back-label">Admin</span>

@@ -3,6 +3,9 @@
 {% load i18n %}
 
 {% block title %}{% trans "Sign Up" %}{% endblock %}
+{% block meta_description %}Create your TAMIPEE Farms account to start ordering fresh catfish, poultry, and farm supplies online with delivery across Nigeria.{% endblock %}
+{% block og_title %}Sign Up - TAMIPEE{% endblock %}
+{% block og_description %}Join TAMIPEE Farms for fresh farm products delivered to you.{% endblock %}
 
 {% block content %}
 <div class="page-wrapper d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 200px); padding: 40px 0; background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%);">
@@ -361,13 +364,13 @@
             }
             if (name) {
                 e.preventDefault();
+                console.log('[Signup] Submit prevented, showing welcome screen');
                 var hideWelcome = showWelcomeScreen(name);
                 var formData = new FormData(signupForm);
                 var csrfToken = formData.get('csrfmiddlewaretoken');
                 
                 setTimeout(function() {
-                    hideWelcome();
-                    
+                    console.log('[Signup] Sending fetch after welcome delay');
                     fetch(signupForm.action || window.location.href, {
                         method: 'POST',
                         body: formData,
@@ -379,16 +382,23 @@
                         redirect: 'manual',
                     })
                     .then(function(response) {
+                        console.log('[Signup] Fetch response:', response.status, response.type, response.headers.get('Location'));
                         var location = response.headers.get('Location');
-                        if (location && location.indexOf('/accounts/dashboard/') !== -1) {
+                        if (location) {
+                            console.log('[Signup] Navigating to dashboard:', location);
                             window.location.href = '/accounts/dashboard/';
-                        } else if (response.status >= 300 && response.status < 400 && location) {
-                            window.location.href = location;
+                        } else if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+                            console.log('[Signup] Opaque redirect detected, navigating to /accounts/dashboard/');
+                            window.location.href = '/accounts/dashboard/';
                         } else {
-                            window.location.reload();
+                            console.log('[Signup] Unexpected response, falling back to native submit');
+                            hideWelcome();
+                            signupForm.submit();
                         }
                     })
-                    .catch(function() {
+                    .catch(function(err) {
+                        console.error('[Signup] Fetch failed, falling back to native submit:', err);
+                        hideWelcome();
                         signupForm.submit();
                     });
                 }, 2500);

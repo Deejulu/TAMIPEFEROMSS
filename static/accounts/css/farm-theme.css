@@ -827,6 +827,7 @@ textarea.form-control {
   min-height: calc(100vh - 200px);
   padding: clamp(2rem, 5vw, 4rem) 0;
   background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%);
+  overflow-x: hidden;
 }
 
 @media (max-width: 768px) {
@@ -1523,7 +1524,7 @@ textarea.form-control {
 }
 
 .navbar-nav .nav-link {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--farm-white);
   padding: 8px 16px;
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
@@ -3417,7 +3418,7 @@ textarea.form-control {
    ========================================== */
 .floating-cart-btn {
   position: fixed;
-  bottom: 28px;
+  bottom: 36px;
   left: 28px;
   z-index: 9998;
   width: 56px;
@@ -3474,7 +3475,7 @@ textarea.form-control {
 
 @media (max-width: 480px) {
   .floating-cart-btn {
-    bottom: 20px;
+    bottom: 28px;
     left: 20px;
     width: 50px;
     height: 50px;
@@ -3609,6 +3610,8 @@ textarea.form-control {
     font-size: 0.95rem;
     transition: all 0.2s ease;
     min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
 
   .navbar-nav .nav-link i {
@@ -3622,6 +3625,12 @@ textarea.form-control {
   .navbar-nav .nav-link:focus {
     background: var(--farm-bg-alt);
     color: var(--farm-primary);
+    transform: translateX(4px);
+  }
+
+  .navbar-nav .nav-link:active {
+    background: var(--farm-primary);
+    color: var(--farm-white);
     transform: translateX(4px);
   }
 
@@ -3665,6 +3674,8 @@ textarea.form-control {
     color: var(--farm-text);
     transition: all 0.2s ease;
     min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
   }
 
   .navbar-nav .dropdown-item i {
@@ -3678,6 +3689,12 @@ textarea.form-control {
   .navbar-nav .dropdown-item:focus {
     background: var(--farm-white);
     color: var(--farm-primary);
+    transform: translateX(4px);
+  }
+
+  .navbar-nav .dropdown-item:active {
+    background: var(--farm-primary);
+    color: var(--farm-white);
     transform: translateX(4px);
   }
 
@@ -3909,6 +3926,35 @@ textarea.form-control {
   display: inline;
 }
 
+/* On wider screens where navbar is expanded, sit below the navbar to avoid overlap */
+@media (min-width: 992px) {
+  .admin-back-link {
+    top: 100px;
+    left: auto;
+    right: 200px;
+    bottom: auto;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    gap: 5px;
+    box-shadow: var(--shadow-sm);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .admin-back-link:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .admin-back-link i {
+    font-size: 0.85rem;
+  }
+
+  .admin-back-link .back-label {
+    display: inline;
+  }
+}
+
 @media (max-width: 991px) {
   .admin-back-link {
     top: 70px;
@@ -3932,8 +3978,8 @@ textarea.form-control {
   .admin-back-link {
     top: 76px;
     right: 12px;
-    bottom: auto;
     left: auto;
+    bottom: auto;
     width: 40px;
     height: 40px;
     padding: 0;
