@@ -405,12 +405,13 @@ img {
   border-radius: 10px;
   margin-left: 6px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .btn-add-to-cart {
   white-space: normal;
   min-width: 7rem;
-  width: 140px;
+  width: 150px;
   text-align: center;
   justify-content: center;
   flex-shrink: 0;
