@@ -11,6 +11,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_design.css' %}">
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_dark_mode.css' %}">
 {% block extra_css %}{% endblock %}
 {% if user.is_authenticated %}
 <meta name="csrf-token" content="{{ csrf_token }}">
@@ -270,6 +271,11 @@
                     <span class="admin-dashboard-link-label">Dashboard</span>
                 </a>
 
+                <!-- Dark Mode Toggle -->
+                <button class="admin-dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+                    <i class="bi bi-moon-stars" id="darkModeIcon"></i>
+                </button>
+
                 <!-- User Info Dropdown -->
                 {% if user.is_authenticated %}
                 <li class="nav-item dropdown" style="list-style: none;">
@@ -414,5 +420,96 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<script>
+(function() {
+    'use strict';
+
+    const STORAGE_KEY = 'admin-dark-mode';
+    const BODY_CLASS = 'dark-mode';
+
+    function getSystemPreference() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function getStoredPreference() {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored === 'dark') return true;
+            if (stored === 'light') return false;
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setStoredPreference(isDark) {
+        try {
+            localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light');
+        } catch (e) {
+            // localStorage not available
+        }
+    }
+
+    function applyTheme(isDark) {
+        if (isDark) {
+            document.body.classList.add(BODY_CLASS);
+        } else {
+            document.body.classList.remove(BODY_CLASS);
+        }
+        updateToggleUI(isDark);
+    }
+
+    function updateToggleUI(isDark) {
+        const icon = document.getElementById('darkModeIcon');
+        const label = document.getElementById('darkModeLabel');
+        if (icon) {
+            icon.className = isDark ? 'bi bi-sun-fill toggle-icon' : 'bi bi-moon-stars toggle-icon';
+        }
+        if (label) {
+            label.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+        }
+    }
+
+    function initializeDarkMode() {
+        const stored = getStoredPreference();
+        const isDark = stored !== null ? stored : getSystemPreference();
+        applyTheme(isDark);
+    }
+
+    function setupToggle() {
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (!toggleBtn) return;
+
+        toggleBtn.addEventListener('click', function() {
+            const isCurrentlyDark = document.body.classList.contains(BODY_CLASS);
+            const newIsDark = !isCurrentlyDark;
+            applyTheme(newIsDark);
+            setStoredPreference(newIsDark);
+        });
+    }
+
+    function watchSystemTheme() {
+        if (getStoredPreference() !== null) return;
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', function(e) {
+            applyTheme(e.matches);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDarkMode();
+            setupToggle();
+            watchSystemTheme();
+        });
+    } else {
+        initializeDarkMode();
+        setupToggle();
+        watchSystemTheme();
+    }
+})();
 </script>
 {% endblock %}

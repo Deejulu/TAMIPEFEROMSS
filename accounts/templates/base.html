@@ -144,7 +144,7 @@
 
     <!-- Admin Back Link (visible on shop pages for admin users) -->
     {% if user.is_authenticated and user.role in 'SUPER_ADMIN,FARM_MANAGER,SUPER_STAFF' and request.resolver_match.namespace != 'admin_dashboard' and request.path|slice:":16" != "/admin-dashboard" %}
-    <a href="{% url 'admin_dashboard:overview' %}" class="admin-back-link" id="adminBackLink">
+    <a href="{% url 'admin_dashboard:overview' %}" class="admin-back-link d-lg-none" id="adminBackLink">
       <i class="bi bi-speedometer2"></i>
       <span class="back-label">Admin</span>
     </a>

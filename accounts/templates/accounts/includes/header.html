@@ -79,7 +79,17 @@
            </a>
          </li>
 
-         {% if user.is_authenticated and user.role == 'CUSTOMER' %}
+         {% if user.is_authenticated and user.role in 'SUPER_ADMIN,FARM_MANAGER,SUPER_STAFF' and request.resolver_match.namespace != 'admin_dashboard' and request.path|slice:":16" != "/admin-dashboard" %}
+         <li class="nav-item d-none d-lg-flex">
+           <a class="nav-link d-flex align-items-center"
+              href="{% url 'admin_dashboard:overview' %}">
+             <i class="bi bi-speedometer2"></i>
+             <span>Admin</span>
+           </a>
+         </li>
+         {% endif %}
+
+          {% if user.is_authenticated and user.role == 'CUSTOMER' %}
          <!-- Orders & Payments Link -->
          <li class="nav-item">
            <a class="nav-link d-flex align-items-center"
