@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.db.models import Sum, Count, F
@@ -847,31 +848,43 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
             annotated_total_feed_cost=Sum('feed_logs__cost'),
             annotated_total_feed_qty=Sum('feed_logs__quantity_kg'),
             annotated_total_mortality=Sum('mortality_logs__count'),
-        ).prefetch_related('feed_logs', 'growth_records', 'mortality_logs', 'harvest')
+        ).select_related('harvest').prefetch_related(
+            'feed_logs',
+            'growth_records',
+            'mortality_logs',
+            'vaccination_records',
+            'health_logs',
+        )
 
         analytics = []
         analytics_json = []
         for batch in batches:
-            fcr = batch.feed_conversion_ratio
-            growth_records = batch.growth_records.all().order_by('date')
-            if growth_records.count() >= 2:
-                earliest = growth_records.first()
-                latest = growth_records.last()
+            # Compute FCR from prefetched data to avoid extra DB queries
+            feed_logs = batch.feed_logs.all()
+            total_feed_qty = sum(fl.quantity_kg for fl in feed_logs) if feed_logs else 0
+            
+            growth_records = list(batch.growth_records.all())
+            growth_records.sort(key=lambda r: r.date)
+            growth_rate = None
+            weight_gain = None
+            if len(growth_records) >= 2:
+                earliest = growth_records[0]
+                latest = growth_records[-1]
                 days = (latest.date - earliest.date).days
                 weight_gain = (latest.average_weight_kg - earliest.average_weight_kg) * batch.current_stock
                 growth_rate = round(float(weight_gain / days), 4) if days > 0 and weight_gain > 0 else None
-            else:
-                growth_rate = None
 
+            # Use select_related harvest data directly
             profit = None
             if hasattr(batch, 'harvest'):
-                profit = batch.harvest.profit
+                total_feed_cost = sum(fl.cost for fl in feed_logs) if feed_logs else 0
+                profit = batch.harvest.total_revenue - total_feed_cost
 
             item = {
                 'batch': batch,
                 'total_feed_cost': batch.annotated_total_feed_cost or 0,
                 'total_feed_qty': batch.annotated_total_feed_qty or 0,
-                'fcr': fcr,
+                'fcr': round(total_feed_qty / weight_gain, 2) if weight_gain and total_feed_qty > 0 else None,
                 'mortality_rate': batch.mortality_rate,
                 'growth_rate': growth_rate,
                 'profit': profit,
@@ -885,7 +898,7 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
                 },
                 'total_feed_cost': float(item['total_feed_cost']) if item['total_feed_cost'] else 0,
                 'total_feed_qty': float(item['total_feed_qty']) if item['total_feed_qty'] else 0,
-                'fcr': float(fcr) if fcr else None,
+                'fcr': float(item['fcr']) if item['fcr'] else None,
                 'mortality_rate': float(batch.mortality_rate) if batch.mortality_rate else 0,
                 'growth_rate': float(growth_rate) if growth_rate is not None else None,
                 'profit': float(profit) if profit is not None else None,
@@ -912,22 +925,31 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
             })
         context['stock_pie_json'] = json.dumps(stock_pie)
 
-        # Trend line data: monthly feed cost over time
-        monthly_feed = FeedLog.objects.annotate(
-            month=TruncMonth('date')
-        ).values('month').annotate(
-            total_cost=Sum('cost')
-        ).order_by('month')
+        # Cache monthly feed trend for 15 minutes
+        cache_key = 'analytics_monthly_feed_trend'
+        cached_trend = cache.get(cache_key)
+        if cached_trend is None:
+            monthly_feed = FeedLog.objects.annotate(
+                month=TruncMonth('date')
+            ).values('month').annotate(
+                total_cost=Sum('cost')
+            ).order_by('month')
+            
+            trend_labels = []
+            trend_values = []
+            for entry in monthly_feed:
+                if entry['month']:
+                    trend_labels.append(entry['month'].strftime('%b %Y'))
+                    trend_values.append(float(entry['total_cost']) if entry['total_cost'] else 0)
+            
+            cached_trend = {
+                'labels': trend_labels,
+                'values': trend_values,
+            }
+            cache.set(cache_key, cached_trend, 900)  # 15 minutes
         
-        trend_labels = []
-        trend_values = []
-        for entry in monthly_feed:
-            if entry['month']:
-                trend_labels.append(entry['month'].strftime('%b %Y'))
-                trend_values.append(float(entry['total_cost']) if entry['total_cost'] else 0)
-        
-        context['trend_labels_json'] = json.dumps(trend_labels)
-        context['trend_values_json'] = json.dumps(trend_values)
+        context['trend_labels_json'] = json.dumps(cached_trend['labels'])
+        context['trend_values_json'] = json.dumps(cached_trend['values'])
 
         # Vaccination Coverage data
         vaccination_coverage = []
@@ -935,7 +957,7 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         for batch in batches:
             total_stock = batch.current_stock or 0
             vaccination_records = batch.vaccination_records.all()
-            vaccinations_count = vaccination_records.count()
+            vaccinations_count = len(vaccination_records)
             coverage_pct = round((vaccinations_count / total_stock * 100), 1) if total_stock > 0 else 0
             item = {
                 'batch': batch,
@@ -960,7 +982,7 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         health_medicines_data = {}
         for batch in batches:
             health_logs = batch.health_logs.all()
-            log_count = health_logs.count()
+            log_count = len(health_logs)
             item = {
                 'batch': batch,
                 'log_count': log_count,

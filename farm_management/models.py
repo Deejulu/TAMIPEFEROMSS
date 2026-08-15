@@ -113,6 +113,9 @@ class FeedLog(models.Model):
         verbose_name = _("feed log")
         verbose_name_plural = _("feed logs")
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['batch', 'date'], name='feedlog_batch_date_idx'),
+        ]
 
     def save(self, *args, **kwargs):
         if self.feed_inventory and not self.pk:
@@ -135,6 +138,9 @@ class GrowthRecord(models.Model):
         verbose_name = _("growth record")
         verbose_name_plural = _("growth records")
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['batch', 'date'], name='growthrecord_batch_date_idx'),
+        ]
 
     def __str__(self):
         return f"{self.batch} — {self.date}"
@@ -152,6 +158,9 @@ class MortalityLog(models.Model):
         verbose_name = _("mortality log")
         verbose_name_plural = _("mortality logs")
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['batch', 'date'], name='mortalitylog_batch_date_idx'),
+        ]
 
     def __str__(self):
         return f"{self.batch} — {self.date} — {self.count} deaths"
@@ -200,6 +209,9 @@ class VaccinationRecord(models.Model):
         verbose_name = _("vaccination record")
         verbose_name_plural = _("vaccination records")
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['batch', 'date'], name='vaccination_batch_date_idx'),
+        ]
 
     def __str__(self):
         return f"{self.batch} — {self.date} — {self.vaccine_name}"
@@ -219,6 +231,9 @@ class HealthMedicationLog(models.Model):
         verbose_name = _("health/medication log")
         verbose_name_plural = _("health/medication logs")
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['batch', 'date'], name='health_log_batch_date_idx'),
+        ]
 
     def __str__(self):
         return f"{self.batch} — {self.date} — {self.medicine_name}"
