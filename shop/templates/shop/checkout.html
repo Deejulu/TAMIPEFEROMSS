@@ -119,15 +119,18 @@
                        name="payment_method" 
                        value="{{ method.code }}"
                        {% if forloop.first %}checked{% endif %}>
-                <label for="payment-{{ method.code }}">
-                  {% if method.code == 'paystack' %}
-                    <i class="bi bi-credit-card"></i>
-                  {% elif method.code == 'bank_transfer' %}
-                    <i class="bi bi-bank"></i>
-                  {% elif method.code == 'cash_on_delivery' %}
-                    <i class="bi bi-cash-coin"></i>
-                  {% endif %}
-                  <span>{{ method.label }}</span>
+                <label for="payment-{{ method.code }}" class="payment-label">
+                  <span class="payment-label-content">
+                    {% if method.code == 'paystack' %}
+                      <i class="bi bi-credit-card"></i>
+                    {% elif method.code == 'bank_transfer' %}
+                      <i class="bi bi-bank"></i>
+                    {% elif method.code == 'cash_on_delivery' %}
+                      <i class="bi bi-cash-coin"></i>
+                    {% endif %}
+                    <span>{{ method.label }}</span>
+                  </span>
+                  <span class="payment-check"><i class="bi bi-check-circle-fill"></i></span>
                 </label>
               </div>
               {% endfor %}
