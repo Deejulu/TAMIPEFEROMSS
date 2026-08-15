@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'farm_management',
     'notifications',
     'shop',
+    'shared_tools',
 ]
 
 MIDDLEWARE = [

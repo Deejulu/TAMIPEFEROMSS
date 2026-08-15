@@ -534,12 +534,16 @@
                     <div class="info-row-improved">
                         <dt><i class="bi bi-envelope me-2"></i>{% trans "Email" %}</dt>
                         <dd class="text-break">
-                            {{ user.email }}
-                            {% if user.email_verified %}
-                                <span class="design-badge design-badge-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
+                            {% if user.email %}
+                                {{ user.email }}
+                                {% if user.email_verified %}
+                                    <span class="design-badge design-badge-success ms-1"><i class="bi bi-check-circle-fill"></i> {% trans "Verified" %}</span>
+                                {% else %}
+                                    <span class="design-badge design-badge-warning ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
+                                    <a href="{% url 'accounts:resend_verification' %}" class="ms-2 small" style="color: var(--farm-terracotta);">{% trans "Resend verification" %}</a>
+                                {% endif %}
                             {% else %}
-                                <span class="design-badge design-badge-warning ms-1"><i class="bi bi-exclamation-triangle-fill"></i> {% trans "Unverified" %}</span>
-                                <a href="{% url 'accounts:resend_verification' %}" class="ms-2 small" style="color: var(--farm-terracotta);">{% trans "Resend verification" %}</a>
+                                <span class="text-muted">{% trans "Not provided" %}</span>
                             {% endif %}
                         </dd>
                     </div>
@@ -636,6 +640,9 @@
                         </a>
                         <a href="{% url 'accounts:payment_history' %}" class="btn btn-outline">
                             <i class="bi bi-credit-card me-1"></i>{% trans "Payment History" %}
+                        </a>
+                        <a href="{% url 'shop:customer_messages' %}" class="btn btn-outline">
+                            <i class="bi bi-chat-dots me-1"></i>{% trans "My Messages" %}
                         </a>
                     </div>
                 </div>

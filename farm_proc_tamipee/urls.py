@@ -25,4 +25,5 @@ urlpatterns = [
     path('admin-dashboard/farm-management/', include('farm_management.urls', namespace='farm_management')),
     path('admin-dashboard/', include('admin_dashboard.urls', namespace='admin_dashboard')),
     path('shop/', include('shop.urls', namespace='shop')),
+    path('tools/', include('shared_tools.urls', namespace='shared_tools')),
 ]

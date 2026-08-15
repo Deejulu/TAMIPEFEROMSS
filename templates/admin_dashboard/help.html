@@ -1,0 +1,584 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title|default:"Help" }} | Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_design.css' %}">
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_dark_mode.css' %}">
+<style>
+  .help-search-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+    backdrop-filter: blur(8px);
+    padding: 1rem 0 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .help-search-input {
+    width: 100%;
+    max-width: 720px;
+    padding: 0.85rem 1.25rem;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    font-size: 1rem;
+    font-family: var(--font-body);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .help-search-input:focus {
+    outline: none;
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 4px rgba(46,125,50,0.1);
+  }
+
+  .help-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    scroll-margin-top: 140px;
+  }
+
+  .help-section h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1B5E20;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .help-section h2 i {
+    color: #D4AF37;
+    font-size: 1.4rem;
+  }
+
+  .help-step {
+    display: flex;
+    gap: 12px;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .help-step:last-child {
+    border-bottom: none;
+  }
+
+  .help-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .help-step-content {
+    flex: 1;
+  }
+
+  .help-step-content strong {
+    color: #1f2937;
+    font-weight: 600;
+  }
+
+  .help-example {
+    background: #f8fdf8;
+    border-left: 4px solid #2E7D32;
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #374151;
+  }
+
+  .help-example strong {
+    color: #1B5E20;
+  }
+
+  .help-quick-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .help-quick-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.85rem 1rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+
+  .help-quick-nav a:hover {
+    border-color: #2E7D32;
+    background: #f8fdf8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .help-quick-nav a i {
+    color: #2E7D32;
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+  }
+
+  .help-no-results {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+  }
+
+  @media (max-width: 768px) {
+    .help-section {
+      padding: 1.15rem;
+      scroll-margin-top: 120px;
+    }
+    .help-section h2 {
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .help-section {
+      padding: 1rem;
+      scroll-margin-top: 110px;
+    }
+    .help-quick-nav {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="admin-content-inner">
+  <div class="help-search-wrap">
+    <input
+      type="text"
+      id="helpSearch"
+      class="help-search-input"
+      placeholder="Search help topics... e.g. batches, suppliers, feed inventory, orders"
+      autocomplete="off"
+    >
+    <div id="helpNoResults" class="help-no-results">
+      <i class="bi bi-search" style="font-size: 2rem; color: #d1d5db;"></i>
+      <p style="margin-top: 0.5rem;">No matching sections found. Try a broader keyword.</p>
+    </div>
+  </div>
+
+  <div class="help-quick-nav">
+    <a href="#section-overview"><i class="bi bi-speedometer2"></i> Overview</a>
+    <a href="#section-notifications"><i class="bi bi-bell"></i> Notifications</a>
+    <a href="#section-website-content"><i class="bi bi-window-stack"></i> Website Content</a>
+    <a href="#section-farm-management"><i class="bi bi-basket"></i> Farm Management</a>
+    <a href="#section-batches"><i class="bi bi-box-seam"></i> Batches</a>
+    <a href="#section-suppliers"><i class="bi bi-truck"></i> Suppliers</a>
+    <a href="#section-feed-inventory"><i class="bi bi-box"></i> Feed Inventory</a>
+    <a href="#section-health"><i class="bi bi-heart-pulse"></i> Health & Vaccination</a>
+    <a href="#section-shop-orders"><i class="bi bi-shop"></i> Shop / Orders</a>
+    <a href="#section-staff"><i class="bi bi-person-badge"></i> Staff Management</a>
+    <a href="#section-users"><i class="bi bi-people"></i> User Management</a>
+    <a href="#section-reports"><i class="bi bi-bar-chart-line"></i> Reports</a>
+    <a href="#section-audit"><i class="bi bi-journal-text"></i> Activity Timeline</a>
+  </div>
+
+  <div id="helpSections">
+    <div class="help-section" data-keywords="overview dashboard snapshot alerts quick links">
+      <h2><i class="bi bi-speedometer2"></i> Overview</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">The Overview page is your command center. It shows farm health, order volume, low-stock warnings, and recent activity in one place.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Review the farm snapshot</strong> — check active batches, species breakdown, and any batch alerts.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Watch shop metrics</strong> — see recent orders count, low-stock products, and payment health.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Use Quick Links</strong> to jump directly to Farm Management, Users, Content, Orders, Analytics, or Suppliers.</div>
+      </div>
+      <div class="help-example">
+        <strong>Nigerian farm context:</strong> If you run a poultry farm in Ogun State, the Overview might show 3 active broiler batches, 12 unread batch alerts, and 2 feed items below reorder point.
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="notifications alerts bell unread">
+      <h2><i class="bi bi-bell"></i> Notifications</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Notifications alert you to important events across the farm and shop so nothing slips through the cracks.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Check the bell icon</strong> in the top bar — it shows unread notification count.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Filter by type</strong> — batch alerts, order updates, payment confirmations, system warnings.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Mark as read</strong> individually or use <strong>Mark all read</strong> to clear the backlog.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real example:</strong> A mortality spike in Batch #47 triggers an alert: "Mortality log created for Broiler Batch #47 — 12 birds recorded on 12 Aug 2026."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="website content management hero banner about contact faq delivery terms returns">
+      <h2><i class="bi bi-window-stack"></i> Website Content</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Control what customers see on the public-facing website without touching code.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Open Website Content</strong> from the sidebar under Management.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Choose a section</strong> — Hero Banner, About Us, Contact Info, FAQ, Delivery Info, Terms & Privacy, or Returns Policy.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Edit and save</strong> — use the rich text editor to update headings, paragraphs, and images. Changes go live immediately.</div>
+      </div>
+      <div class="help-example">
+        <strong>Nigerian context:</strong> Update the Hero Banner to promote "National Day Catfish Special — 20% off all smoked catfish." In Delivery Info, add "We deliver within Lagos in 24 hours and to Ibadan within 48 hours."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="farm management dashboard analytics batches suppliers species categories feed logs growth mortality harvest">
+      <h2><i class="bi bi-basket"></i> Farm Management</h2>
+      <p style="color: #4b5566; margin-bottom: 0.75rem;">The Farm Management hub is your central workspace for everything related to livestock, poultry, and feed operations.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Start from the dashboard</strong> — see total/active/closed batches, feed inventory count, low-stock warnings, and recent mortality logs.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Navigate to sub-sections</strong> — Batches, Suppliers, Species, Categories, Feed Inventory, Health Records, Daily Activities, and Analytics.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Use filters and search</strong> on list pages to find specific batches, species, or suppliers quickly.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real example:</strong> A farm manager in Kaduna filters batches by <strong>Poultry → Broiler</strong> to review all active broiler flocks before placing a feed order.
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="batches create edit species category status active closed poultry livestock">
+      <h2><i class="bi bi-box-seam"></i> Batches</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Batches represent groups of animals raised together. Track their lifecycle from intake to harvest.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Create a batch</strong> — go to Farm Management → Batches → Add Batch. Enter a name, select species/category, set start date and initial count.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Update status</strong> — mark as <strong>Active</strong> while rearing, then <strong>Closed</strong> after harvest.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Log daily activities</strong> — feed, growth, mortality, vaccination, and harvest records are all tied to a batch.</div>
+      </div>
+      <div class="help-example">
+        <strong>Nigerian examples:</strong><br>
+        • <strong>Poultry — Broiler:</strong> "Broiler Batch A — 500 birds, 28-day cycle, hatchery: Zartech Farms, Ibadan."<br>
+        • <strong>Poultry — Layer:</strong> "Layer Batch B — 300 birds, ISA Brown, started 15 Mar 2026."<br>
+        • <strong>Livestock — White Fulani:</strong> "White Fulani Herd C — 25 cows, grazing at Kano State farm."<br>
+        • <strong>Livestock — Sokoto Gudali:</strong> "Sokoto Gudali Herd D — 18 cows, Sokoto origin, breeding stock."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="suppliers add edit directory contact address feed premik">
+      <h2><i class="bi bi-truck"></i> Suppliers</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Maintain a directory of feed suppliers, veterinary drug vendors, and equipment providers.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Add a supplier</strong> — go to Farm Management → Suppliers → Add Supplier. Fill name, contact person, phone, email, and address.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Link to inventory</strong> — when creating feed inventory items, assign them to a supplier so you know who to reorder from.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Keep records updated</strong> — edit supplier details if phone numbers or delivery addresses change.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real Nigerian suppliers:</strong><br>
+        • <strong>Premier Feeds Ltd</strong> — 23 Industrial Ave, Lagos. +234-803-555-0199<br>
+        • <strong>Grand Cereals Ltd</strong> — 45 Makurdi Road, Jos. +234-805-222-0177<br>
+        • <strong>Animal Care Ltd</strong> — 12 Amuwo-Odofin, Lagos. +234-802-333-0456<br>
+        • <strong>Vetinary & Agro Services</strong> — 7 WAPCO Road, Ikeja. +234-807-444-0234
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="feed inventory stock quantity reorder point feed type category supplier">
+      <h2><i class="bi bi-box"></i> Feed Inventory</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Track feed stock levels, set reorder points, and ensure your animals never run out of feed.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Add inventory item</strong> — Farm Management → Feed Inventory → Add. Enter feed type, category, current quantity (kg), and reorder point.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Monitor low stock</strong> — the dashboard flags items at or below reorder point. The list view shows count of low-stock items.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Update quantities</strong> — edit the record when you receive a new delivery or issue feed to a batch.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real Nigerian feed types:</strong><br>
+        • <strong>Broiler Starter</strong> — 50kg bag, brand: Top Feed<br>
+        • <strong>Broiler Finisher</strong> — 50kg bag, brand: Grand Cereals<br>
+        • <strong>Layer Mash</strong> — 25kg bag, brand: Vital Feed<br>
+        • <strong>Maize (whole)</strong> — 100kg, local grain market, Ibadan<br>
+        • <strong>Soya Bean Meal</strong> — 50kg, protein supplement
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="health vaccination medication logs disease sick treatment vet">
+      <h2><i class="bi bi-heart-pulse"></i> Health & Vaccination Records</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Log health issues, medications, and vaccinations for every batch to maintain biosecurity and traceability.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Record a health issue</strong> — from a batch detail page, add a Health/Medication Log. Describe symptoms, treatment given, and outcome.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Schedule vaccinations</strong> — add Vaccination Records with vaccine name, dosage, administration date, and next due date.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Review records</strong> — use Health Records list to see all logs across batches and filter by date range.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real Nigerian context:</strong><br>
+        • <strong>Newcastle Disease</strong> — vaccinate broilers on day 7 and day 21 using Lasota vaccine.<br>
+        • <strong>Coccidiosis</strong> — treat with Amprolium in drinking water for 5 days.<br>
+        • <strong>Gumboro (IBD)</strong> — vaccination at 10 days and 24 days.<br>
+        • <strong>Record:</strong> "Broiler Batch A — 12 birds showed lethargy on 15 Aug; treated with Oxytetracycline; 2 mortalities."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="shop orders products categories inventory add edit delete price stock image">
+      <h2><i class="bi bi-shop"></i> Shop / Orders</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Manage the online shop: products, categories, pricing, stock, and customer orders.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Create categories</strong> — Shop / Orders → Products → Categories. Examples: Catfish, Poultry, Livestock, Feed, Supplies.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Add products</strong> — upload images, set prices, assign categories, and manage stock levels. Use clear product names and weights.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Process orders</strong> — review incoming orders, update status (pending → confirmed → shipped → delivered), and mark payments.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">4</span>
+        <div class="help-step-content"><strong>Manage payments</strong> — confirm Paystack or bank transfers, handle failed payments, and export CSV reports.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real Nigerian shop examples:</strong><br>
+        • <strong>Catfish</strong> — "Fresh Smoked Catfish (1kg)" — ₦4,500<br>
+        • <strong>Poultry</strong> — "Live Broiler (1.8kg avg)" — ₦3,200<br>
+        • <strong>Feed</strong> — "Broiler Starter 50kg" — ₦18,500<br>
+        • <strong>Eggs</strong> — "Tray of Eggs (30 pcs)" — ₦2,800
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="staff management create edit deactivate super admin super staff roles">
+      <h2><i class="bi bi-person-badge"></i> Staff Management</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Create and manage staff accounts that can access the admin dashboard. Only Super Admins and Super Staff can access this section.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Create staff account</strong> — Staff Management → Create Staff. Enter full name, email, phone, and assign role (STAFF or SUPER_STAFF).</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Set permissions</strong> — Super Staff can manage regular staff but cannot touch Super Admins. Super Admins have full access.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Edit or deactivate</strong> — update details or deactivate accounts when staff leave. Deactivated staff cannot log in.</div>
+      </div>
+      <div class="help-example">
+        <strong>Role examples:</strong><br>
+        • <strong>STAFF</strong> — "Chinedu Okafor — manages daily feed logs and batch updates."<br>
+        • <strong>SUPER_STAFF</strong> — "Funke Adeyemi — oversees staff, manages inventory, cannot delete users."<br>
+        • <strong>SUPER_ADMIN</strong> — "TAMIPEE Owner — full system access, billing, and user roles."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="user management create edit delete roles customer super admin farm manager staff">
+      <h2><i class="bi bi-people"></i> User Management</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Manage all user accounts across the platform — customers, staff, farm managers, and admins.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Search users</strong> — filter by name, email, or role. View total active users and role distribution.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Create users</strong> — User Management → Create User. Assign role and set initial password.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Edit roles</strong> — promote staff to Super Staff, downgrade roles, or deactivate accounts.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">4</span>
+        <div class="help-step-content"><strong>Force password reset</strong> — send a reset link for users who forgot credentials.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real user roles:</strong><br>
+        • <strong>CUSTOMER</strong> — "Adebayo Johnson — Lagos, orders catfish weekly."<br>
+        • <strong>FARM_MANAGER</strong> — "Dr. Ngozi Eze — oversees farm operations, batches, and feed."<br>
+        • <strong>SUPER_STAFF</strong> — "Mr. Adeyemi — manages staff, shop inventory, and orders."<br>
+        • <strong>SUPER_ADMIN</strong> — "TAMIPEE Founder — full control."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="reports analytics sales orders payments farm performance species batch">
+      <h2><i class="bi bi-bar-chart-line"></i> Reports & Analytics</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Review business performance through dashboards, exportable data, and farm analytics.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Check Overview metrics</strong> — total orders, revenue, active users, and low-stock alerts.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Use Farm Analytics</strong> — view batch performance by species, growth trends, mortality rates, and feed conversion ratios.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Export data</strong> — download CSV reports from Payments or batch PDFs for record-keeping.</div>
+      </div>
+      <div class="help-example">
+        <strong>Nigerian business examples:</strong><br>
+        • "Broiler batches in Q2 2026 averaged 1.8kg at slaughter with 92% survival rate."<br>
+        • "Catfish sales peaked during Ramadan — ₦1.2M in April 2026."<br>
+        • "Top supplier by volume: Premier Feeds Ltd — 2,400kg delivered in June."
+      </div>
+    </div>
+
+    <div class="help-section" data-keywords="audit log activity timeline track changes history admin actions">
+      <h2><i class="bi bi-journal-text"></i> Activity Timeline</h2>
+      <p style="color: #4b5563; margin-bottom: 0.75rem;">Audit logs track every significant action taken in the admin dashboard for accountability and debugging.</p>
+      <div class="help-step">
+        <span class="help-step-num">1</span>
+        <div class="help-step-content"><strong>Review recent actions</strong> — see who created, updated, or deleted records and when.</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">2</span>
+        <div class="help-step-content"><strong>Filter by user or action type</strong> — narrow down to a specific staff member or action (create, update, delete).</div>
+      </div>
+      <div class="help-step">
+        <span class="help-step-num">3</span>
+        <div class="help-step-content"><strong>Trace issues</strong> — if an order status changed unexpectedly, the audit log shows who changed it and when.</div>
+      </div>
+      <div class="help-example">
+        <strong>Real log entries:</strong><br>
+        • "Super Admin created batch 'Broiler Batch G' (Poultry → Broiler) — 15 Aug 2026, 09:14"<br>
+        • "Staff updated product 'Smoked Catfish 1kg' price from ₦4,200 to ₦4,500 — 14 Aug 2026, 16:22"<br>
+        • "Super Admin deleted supplier 'Old Feed Ltd' — 13 Aug 2026, 11:05"
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  'use strict';
+  const searchInput = document.getElementById('helpSearch');
+  const sections = document.querySelectorAll('.help-section');
+  const noResults = document.getElementById('helpNoResults');
+  const quickNavLinks = document.querySelectorAll('.help-quick-nav a');
+
+  if (!searchInput) return;
+
+  function hideQuickNav(show) {
+    quickNavLinks.forEach(function(link) {
+      link.style.display = show ? '' : 'none';
+    });
+  }
+
+  function scrollToFirstVisible() {
+    var first = null;
+    sections.forEach(function(sec) {
+      if (sec.style.display !== 'none') {
+        first = sec;
+      }
+    });
+    if (first) {
+      first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  searchInput.addEventListener('input', function() {
+    var query = this.value.trim().toLowerCase();
+    var anyVisible = false;
+
+    sections.forEach(function(section) {
+      var keywords = (section.getAttribute('data-keywords') || '').toLowerCase();
+      var text = section.textContent.toLowerCase();
+      var match = !query || keywords.indexOf(query) !== -1 || text.indexOf(query) !== -1;
+      section.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+
+    noResults.style.display = anyVisible ? 'none' : 'block';
+    hideQuickNav(!query);
+
+    if (query && anyVisible) {
+      scrollToFirstVisible();
+    }
+  });
+
+  quickNavLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var href = this.getAttribute('href');
+      if (href && href.indexOf('#') !== -1) {
+        e.preventDefault();
+        var target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          searchInput.value = '';
+          hideQuickNav(true);
+          noResults.style.display = 'none';
+          sections.forEach(function(sec) { sec.style.display = ''; });
+        }
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

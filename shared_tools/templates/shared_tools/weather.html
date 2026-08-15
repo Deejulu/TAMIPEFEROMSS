@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Weather — TAMIPEE Farms{% endblock %}
+
+{% block extra_head %}
+<style>
+  .weather-card {
+    background: #fff;
+    border-radius: var(--radius-xl, 16px);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(27,94,32,0.12);
+    overflow: hidden;
+  }
+  .weather-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    color: #fff;
+    padding: 2rem;
+  }
+  .weather-header h1 {
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-weight: 700;
+    margin: 0;
+  }
+  .weather-body {
+    padding: 2rem;
+  }
+  .weather-meta {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+  .weather-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .weather-stat {
+    background: #FAFBFC;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--radius-md, 12px);
+    padding: 1.1rem;
+    text-align: center;
+  }
+  .weather-stat i {
+    font-size: 1.5rem;
+    color: #D4AF37;
+    margin-bottom: 0.5rem;
+  }
+  .weather-stat .value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1B5E20;
+  }
+  .weather-stat .label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .weather-error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    padding: 1rem;
+    border-radius: var(--radius-md, 12px);
+    margin-top: 1rem;
+  }
+  .weather-actions a {
+    margin-right: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom page-wrapper">
+  <div class="weather-card animate-fade-in-up">
+    <div class="weather-header">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h1><i class="bi bi-cloud-sun me-2"></i>{% trans "Weather" %}</h1>
+          <p class="mb-0" style="opacity:0.9;">{% trans "Current conditions for your farm location" %}</p>
+        </div>
+        <div class="weather-actions">
+          <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-speedometer2 me-1"></i>{% trans "Dashboard" %}
+          </a>
+          <a href="{% url 'shared_tools:calculator' %}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-calculator me-1"></i>{% trans "Calculator" %}
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="weather-body">
+      {% if error %}
+        <div class="weather-error">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          {% trans "Unable to load weather right now." %} {{ error }}
+        </div>
+      {% endif %}
+
+      <form method="get" action="." class="d-flex flex-wrap gap-2 mb-3">
+        <input type="text"
+               name="location"
+               value="{{ city|default:'' }}"
+               placeholder="Enter city or town..."
+               class="form-control"
+               style="max-width: 360px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-search me-1"></i> Get Weather
+        </button>
+      </form>
+
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div>
+          <div style="font-size: 1.25rem; font-weight: 700; color: #1B5E20;">{{ city }}</div>
+          <div class="weather-meta">
+            {% trans "Updated" %}: {{ last_updated|date:"M d, Y H:i" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-grid">
+        <div class="weather-stat">
+          <i class="bi bi-thermometer-half"></i>
+          <div class="value">{{ temperature|default:"--" }}°C</div>
+          <div class="label">{% trans "Temperature" %}</div>
+        </div>
+        <div class="weather-stat">
+          <i class="bi bi-droplet"></i>
+          <div class="value">{{ humidity|default:"--" }}%</div>
+          <div class="label">{% trans "Humidity" %}</div>
+        </div>
+        <div class="weather-stat">
+          <i class="bi bi-wind"></i>
+          <div class="value">{{ wind_speed|default:"--" }} km/h</div>
+          <div class="label">{% trans "Wind Speed" %}</div>
+        </div>
+        <div class="weather-stat">
+          <i class="bi bi-cloud"></i>
+          <div class="value" style="font-size: 1rem; margin-top: 0.4rem;">{{ description }}</div>
+          <div class="label">{% trans "Condition" %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

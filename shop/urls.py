@@ -27,4 +27,6 @@ urlpatterns = [
     path("delivery/", views.delivery_info_page, name="delivery_info"),
     path("terms/", views.terms_privacy_page, name="terms_privacy"),
     path("returns/", views.return_refund_page, name="return_refund"),
+    path("my-messages/", views.customer_messages, name="customer_messages"),
+    path("my-messages/<str:thread_id>/", views.customer_message_thread, name="customer_message_thread"),
 ]

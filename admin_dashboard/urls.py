@@ -60,4 +60,7 @@ urlpatterns = [
     path('audit-log/', views.AuditLogView.as_view(), name='audit_log'),
     path('website-content/', views.WebsiteContentHubView.as_view(), name='website_content'),
     path('shop-orders/', views.ShopOrdersHubView.as_view(), name='shop_orders'),
+    path('contact-messages/', views.ContactMessagesView.as_view(), name='contact_messages'),
+    path('contact-messages/<int:pk>/', views.ContactMessageDetailView.as_view(), name='contact_message_detail'),
+    path('contact-messages/<int:pk>/update-status/', views.update_contact_message_status, name='contact_message_update_status'),
 ]

@@ -17,7 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.urls import reverse
 
-from .models import Product, Cart, CartItem, Order, OrderItem, Category, Payment
+from .models import Product, Cart, CartItem, Order, OrderItem, Category, Payment, ContactMessage
 from admin_dashboard.models import DeliveryOption, PaymentMethodSetting, MinimumOrderAmount, SiteContent
 
 
@@ -267,6 +267,8 @@ def checkout(request):
         "delivery_address": request.user.default_delivery_address,
         "paystack_public_key": settings.PAYSTACK_PUBLIC_KEY,
         "enabled_payment_methods": enabled_payment_methods,
+        "user_email": request.user.email,
+        "user_phone": request.user.phone_number,
     })
 
 
@@ -292,9 +294,32 @@ def place_order(request):
     }:
         messages.error(request, _("Please select an available payment method."))
         return redirect("shop:checkout")
+
+    checkout_email = request.POST.get("checkout_email", "").strip()
+    checkout_phone = request.POST.get("checkout_phone", "").strip()
+
+    if payment_method == "paystack" and not checkout_email and not request.user.email:
+        messages.error(request, _("Email address is required for card payments. Please provide your email."))
+        return redirect("shop:checkout")
+
+    user = request.user
+    if checkout_email and not user.email:
+        user.email = checkout_email
+        user.save(update_fields=["email"])
+    elif checkout_email and checkout_email != user.email:
+        user.email = checkout_email
+        user.save(update_fields=["email"])
+
+    if checkout_phone and not user.phone_number:
+        user.phone_number = checkout_phone
+        user.save(update_fields=["phone_number"])
+    elif checkout_phone and checkout_phone != user.phone_number:
+        user.phone_number = checkout_phone
+        user.save(update_fields=["phone_number"])
+
     subtotal = cart.total
     order = Order.objects.create(
-        user=request.user,
+        user=user,
         status=Order.Status.PENDING,
         subtotal=subtotal,
         delivery_fee=delivery_option.price,
@@ -583,6 +608,29 @@ def contact_page(request):
     """
     contact_content = SiteContent.get_section_content('contact')
     
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+        
+        if name and message:
+            import uuid
+            thread_id = str(uuid.uuid4())
+            ContactMessage.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                subject=subject,
+                message=message,
+                sender_type='customer',
+                thread_id=thread_id,
+            )
+            from django.contrib import messages
+            messages.success(request, 'Your message has been sent successfully. We will get back to you soon.')
+            return redirect('shop:contact')
+    
     context = {
         'contact_content': contact_content,
         'page_title': 'Contact Us',
@@ -649,3 +697,68 @@ def return_refund_page(request):
     }
     
     return render(request, 'shop/return_refund.html', context)
+
+
+def customer_messages(request):
+    """
+    Customer-facing message threads page.
+    Shows all message threads for the current user or session.
+    """
+    if request.user.is_authenticated:
+        threads = ContactMessage.objects.filter(
+            email=request.user.email,
+            sender_type='customer',
+            parent__isnull=True
+        ).order_by('-created_at')
+    else:
+        threads = ContactMessage.objects.none()
+    
+    context = {
+        'threads': threads,
+        'page_title': 'My Messages',
+    }
+    
+    return render(request, 'shop/customer_messages.html', context)
+
+
+def customer_message_thread(request, thread_id):
+    """
+    Customer-facing chat thread view.
+    Shows a conversation and allows replying.
+    """
+    messages_list = ContactMessage.objects.filter(
+        thread_id=thread_id,
+        sender_type='customer'
+    ).order_by('created_at')
+    
+    if not messages_list.exists():
+        from django.http import Http404
+        raise Http404("Thread not found")
+    
+    thread_messages = ContactMessage.objects.filter(thread_id=thread_id).order_by('created_at')
+    first_message = messages_list.first()
+    
+    if request.method == 'POST':
+        reply_text = request.POST.get('message', '').strip()
+        if reply_text:
+            ContactMessage.objects.create(
+                name=request.user.get_full_name() if request.user.is_authenticated else first_message.name,
+                email=request.user.email if request.user.is_authenticated else first_message.email,
+                phone=first_message.phone,
+                subject=first_message.subject,
+                message=reply_text,
+                sender_type='customer',
+                parent=first_message,
+                thread_id=thread_id,
+            )
+            from django.contrib import messages
+            messages.success(request, 'Your reply has been sent.')
+            return redirect('shop:customer_message_thread', thread_id=thread_id)
+    
+    context = {
+        'thread_messages': thread_messages,
+        'thread_id': thread_id,
+        'page_title': f'Message: {first_message.subject or first_message.name}',
+    }
+    
+    return render(request, 'shop/customer_message_thread.html', context)

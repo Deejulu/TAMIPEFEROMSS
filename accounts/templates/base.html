@@ -310,10 +310,6 @@
             const STORAGE_KEY = 'admin-dark-mode';
             const BODY_CLASS = 'dark-mode';
 
-            function getSystemPreference() {
-                return window.matchMedia('(prefers-color-scheme: dark)').matches;
-            }
-
             function getStoredPreference() {
                 try {
                     const stored = localStorage.getItem(STORAGE_KEY);
@@ -351,7 +347,7 @@
 
             function initializeDarkMode() {
                 const stored = getStoredPreference();
-                const isDark = stored !== null ? stored : getSystemPreference();
+                const isDark = stored === 'dark';
                 applyTheme(isDark);
             }
 
@@ -370,11 +366,12 @@
             }
 
             function watchSystemTheme() {
-                if (getStoredPreference() !== null) return;
-
                 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
                 mediaQuery.addEventListener('change', function(e) {
-                    applyTheme(e.matches);
+                    const stored = getStoredPreference();
+                    if (stored === null) {
+                        applyTheme(false);
+                    }
                 });
             }
 

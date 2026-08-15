@@ -416,3 +416,68 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment #{self.pk} - Order #{self.order.pk} - {self.status}"
+
+
+class ContactMessage(models.Model):
+    """
+    Message submitted through the public Contact page.
+    Supports threaded replies between customers and admin/staff.
+    """
+    STATUS_CHOICES = [
+        ("unread", _("Unread")),
+        ("read", _("Read")),
+        ("resolved", _("Resolved")),
+    ]
+
+    SENDER_TYPES = [
+        ("customer", _("Customer")),
+        ("admin", _("Admin/Staff")),
+    ]
+
+    name = models.CharField(_("name"), max_length=200)
+    email = models.EmailField(_("email"), blank=True)
+    phone = models.CharField(_("phone"), max_length=20, blank=True)
+    subject = models.CharField(_("subject"), max_length=200, blank=True)
+    message = models.TextField(_("message"))
+    status = models.CharField(
+        _("status"),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="unread",
+    )
+    sender_type = models.CharField(
+        _("sender type"),
+        max_length=20,
+        choices=SENDER_TYPES,
+        default="customer",
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        verbose_name=_("parent message"),
+    )
+    thread_id = models.CharField(
+        _("thread id"),
+        max_length=50,
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=_("Groups messages in the same conversation"),
+    )
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("contact message")
+        verbose_name_plural = _("contact messages")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Contact #{self.pk} - {self.name} - {self.get_status_display()}"
+
+    @property
+    def is_reply(self):
+        return self.parent is not None

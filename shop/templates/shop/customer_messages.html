@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}My Messages - TAMIPEE{% endblock %}
+
+{% block content %}
+<div class="page-wrapper" style="background: linear-gradient(180deg, var(--farm-cream) 0%, var(--farm-bg-alt) 100%); padding: clamp(1.5rem, 4vw, 2.5rem) 0;">
+  <div class="container-custom">
+    <div class="page-header-section">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h1 class="mb-1"><i class="bi bi-chat-dots me-2"></i>{% trans "My Messages" %}</h1>
+          <p class="page-subtitle mb-0">{% trans "Your conversations with our support team." %}</p>
+        </div>
+        <a href="{% url 'shop:contact' %}" class="btn btn-accent">
+          <i class="bi bi-plus-circle me-1"></i>{% trans "New Message" %}
+        </a>
+      </div>
+    </div>
+
+    {% if threads %}
+    <div class="messages-list animate-fade-in-up" style="animation-delay: 0.1s;">
+      {% for thread in threads %}
+      <a href="{% url 'shop:customer_message_thread' thread_id=thread.thread_id %}" class="message-thread-card">
+        <div class="message-thread-icon">
+          <i class="bi bi-chat-left-text"></i>
+        </div>
+        <div class="message-thread-content">
+          <div class="message-thread-header">
+            <strong class="message-thread-subject">{{ thread.subject|default:"No Subject" }}</strong>
+            <span class="message-thread-date">{{ thread.created_at|date:"M d, Y" }}</span>
+          </div>
+          <div class="message-thread-preview">
+            <span class="message-thread-name">{{ thread.name }}</span>
+            <span class="message-thread-status badge badge-{{ thread.status|default:'unread' }}">
+              {{ thread.get_status_display }}
+            </span>
+          </div>
+          <p class="message-thread-text">{{ thread.message|truncatechars:100 }}</p>
+        </div>
+        <div class="message-thread-arrow">
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state animate-fade-in-up" style="animation-delay: 0.1s;">
+      <i class="bi bi-inbox" style="font-size: 3rem; color: var(--farm-border); margin-bottom: 1rem; display: block;"></i>
+      <h3 style="color: var(--farm-forest); margin-bottom: 0.5rem;">No messages yet</h3>
+      <p style="color: var(--farm-text-muted); margin-bottom: 1.5rem;">Start a conversation with our team by sending us a message.</p>
+      <a href="{% url 'shop:contact' %}" class="btn btn-accent">
+        <i class="bi bi-envelope me-1"></i> Contact Us
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .message-thread-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--farm-border-light);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    transition: all 0.25s ease;
+  }
+  .message-thread-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--farm-accent);
+  }
+  .message-thread-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(27,94,32,0.08) 0%, rgba(46,125,50,0.12) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--farm-primary);
+    flex-shrink: 0;
+  }
+  .message-thread-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .message-thread-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+  }
+  .message-thread-subject {
+    font-weight: 600;
+    color: var(--farm-forest);
+    font-size: 1rem;
+  }
+  .message-thread-date {
+    font-size: 0.8rem;
+    color: var(--farm-text-muted);
+    white-space: nowrap;
+  }
+  .message-thread-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+  .message-thread-name {
+    font-weight: 500;
+    color: var(--farm-text);
+    font-size: 0.9rem;
+  }
+  .message-thread-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-full);
+  }
+  .badge-unread {
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--farm-accent-dark);
+  }
+  .badge-read {
+    background: rgba(46, 125, 50, 0.12);
+    color: var(--farm-secondary);
+  }
+  .badge-resolved {
+    background: rgba(40, 167, 69, 0.12);
+    color: var(--farm-success);
+  }
+  .message-thread-text {
+    color: var(--farm-text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .message-thread-arrow {
+    color: var(--farm-text-muted);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    .message-thread-card {
+      padding: 1rem;
+    }
+    .message-thread-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.25rem;
+    }
+  }
+</style>
+{% endblock %}

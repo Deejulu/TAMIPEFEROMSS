@@ -277,6 +277,78 @@
   }
 
   /* ==========================================
+     CONTACT FORM
+     ========================================== */
+  .contact-form-card {
+    background: var(--farm-white);
+    border-radius: var(--radius-xl);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    box-shadow: var(--shadow-md), 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--farm-border-light);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .contact-form-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .contact-form-card .form-label {
+    font-weight: 600;
+    color: var(--farm-forest);
+    font-size: 0.9rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .contact-form-card .form-control {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--farm-border-light);
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+
+  .contact-form-card .form-control:focus {
+    border-color: var(--farm-accent);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  }
+
+  .contact-form-card textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .contact-submit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, var(--farm-primary) 0%, var(--farm-secondary) 100%);
+    color: var(--farm-white);
+    border: none;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(27, 94, 32, 0.2);
+  }
+
+  .contact-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(27, 94, 32, 0.3);
+    background: linear-gradient(135deg, var(--farm-primary-dark) 0%, var(--farm-primary) 100%);
+  }
+
+  /* ==========================================
      RESPONSIVE
      ========================================== */
   @media (max-width: 768px) {
@@ -359,94 +431,174 @@
 
 <div class="contact-section">
   <div class="container-custom">
-    <div class="contact-info-grid">
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.1s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-envelope-fill"></i>
+    <div class="row g-4">
+      <!-- Contact Form -->
+      <div class="col-12 col-lg-7">
+        <div class="contact-form-card animate-fade-in-up" style="animation-delay: 0.1s;">
+          <h3 style="font-weight: 700; color: var(--farm-forest); margin-bottom: 1.25rem; font-size: 1.25rem;">
+            <i class="bi bi-chat-dots me-2" style="color: var(--farm-accent);"></i>Send Us a Message
+          </h3>
+          <form method="post" action="{% url 'shop:contact' %}" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="contactName" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="contactName" placeholder="Your name" required>
+              </div>
+              <div class="col-md-6">
+                <label for="contactEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="contactEmail" placeholder="you@example.com" required>
+              </div>
+              <div class="col-12">
+                <label for="contactSubject" class="form-label">Subject</label>
+                <input type="text" class="form-control" id="contactSubject" placeholder="How can we help?">
+              </div>
+              <div class="col-12">
+                <label for="contactMessage" class="form-label">Message</label>
+                <textarea id="contactMessage" class="form-control" rows="5" placeholder="Tell us more about your enquiry..." required></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="contact-submit-btn">
+                  <i class="bi bi-send"></i> Send Message
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-        <h3>Email</h3>
-        <p><a href="mailto:info@tamipee.com">info@tamipee.com</a></p>
       </div>
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.2s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-telephone-fill"></i>
-        </div>
-        <h3>Phone</h3>
-        <p>Available Monday - Friday<br>9:00 AM - 5:00 PM</p>
-      </div>
-      {% with bh=business_hours_detail %}
-      {% if bh %}
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-clock-fill"></i>
-        </div>
-        <h3>Business Hours</h3>
-        <p>
-          {% for day_label, hours_text in bh.get_grouped_hours %}
-            {{ day_label }}: {{ hours_text }}<br>
-          {% endfor %}
-          {% if bh.notes %}
-            <small class="text-muted">{{ bh.notes }}</small>
+
+      <!-- Contact Info -->
+      <div class="col-12 col-lg-5">
+        <div class="contact-info-grid h-100">
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.15s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-envelope-fill"></i>
+            </div>
+            <h3>Email</h3>
+            <p><a href="mailto:info@tamipee.com">info@tamipee.com</a></p>
+          </div>
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.2s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-telephone-fill"></i>
+            </div>
+            <h3>Phone</h3>
+            <p>Available Monday - Friday<br>9:00 AM - 5:00 PM</p>
+          </div>
+          {% with bh=business_hours_detail %}
+          {% if bh %}
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.25s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <h3>Business Hours</h3>
+            <p>
+              {% for day_label, hours_text in bh.get_grouped_hours %}
+                {{ day_label }}: {{ hours_text }}<br>
+              {% endfor %}
+              {% if bh.notes %}
+                <small class="text-muted">{{ bh.notes }}</small>
+              {% endif %}
+            </p>
+          </div>
+          {% else %}
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.25s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <h3>Business Hours</h3>
+            <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
+          </div>
           {% endif %}
-        </p>
-      </div>
-      {% else %}
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-clock-fill"></i>
+          {% endwith %}
         </div>
-        <h3>Business Hours</h3>
-        <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
       </div>
-      {% endif %}
-      {% endwith %}
     </div>
   </div>
 </div>
 {% else %}
-<div class="contact-section-alt">
+<div class="contact-section">
   <div class="container-custom">
-    <div class="contact-info-grid">
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.1s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-envelope-fill"></i>
+    <div class="row g-4">
+      <!-- Contact Form -->
+      <div class="col-12 col-lg-7">
+        <div class="contact-form-card animate-fade-in-up" style="animation-delay: 0.1s;">
+          <h3 style="font-weight: 700; color: var(--farm-forest); margin-bottom: 1.25rem; font-size: 1.25rem;">
+            <i class="bi bi-chat-dots me-2" style="color: var(--farm-accent);"></i>Send Us a Message
+          </h3>
+          <form method="post" action="{% url 'shop:contact' %}" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="contactName" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="contactName" placeholder="Your name" required>
+              </div>
+              <div class="col-md-6">
+                <label for="contactEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="contactEmail" placeholder="you@example.com" required>
+              </div>
+              <div class="col-12">
+                <label for="contactSubject" class="form-label">Subject</label>
+                <input type="text" class="form-control" id="contactSubject" placeholder="How can we help?">
+              </div>
+              <div class="col-12">
+                <label for="contactMessage" class="form-label">Message</label>
+                <textarea id="contactMessage" class="form-control" rows="5" placeholder="Tell us more about your enquiry..." required></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="contact-submit-btn">
+                  <i class="bi bi-send"></i> Send Message
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
-        <h3>Email</h3>
-        <p><a href="mailto:info@tamipee.com">info@tamipee.com</a></p>
       </div>
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.2s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-telephone-fill"></i>
-        </div>
-        <h3>Phone</h3>
-        <p>Available Monday - Friday<br>9:00 AM - 5:00 PM</p>
-      </div>
-      {% with bh=business_hours_detail %}
-      {% if bh %}
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-clock-fill"></i>
-        </div>
-        <h3>Business Hours</h3>
-        <p>
-          {% for day_label, hours_text in bh.get_grouped_hours %}
-            {{ day_label }}: {{ hours_text }}<br>
-          {% endfor %}
-          {% if bh.notes %}
-            <small class="text-muted">{{ bh.notes }}</small>
+
+      <!-- Contact Info -->
+      <div class="col-12 col-lg-5">
+        <div class="contact-info-grid h-100">
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.15s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-envelope-fill"></i>
+            </div>
+            <h3>Email</h3>
+            <p><a href="mailto:info@tamipee.com">info@tamipee.com</a></p>
+          </div>
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.2s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-telephone-fill"></i>
+            </div>
+            <h3>Phone</h3>
+            <p>Available Monday - Friday<br>9:00 AM - 5:00 PM</p>
+          </div>
+          {% with bh=business_hours_detail %}
+          {% if bh %}
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.25s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <h3>Business Hours</h3>
+            <p>
+              {% for day_label, hours_text in bh.get_grouped_hours %}
+                {{ day_label }}: {{ hours_text }}<br>
+              {% endfor %}
+              {% if bh.notes %}
+                <small class="text-muted">{{ bh.notes }}</small>
+              {% endif %}
+            </p>
+          </div>
+          {% else %}
+          <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.25s;">
+            <div class="contact-info-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <h3>Business Hours</h3>
+            <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
+          </div>
           {% endif %}
-        </p>
-      </div>
-      {% else %}
-      <div class="contact-info-card animate-fade-in-up" style="animation-delay: 0.3s;">
-        <div class="contact-info-icon">
-          <i class="bi bi-clock-fill"></i>
+          {% endwith %}
         </div>
-        <h3>Business Hours</h3>
-        <p>Monday - Friday: 9:00 AM - 5:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
       </div>
-      {% endif %}
-      {% endwith %}
     </div>
   </div>
 </div>

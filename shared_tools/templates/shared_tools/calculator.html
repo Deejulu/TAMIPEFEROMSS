@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Calculator — TAMIPEE Farms{% endblock %}
+
+{% block extra_head %}
+<style>
+  .calc-card {
+    background: #fff;
+    border-radius: var(--radius-xl, 16px);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(27,94,32,0.12);
+    overflow: hidden;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .calc-header {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    color: #fff;
+    padding: 1.5rem 2rem;
+  }
+  .calc-header h1 {
+    font-family: var(--font-heading, 'Poppins', sans-serif);
+    font-weight: 700;
+    margin: 0;
+    font-size: 1.35rem;
+  }
+  .calc-body {
+    padding: 1.5rem;
+  }
+  .calc-display {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: var(--radius-md, 12px);
+    padding: 1rem 1.25rem;
+    text-align: right;
+    margin-bottom: 1rem;
+    min-height: 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .calc-expression {
+    font-size: 0.85rem;
+    color: #6b7280;
+    min-height: 1.2rem;
+    word-break: break-all;
+  }
+  .calc-result {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1B5E20;
+    word-break: break-all;
+  }
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+  }
+  .calc-btn {
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    border-radius: var(--radius-md, 12px);
+    padding: 0.9rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1f2937;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .calc-btn:hover {
+    background: #F3F4F6;
+    border-color: #D1D5DB;
+  }
+  .calc-btn:active {
+    transform: scale(0.97);
+  }
+  .calc-btn.primary {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    color: #fff;
+    border-color: transparent;
+  }
+  .calc-btn.primary:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20);
+  }
+  .calc-btn.accent {
+    background: linear-gradient(135deg, #D4AF37, #C5A028);
+    color: #1B5E20;
+    border-color: transparent;
+  }
+  .calc-btn.accent:hover {
+    background: linear-gradient(135deg, #C5A028, #8B7330);
+  }
+  .calc-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom page-wrapper">
+  <div class="calc-card animate-fade-in-up">
+    <div class="calc-header">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <h1><i class="bi bi-calculator me-2"></i>{% trans "Calculator" %}</h1>
+        <div class="calc-actions">
+          <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-speedometer2 me-1"></i>{% trans "Dashboard" %}
+          </a>
+          <a href="{% url 'shared_tools:weather' %}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-cloud-sun me-1"></i>{% trans "Weather" %}
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="calc-body">
+      <div class="calc-display">
+        <div class="calc-expression" id="calcExpression"></div>
+        <div class="calc-result" id="calcResult">0</div>
+      </div>
+      <div class="calc-grid">
+        <button class="calc-btn" data-action="clear">C</button>
+        <button class="calc-btn" data-action="backspace"><i class="bi bi-backspace"></i></button>
+        <button class="calc-btn accent" data-action="operator" data-value="%">%</button>
+        <button class="calc-btn accent" data-action="operator" data-value="/">÷</button>
+
+        <button class="calc-btn" data-action="number" data-value="7">7</button>
+        <button class="calc-btn" data-action="number" data-value="8">8</button>
+        <button class="calc-btn" data-action="number" data-value="9">9</button>
+        <button class="calc-btn accent" data-action="operator" data-value="*">×</button>
+
+        <button class="calc-btn" data-action="number" data-value="4">4</button>
+        <button class="calc-btn" data-action="number" data-value="5">5</button>
+        <button class="calc-btn" data-action="number" data-value="6">6</button>
+        <button class="calc-btn accent" data-action="operator" data-value="-">−</button>
+
+        <button class="calc-btn" data-action="number" data-value="1">1</button>
+        <button class="calc-btn" data-action="number" data-value="2">2</button>
+        <button class="calc-btn" data-action="number" data-value="3">3</button>
+        <button class="calc-btn accent" data-action="operator" data-value="+">+</button>
+
+        <button class="calc-btn" data-action="number" data-value="0">0</button>
+        <button class="calc-btn" data-action="decimal">.</button>
+        <button class="calc-btn primary" data-action="equals" style="grid-column: span 2;">=</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const expressionEl = document.getElementById('calcExpression');
+  const resultEl = document.getElementById('calcResult');
+  let current = '0';
+  let expression = '';
+  let lastAction = null;
+
+  function updateDisplay() {
+    resultEl.textContent = current;
+    expressionEl.textContent = expression;
+  }
+
+  document.querySelectorAll('.calc-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const action = btn.dataset.action;
+      const value = btn.dataset.value;
+
+      if (action === 'number') {
+        if (lastAction === 'equals') {
+          current = value;
+          expression = '';
+        } else if (current === '0' || current === 'Error') {
+          current = value;
+        } else {
+          current += value;
+        }
+      } else if (action === 'operator') {
+        if (lastAction === 'equals') {
+          expression = current + ' ' + value + ' ';
+          current = '0';
+        } else {
+          expression += current + ' ' + value + ' ';
+          current = '0';
+        }
+      } else if (action === 'decimal') {
+        if (lastAction === 'equals') {
+          current = '0.';
+          expression = '';
+        } else if (!current.includes('.')) {
+          current += '.';
+        }
+      } else if (action === 'clear') {
+        current = '0';
+        expression = '';
+      } else if (action === 'backspace') {
+        if (lastAction === 'equals') {
+          current = '0';
+          expression = '';
+        } else if (current.length > 1) {
+          current = current.slice(0, -1);
+        } else {
+          current = '0';
+        }
+      } else if (action === 'equals') {
+        if (!expression.trim()) return;
+        try {
+          const expr = (expression + current).replace(/[^0-9+\-*/%.]/g, '');
+          const result = Function('"use strict"; return (' + expr + ')')();
+          const formatted = Number.isInteger(result) ? result : parseFloat(result.toFixed(8)).toString();
+          expression = (expression + current + ' =').replace(/\s+/g, ' ');
+          current = formatted;
+        } catch (e) {
+          current = 'Error';
+        }
+      }
+
+      lastAction = action;
+      updateDisplay();
+    });
+  });
+})();
+</script>
+{% endblock %}

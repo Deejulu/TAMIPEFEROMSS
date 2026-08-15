@@ -68,7 +68,7 @@ class CustomSignupForm(UserCreationForm):
     """
     Custom Signup Form for farm_proc_tamipee.
 
-    Collects first name, last name, email, phone number, password,
+    Collects first name, last name, password,
     and three security question/answer pairs. The username and full_name
     fields are auto-generated and not exposed to the user.
     """
@@ -91,17 +91,6 @@ class CustomSignupForm(UserCreationForm):
             attrs={
                 "class": "form-control",
                 "placeholder": "Enter your last name",
-            }
-        ),
-    )
-    phone_number = forms.CharField(
-        label=_("Phone Number"),
-        max_length=20,
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "class": "form-control",
-                "placeholder": "+1 (555) 123-4567",
             }
         ),
     )
@@ -161,18 +150,10 @@ class CustomSignupForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("email",)
+        fields = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Customize email field
-        self.fields["email"].label = _("Email Address")
-        self.fields["email"].widget.attrs.update({
-            "class": "form-control",
-            "placeholder": "you@example.com",
-        })
-        self.fields["email"].help_text = _("Required. A valid email address.")
 
         # Customize password fields
         self.fields["password1"].label = _("Password")
@@ -229,15 +210,17 @@ class CustomSignupForm(UserCreationForm):
 
     def clean_email(self):
         """
-        Validate that the email is unique.
+        Validate that the email is unique, if provided.
         """
         email = self.cleaned_data.get("email")
-        if CustomUser.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError(
-                _("A user with this email address already exists."),
-                code="duplicate_email",
-            )
-        return email.lower()
+        if email:
+            if CustomUser.objects.filter(email__iexact=email).exists():
+                raise forms.ValidationError(
+                    _("A user with this email address already exists."),
+                    code="duplicate_email",
+                )
+            return email.lower()
+        return email
 
     def clean(self):
         """
@@ -265,7 +248,6 @@ class CustomSignupForm(UserCreationForm):
             last_name = self.cleaned_data.get("last_name", "")
             user.username = generate_unique_username(first_name, last_name)
             user.full_name = f"{first_name} {last_name}".strip()
-            user.phone_number = self.cleaned_data.get("phone_number", "")
 
             # Assign CUSTOMER role by default
             user.role = CustomUser.Role.CUSTOMER
@@ -539,19 +521,20 @@ class SecurityQuestionRecoveryForm(forms.Form):
     """
     Form for account recovery via security questions.
 
-    Step 1: User enters email address.
+    Step 1: User enters their username.
     Step 2: User answers their three security questions.
 
     Uses Django's session to pass the verified user between steps.
     Answers are compared against hashed answers using check_password().
     """
 
-    email = forms.EmailField(
-        label=_("Email"),
-        widget=forms.EmailInput(
+    username = forms.CharField(
+        label=_("Username"),
+        max_length=150,
+        widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "you@example.com",
+                "placeholder": "Enter your username",
                 "autofocus": True,
             }
         ),
@@ -595,31 +578,31 @@ class SecurityQuestionRecoveryForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         if self.user:
-            self.fields.pop("email", None)
+            self.fields.pop("username", None)
 
-    def clean_email(self):
+    def clean_username(self):
         """
-        Verify that the email exists in the system.
+        Verify that the username exists in the system.
         """
-        email = self.cleaned_data.get("email")
-        if email:
+        username = self.cleaned_data.get("username")
+        if username:
             try:
-                self.user = User.objects.get(email__iexact=email)
+                self.user = User.objects.get(username__iexact=username)
             except User.DoesNotExist:
                 raise forms.ValidationError(
-                    _("No account found with this email address."),
-                    code="email_not_found",
+                    _("No account found with this username."),
+                    code="username_not_found",
                 )
-        return email
+        return username
 
     def clean(self):
         """
-        If email was submitted, this is step 1 - skip answer validation.
+        If username was submitted, this is step 1 - skip answer validation.
         If answers were submitted, validate them against the user's hashed answers.
         """
         cleaned_data = super().clean()
 
-        if "email" in self.data:
+        if "username" in self.data:
             return cleaned_data
 
         if not self.user:

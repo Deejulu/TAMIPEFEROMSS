@@ -100,14 +100,41 @@
          </li>
          {% endif %}
 
-         <!-- Dark Mode Toggle -->
-         <li class="nav-item">
-           <button type="button" class="public-dark-mode-toggle" id="publicDarkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-             <i class="bi bi-moon-stars toggle-icon" id="publicDarkModeIcon"></i>
-           </button>
-         </li>
+          <!-- Dark Mode Toggle -->
+          <li class="nav-item">
+            <button type="button" class="public-dark-mode-toggle" id="publicDarkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+              <i class="bi bi-moon-stars toggle-icon" id="publicDarkModeIcon"></i>
+            </button>
+          </li>
 
-         {% if user.is_authenticated %}
+          <!-- Shared Tools -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center"
+               href="#"
+               id="sharedToolsDropdown"
+               role="button"
+               data-bs-toggle="dropdown"
+               aria-expanded="false"
+               title="Tools"
+               style="color: #FFFFFF;">
+              <i class="bi bi-tools" style="color: #FFFFFF;"></i>
+              <span class="d-none d-md-inline ms-1" style="font-weight: 500; font-size: 14px; color: #FFFFFF;">Tools</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'shared_tools:weather' %}">
+                  <i class="bi bi-cloud-sun" style="width: 20px;"></i> Weather
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'shared_tools:calculator' %}">
+                  <i class="bi bi-calculator" style="width: 20px;"></i> Calculator
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          {% if user.is_authenticated %}
         <!-- User Dropdown -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle d-flex align-items-center"
@@ -123,12 +150,12 @@
             </div>
 
             <!-- User Name (hidden on mobile) -->
-            <span class="d-none d-md-inline" style="font-weight: 500; font-size: 14px; color: #FFFFFF;">
+            <span class="d-none d-md-inline" style="font-weight: 500; font-size: 14px;">
               {{ user.full_name }}
             </span>
 
             <!-- Dropdown Arrow -->
-            <i class="bi bi-chevron-down d-none d-md-inline" style="font-size: 12px; color: rgba(255,255,255,0.5);"></i>
+            <i class="bi bi-chevron-down d-none d-md-inline" style="font-size: 12px; opacity: 0.7;"></i>
           </a>
 
           <!-- Dropdown Menu -->

@@ -15,7 +15,7 @@ from django.views.generic import ListView, TemplateView, DetailView, UpdateView,
 from datetime import timedelta, datetime
 
 from notifications.models import Notification
-from shop.models import Order, Payment, Category, Product, OrderItem
+from shop.models import Order, Payment, Category, Product, OrderItem, ContactMessage
 from farm_management.models import Batch, FeedInventory, MortalityLog
 from .models import SiteContent, PaymentMethodSetting, MinimumOrderAmount, AuditLogEntry, DeliveryOption
 from .forms import UserEditForm, CategoryForm, ProductForm, SiteContentForm, DeliveryOptionForm, StaffCreateForm, StaffEditForm, StaffCreateForm, StaffEditForm
@@ -1413,3 +1413,79 @@ class WebsiteContentHubView(AdminDashboardShell):
 
 class ShopOrdersHubView(AdminDashboardShell):
     template_name = 'admin_dashboard/shop_orders_hub.html'
+
+
+class ContactMessagesView(AdminRequiredMixin, LoginRequiredMixin, ListView):
+    template_name = 'admin_dashboard/contact_messages.html'
+    model = ContactMessage
+    context_object_name = 'messages'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = ContactMessage.objects.all()
+        status_filter = self.request.GET.get('status', '')
+        if status_filter in dict(ContactMessage.STATUS_CHOICES):
+            qs = qs.filter(status=status_filter)
+        return qs.order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Contact Inquiries'
+        context['status_choices'] = ContactMessage.STATUS_CHOICES
+        context['status_filter'] = self.request.GET.get('status', '')
+        context['unread_count'] = ContactMessage.objects.filter(status='unread').count()
+        return context
+
+
+class ContactMessageDetailView(AdminRequiredMixin, LoginRequiredMixin, DetailView):
+    template_name = 'admin_dashboard/contact_message_detail.html'
+    model = ContactMessage
+    context_object_name = 'message'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f'Contact Inquiry #{self.object.pk}'
+        context['status_choices'] = ContactMessage.STATUS_CHOICES
+        context['thread_messages'] = ContactMessage.objects.filter(
+            thread_id=self.object.thread_id
+        ).order_by('created_at')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        message = self.get_object()
+        reply_text = request.POST.get('reply', '').strip()
+        if reply_text:
+            ContactMessage.objects.create(
+                name=message.name,
+                email=message.email,
+                phone=message.phone,
+                subject=message.subject,
+                message=reply_text,
+                sender_type='admin',
+                parent=message,
+                thread_id=message.thread_id,
+            )
+            message.status = 'read'
+            message.save(update_fields=['status', 'updated_at'])
+            log_audit(request, 'reply', 'ContactMessage', message.pk, f'Admin replied to contact #{message.pk}')
+            messages.success(request, 'Reply sent successfully.')
+        return redirect('admin_dashboard:contact_message_detail', pk=message.pk)
+
+
+@require_POST
+def update_contact_message_status(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Not authenticated'}, status=403)
+    if request.user.role not in (request.user.Role.SUPER_ADMIN, request.user.Role.FARM_MANAGER, request.user.Role.SUPER_STAFF):
+        return JsonResponse({'success': False, 'error': 'Insufficient permissions'}, status=403)
+
+    message = get_object_or_404(ContactMessage, pk=pk)
+    new_status = request.POST.get('status', '')
+    if new_status not in dict(ContactMessage.STATUS_CHOICES):
+        return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
+
+    message.status = new_status
+    message.save(update_fields=['status', 'updated_at'])
+    log_audit(request, 'update', 'ContactMessage', message.pk, f'Marked as {new_status}')
+    messages.success(request, f'Contact inquiry marked as {message.get_status_display()}.')
+    return JsonResponse({'success': True, 'status': message.status})

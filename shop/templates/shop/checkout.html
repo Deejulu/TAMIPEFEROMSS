@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}Checkout - TAMIPEE{% endblock %}
 
@@ -49,11 +50,34 @@
           <div class="card-header bg-white border-0 py-3">
             <h2 class="h5 mb-0 text-primary">Delivery</h2>
           </div>
-          <div class="card-body">
-            <p class="checkout-note text-muted">Select a delivery speed and confirm the address for this order.</p>
-            <label for="delivery_address" class="form-label">Delivery address</label>
-            <textarea id="delivery_address" form="checkout-form" name="delivery_address" class="form-control" rows="4" required placeholder="Enter your full delivery address">{{ delivery_address }}</textarea>
-            <div class="delivery-options-list mt-3">
+           <div class="card-body">
+             <p class="checkout-note text-muted">Select a delivery speed and confirm the address for this order.</p>
+             
+             {% if not user_email %}
+             <div class="alert alert-warning mb-3" role="alert">
+               <i class="bi bi-exclamation-triangle me-2"></i>
+               {% trans "Email is required for order confirmations. Please provide your email address below." %}
+             </div>
+             {% endif %}
+             
+             <label for="delivery_address" class="form-label">Delivery address</label>
+             <textarea id="delivery_address" form="checkout-form" name="delivery_address" class="form-control" rows="4" required placeholder="Enter your full delivery address">{{ delivery_address }}</textarea>
+             
+             {% if not user_email %}
+             <div class="mt-3">
+               <label for="checkout_email" class="form-label">{% trans "Email Address" %} <span class="text-danger">*</span></label>
+               <input type="email" id="checkout_email" name="checkout_email" class="form-control" required placeholder="you@example.com" value="{{ user_email|default:'' }}">
+             </div>
+             {% endif %}
+             
+             {% if not user_phone %}
+             <div class="mt-3">
+               <label for="checkout_phone" class="form-label">{% trans "Phone Number" %} <span class="text-muted">({% trans "optional" %})</span></label>
+               <input type="tel" id="checkout_phone" name="checkout_phone" class="form-control" placeholder="+234 801 234 5678" value="{{ user_phone|default:'' }}">
+             </div>
+             {% endif %}
+             
+             <div class="delivery-options-list mt-3">
               {% for option in delivery_options %}
               <div class="delivery-option-card">
                 <input class="form-check-input" form="checkout-form" type="radio" name="delivery_option" id="delivery-{{ option.pk }}" value="{{ option.pk }}" {% if forloop.first %}checked{% endif %}>

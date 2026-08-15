@@ -50,6 +50,10 @@ body.dark-mode .nav-link {
     color: var(--farm-text) !important;
 }
 
+body.dark-mode .navbar-brand .brand-wordmark {
+    color: #FFFFFF !important;
+}
+
 body.dark-mode .nav-link:hover,
 body.dark-mode .nav-link:focus {
     color: var(--farm-accent) !important;
@@ -315,6 +319,128 @@ body.dark-mode .footer-copyright {
     border-top: 1px solid var(--farm-border) !important;
 }
 
+body.dark-mode .social-link {
+    color: var(--farm-text) !important;
+    border-color: var(--farm-border) !important;
+    background: var(--farm-white) !important;
+}
+
+body.dark-mode .social-link i {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .social-link:hover,
+body.dark-mode .social-link:focus-visible {
+    background: var(--farm-accent) !important;
+    border-color: var(--farm-accent) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+body.dark-mode .social-link:hover i,
+body.dark-mode .social-link:focus-visible i {
+    color: var(--farm-primary-dark) !important;
+}
+
+/* ==========================================   PAGE HEADERS   ========================================== */
+body.dark-mode .page-header-section h1,
+body.dark-mode .page-header-section h2 {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .page-header-section h1 i,
+body.dark-mode .page-header-section h2 i {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .section-header-bar h2,
+body.dark-mode .section-header-bar h3 {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .section-header-bar h2 i,
+body.dark-mode .section-header-bar h3 i {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .page-subtitle {
+    color: var(--farm-text-muted) !important;
+}
+
+/* Hero sections must stay white on dark backgrounds */
+body.dark-mode .hero h1,
+body.dark-mode .hero .hero-text,
+body.dark-mode .hero .eyebrow,
+body.dark-mode .about-hero h1,
+body.dark-mode .about-hero .subtitle,
+body.dark-mode .about-hero .eyebrow,
+body.dark-mode .contact-hero h1,
+body.dark-mode .contact-hero .subtitle,
+body.dark-mode .contact-hero .eyebrow,
+body.dark-mode .delivery-hero h1,
+body.dark-mode .delivery-hero .subtitle,
+body.dark-mode .delivery-hero .eyebrow,
+body.dark-mode .faq-hero h1,
+body.dark-mode .faq-hero .subtitle,
+body.dark-mode .faq-hero .eyebrow,
+body.dark-mode .returns-hero h1,
+body.dark-mode .returns-hero .subtitle,
+body.dark-mode .returns-hero .eyebrow,
+body.dark-mode .terms-hero h1,
+body.dark-mode .terms-hero .subtitle,
+body.dark-mode .terms-hero .eyebrow {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .hero h1 i,
+body.dark-mode .about-hero h1 i,
+body.dark-mode .contact-hero h1 i,
+body.dark-mode .delivery-hero h1 i,
+body.dark-mode .faq-hero h1 i,
+body.dark-mode .returns-hero h1 i,
+body.dark-mode .terms-hero h1 i {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .card-title {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .card-title i {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .breadcrumb-item a {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .breadcrumb-item a:hover {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .breadcrumb-item.active {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode table thead,
+body.dark-mode thead th {
+    color: var(--farm-white) !important;
+}
+
+body.dark-mode tbody td,
+body.dark-mode tbody th {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .list-group-item {
+    color: var(--farm-text) !important;
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border-light) !important;
+}
+
+body.dark-mode .list-group-item:hover {
+    background-color: var(--farm-bg-alt) !important;
+}
+
 /* ==========================================   HERO SECTIONS   ========================================== */
 body.dark-mode .hero {
     background: linear-gradient(135deg, #0F2A1D 0%, #1B5E20 50%, #2E7D32 100%) !important;
@@ -360,6 +486,78 @@ body.dark-mode .modal-title {
     color: var(--farm-forest) !important;
 }
 
+/* ==========================================   CHAT / MESSAGES   ========================================== */
+body.dark-mode .chat-page {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .chat-header {
+    background: linear-gradient(135deg, #0F2A1D 0%, #1B5E20 50%, #2E7D32 100%) !important;
+    border-bottom-color: var(--farm-border) !important;
+}
+
+body.dark-mode .chat-title,
+body.dark-mode .chat-subtitle {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .chat-messages {
+    background-color: var(--farm-bg) !important;
+}
+
+body.dark-mode .chat-message-customer .chat-message-bubble {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .chat-message-admin .chat-message-bubble {
+    background: linear-gradient(135deg, var(--farm-primary) 0%, var(--farm-secondary) 100%) !important;
+    color: var(--farm-white) !important;
+}
+
+body.dark-mode .chat-reply-box {
+    background-color: var(--farm-white) !important;
+    border-top-color: var(--farm-border) !important;
+}
+
+body.dark-mode .chat-reply-input {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .chat-reply-input:focus {
+    border-color: var(--farm-accent) !important;
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2) !important;
+}
+
+body.dark-mode .message-thread-card {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+}
+
+body.dark-mode .message-thread-card:hover {
+    border-color: var(--farm-accent) !important;
+}
+
+body.dark-mode .message-thread-subject {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .message-thread-text {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .chat-sender-admin {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .chat-sender-customer {
+    color: var(--farm-primary) !important;
+}
+
 /* ==========================================   TOAST NOTIFICATIONS   ========================================== */
 body.dark-mode .cart-toast {
     background: var(--farm-white) !important;
@@ -387,6 +585,92 @@ body.dark-mode .scroll-button {
 /* ==========================================   WELCOME OVERLAY   ========================================== */
 body.dark-mode .welcome-overlay {
     background: linear-gradient(135deg, #0F2A1D 0%, #1B5E20 50%, #2E7D32 100%) !important;
+}
+
+body.dark-mode .welcome-content {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .welcome-title {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .welcome-subtitle {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.dark-mode .welcome-icon {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .welcome-spinner {
+    border-top-color: var(--farm-accent) !important;
+}
+
+body.dark-mode .about-stat-card,
+body.dark-mode .contact-info-card,
+body.dark-mode .contact-form-card,
+body.dark-mode .why-item,
+body.dark-mode .about-content-card {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .about-stat-card:hover,
+body.dark-mode .contact-info-card:hover,
+body.dark-mode .why-item:hover,
+body.dark-mode .about-content-card:hover,
+body.dark-mode .contact-form-card:hover {
+    border-color: var(--farm-accent) !important;
+    box-shadow: var(--shadow-gold) !important;
+}
+
+body.dark-mode .about-stat-value,
+body.dark-mode .about-content-card .content h2,
+body.dark-mode .contact-info-card h3,
+body.dark-mode .why-item-text h4 {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .about-stat-label,
+body.dark-mode .about-stat-icon,
+body.dark-mode .why-item-icon,
+body.dark-mode .contact-info-icon {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .about-stat-card .about-stat-icon {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .why-item-icon {
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.25) 0%, rgba(201, 168, 76, 0.15) 100%) !important;
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .contact-form-card .form-label {
+    color: var(--farm-forest) !important;
+}
+
+body.dark-mode .contact-form-card .form-control {
+    background-color: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .contact-form-card .form-control:focus {
+    border-color: var(--farm-accent) !important;
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2) !important;
+}
+
+body.dark-mode .contact-submit-btn {
+    background: linear-gradient(135deg, var(--farm-primary) 0%, var(--farm-secondary) 100%) !important;
+    color: var(--farm-white) !important;
+}
+
+body.dark-mode .contact-submit-btn:hover {
+    background: linear-gradient(135deg, var(--farm-primary-dark) 0%, var(--farm-primary) 100%) !important;
 }
 
 /* ==========================================   ADMIN BACK LINK   ========================================== */

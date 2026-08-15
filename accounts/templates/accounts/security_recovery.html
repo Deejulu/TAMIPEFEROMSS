@@ -17,7 +17,7 @@
                   {% if security_questions %}
                       {% trans "Answer your security questions to verify your identity." %}
                   {% else %}
-                      {% trans "Enter your email address to begin recovery." %}
+                      {% trans "Enter your username to begin recovery." %}
                   {% endif %}
               </p>
             </div>
@@ -46,24 +46,37 @@
                   {% endif %}
 
                   {% if not security_questions %}
-                      <!-- Email Field -->
+                      <!-- Username Field -->
                       <div class="mb-3">
-                          <label for="{{ form.email.id_for_label }}" class="form-label">
-                              <i class="bi bi-envelope me-1"></i>{{ form.email.label }}
+                          <label for="{{ form.username.id_for_label }}" class="form-label">
+                              <i class="bi bi-person me-1"></i>{{ form.username.label }}
                           </label>
-                          {{ form.email }}
-                          {% if form.email.errors %}
+                          {{ form.username }}
+                          {% if form.username.errors %}
                               <div class="invalid-feedback d-block">
-                                  {% for error in form.email.errors %}
+                                  {% for error in form.username.errors %}
                                       {{ error }}
                                   {% endfor %}
                               </div>
                           {% endif %}
                       </div>
 
+                      {% if locked %}
+                          <div class="alert alert-danger" role="alert">
+                              <i class="bi bi-lock-fill me-2"></i>
+                              {% trans "Too many failed attempts. Please try again later." %}
+                          </div>
+                      {% endif %}
+
+                      {% if failed_attempts > 0 %}
+                          <p class="text-muted small mb-3">
+                              {% trans "Failed attempts:" %} {{ failed_attempts }} / {{ max_attempts }}
+                          </p>
+                      {% endif %}
+
                       <!-- Submit Button -->
                       <div class="d-grid">
-                          <button type="submit" class="btn btn-primary btn-lg">
+                          <button type="submit" class="btn btn-primary btn-lg" {% if locked %}disabled{% endif %}>
                               <i class="bi bi-arrow-right-circle me-2"></i>{% trans "Continue" %}
                           </button>
                       </div>
@@ -111,9 +124,15 @@
                           {% endif %}
                       </div>
 
+                      {% if failed_attempts > 0 %}
+                          <p class="text-muted small mb-3">
+                              {% trans "Failed attempts:" %} {{ failed_attempts }} / {{ max_attempts }}
+                          </p>
+                      {% endif %}
+
                       <!-- Submit Button -->
                       <div class="d-grid">
-                          <button type="submit" class="btn btn-primary btn-lg">
+                          <button type="submit" class="btn btn-primary btn-lg" {% if locked %}disabled{% endif %}>
                               <i class="bi bi-check-circle me-2"></i>{% trans "Verify Answers" %}
                           </button>
                       </div>

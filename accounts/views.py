@@ -117,27 +117,28 @@ class SignUpView(CreateView):
         ]
         self.request.session["signup_security_questions"] = questions
 
-        # Send verification email
-        verification_url = build_verification_url(self.request, user)
-        try:
-            user.email_user(
-                subject=_("Verify your email address"),
-                message=_(
-                    f"Hi {user.full_name},\n\n"
-                    f"Please verify your email address by clicking the link below:\n"
-                    f"{verification_url}\n\n"
-                    f"This link will expire in 24 hours.\n\n"
-                     f"Thank you,\nTeam"
-                ),
-                fail_silently=False,
-            )
-        except Exception:
-            pass  # Email sending failure should not block registration
+        # Send verification email only if user provided an email
+        if user.email:
+            verification_url = build_verification_url(self.request, user)
+            try:
+                user.email_user(
+                    subject=_("Verify your email address"),
+                    message=_(
+                        f"Hi {user.full_name},\n\n"
+                        f"Please verify your email address by clicking the link below:\n"
+                        f"{verification_url}\n\n"
+                        f"This link will expire in 24 hours.\n\n"
+                         f"Thank you,\nTeam"
+                    ),
+                    fail_silently=False,
+                )
+            except Exception:
+                pass  # Email sending failure should not block registration
 
         messages.success(
             self.request,
             _(f"Account created successfully! Your username is: {user.username}. "
-              f"Please check your email to verify your account."),
+              f"Please save your security questions for account recovery."),
         )
         return response
 
@@ -438,16 +439,20 @@ class SecurityQuestionRecoveryView(FormView):
     """
     Account recovery via security questions.
 
-    Step 1: User enters email address.
+    Step 1: User enters their username.
     Step 2: User answers their three security questions.
 
     If all answers are correct, the user is stored in session
     and redirected to the password reset step.
+
+    Rate limiting: after 5 failed answer attempts for the same username,
+    the recovery session is cleared and the user must start over.
     """
 
     form_class = SecurityQuestionRecoveryForm
     template_name = "accounts/security_recovery.html"
     success_url = reverse_lazy("accounts:security_recovery_reset")
+    MAX_FAILED_ATTEMPTS = 5
 
     def get_form_kwargs(self):
         """
@@ -465,6 +470,7 @@ class SecurityQuestionRecoveryView(FormView):
     def get_context_data(self, **kwargs):
         """
         Add security questions to context when user is in session.
+        Also pass attempt info for display.
         """
         context = super().get_context_data(**kwargs)
         recovery_user_id = self.request.session.get("recovery_user_id")
@@ -476,15 +482,36 @@ class SecurityQuestionRecoveryView(FormView):
                 )
             except User.DoesNotExist:
                 pass
+
+        context["failed_attempts"] = self.request.session.get("recovery_failed_attempts", 0)
+        context["max_attempts"] = self.MAX_FAILED_ATTEMPTS
+        context["locked"] = self.request.session.get("recovery_locked", False)
         return context
+
+    def _clear_recovery_session(self):
+        """Clear all recovery-related session data."""
+        self.request.session.pop("recovery_user_id", None)
+        self.request.session.pop("recovery_verified_user_id", None)
+        self.request.session.pop("recovery_failed_attempts", None)
+        self.request.session.pop("recovery_locked", None)
+
+    def _increment_failed_attempts(self):
+        """Increment failed attempt counter and lock if threshold reached."""
+        attempts = self.request.session.get("recovery_failed_attempts", 0) + 1
+        self.request.session["recovery_failed_attempts"] = attempts
+        if attempts >= self.MAX_FAILED_ATTEMPTS:
+            self.request.session["recovery_locked"] = True
+            self._clear_recovery_session()
 
     def form_valid(self, form):
         """
-        If email step: store user in session and re-render with questions.
-        If answers step: store verified user in session and redirect.
+        If username step: store user in session and re-render with questions.
+        If answers step: verify and redirect to password reset.
         """
         if form.user and not self.request.session.get("recovery_user_id"):
             self.request.session["recovery_user_id"] = form.user.pk
+            self.request.session["recovery_failed_attempts"] = 0
+            self.request.session["recovery_locked"] = False
             messages.success(
                 self.request,
                 _("Please answer your security questions to verify your identity."),
@@ -495,6 +522,8 @@ class SecurityQuestionRecoveryView(FormView):
 
         if form.user and self.request.session.get("recovery_user_id"):
             self.request.session["recovery_verified_user_id"] = form.user.pk
+            self.request.session.pop("recovery_failed_attempts", None)
+            self.request.session.pop("recovery_locked", None)
             messages.success(
                 self.request,
                 _("Identity verified! Please set a new password."),
@@ -557,6 +586,8 @@ class RecoveryPasswordResetView(FormView):
         form.save()
         self.request.session.pop("recovery_user_id", None)
         self.request.session.pop("recovery_verified_user_id", None)
+        self.request.session.pop("recovery_failed_attempts", None)
+        self.request.session.pop("recovery_locked", None)
         messages.success(
             self.request,
             _("Your password has been reset successfully. Please log in."),
