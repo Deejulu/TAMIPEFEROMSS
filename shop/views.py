@@ -1,11 +1,15 @@
 import hashlib
 import hmac
 import json
+import re
 import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
 from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -16,6 +20,9 @@ from django.views.decorators.http import require_POST
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.urls import reverse
+
+from django.db.models import Q, Count, Sum, F, DecimalField, Value
+from django.db.models.functions import Coalesce
 
 from .models import Product, Cart, CartItem, Order, OrderItem, Category, Payment, ContactMessage
 from admin_dashboard.models import DeliveryOption, PaymentMethodSetting, MinimumOrderAmount, SiteContent
@@ -123,8 +130,11 @@ def cart_view(request):
     Display the user's cart with all items and total.
     """
     cart = _get_or_create_cart(request)
+    cart_items = cart.items.select_related('product').all()
+    
     context = {
         "cart": cart,
+        "cart_items": cart_items,
     }
     return render(request, "shop/cart.html", context)
 
@@ -298,9 +308,25 @@ def place_order(request):
     checkout_email = request.POST.get("checkout_email", "").strip()
     checkout_phone = request.POST.get("checkout_phone", "").strip()
 
-    if payment_method == "paystack" and not checkout_email and not request.user.email:
-        messages.error(request, _("Email address is required for card payments. Please provide your email."))
-        return redirect("shop:checkout")
+    if payment_method == "paystack":
+        email_for_payment = checkout_email or request.user.email
+        if not email_for_payment:
+            messages.error(request, _("Email address is required for card payments. Please provide your email."))
+            return redirect("shop:checkout")
+        try:
+            validate_email(email_for_payment)
+        except ValidationError:
+            messages.error(request, _("Please enter a valid email address for card payment."))
+            return redirect("shop:checkout")
+        domain = email_for_payment.split("@")[-1].lower() if "@" in email_for_payment else ""
+        private_tlds = (".local", ".test", ".example", ".invalid", ".localhost", ".lan", ".internal", ".private")
+        if domain.endswith(private_tlds):
+            messages.error(
+                request,
+                _("The email '%(email)s' uses a private domain that card payments cannot accept. "
+                  "Please update your account email or enter a different email.") % {"email": email_for_payment}
+            )
+            return redirect("shop:checkout")
 
     user = request.user
     if checkout_email and not user.email:
@@ -348,6 +374,28 @@ def _initialize_paystack_payment(request, order):
     if not settings.PAYSTACK_SECRET_KEY:
         messages.error(request, _("Card payments are not configured. Please choose another method."))
         return redirect("accounts:order_detail", pk=order.pk)
+    
+    email = request.user.email
+    if not email:
+        messages.error(request, _("Email address is required for card payments. Please update your account email."))
+        return redirect("accounts:order_detail", pk=order.pk)
+    
+    try:
+        validate_email(email)
+    except ValidationError:
+        messages.error(request, _("Please update your account email to a valid address before paying with card."))
+        return redirect("accounts:order_detail", pk=order.pk)
+    
+    domain = email.split("@")[-1].lower() if "@" in email else ""
+    private_tlds = (".local", ".test", ".example", ".invalid", ".localhost", ".lan", ".internal", ".private")
+    if domain.endswith(private_tlds):
+        messages.error(
+            request,
+            _("The email '%(email)s' uses a private domain that card payments cannot accept. "
+              "Please update your account email to a real address like user@example.com.") % {"email": email}
+        )
+        return redirect("accounts:order_detail", pk=order.pk)
+    
     reference = f"tamipee-{order.pk}-{uuid.uuid4().hex[:16]}"
     Payment.objects.create(order=order, reference=reference, amount=order.total)
     payload = urllib.parse.urlencode({
@@ -377,7 +425,19 @@ def _initialize_paystack_payment(request, order):
         except Exception:
             pass
         print(f"[PAYSTACK INIT HTTPError] order={order.pk} status={exc.code} body={body}")
-        messages.error(request, _("Card payment provider returned an error. Please try again or choose another method."))
+        try:
+            error_data = json.loads(body) if body else {}
+            error_message = error_data.get("message", "")
+            if "email" in error_message.lower() and "valid" in error_message.lower():
+                messages.error(
+                    request,
+                    _("Card payments require a valid public email address. "
+                      "Please update your account email and try again.")
+                )
+            else:
+                messages.error(request, _("Card payment provider returned an error. Please try again or choose another method."))
+        except Exception:
+            messages.error(request, _("Card payment provider returned an error. Please try again or choose another method."))
         return redirect("accounts:order_detail", pk=order.pk)
     except urllib.error.URLError as exc:
         print(f"[PAYSTACK INIT URLError] order={order.pk} error={exc.reason}")

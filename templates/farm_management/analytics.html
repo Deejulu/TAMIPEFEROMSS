@@ -277,6 +277,48 @@
     </div>
     {% endif %}
 
+    <!-- Sales Analytics Section -->
+    {% if sales_analytics.has_data %}
+    <h3 class="mt-5 mb-3" style="color: #1B5E20; font-weight: 700;">
+        <i class="bi bi-cart-check"></i> Sales Analytics
+    </h3>
+    <p class="text-muted mb-4">Best and worst selling products based on actual order data.</p>
+
+    <!-- Metric Toggle -->
+    <div class="btn-group mb-4" role="group" aria-label="Sales metric toggle">
+        <button type="button" class="btn btn-outline-primary active" id="salesToggleUnits" onclick="switchSalesMetric('units')">
+            <i class="bi bi-box"></i> Units Sold
+        </button>
+        <button type="button" class="btn btn-outline-primary" id="salesToggleRevenue" onclick="switchSalesMetric('revenue')">
+            <i class="bi bi-currency-dollar"></i> Revenue (₦)
+        </button>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Best Sellers Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-trophy"></i> Best Sellers</h4>
+                <p class="chart-description">Top performing products by selected metric.</p>
+                <div class="chart-wrapper">
+                    <canvas id="bestSellersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worst Sellers Chart -->
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title"><i class="bi bi-arrow-down-circle"></i> Slowest Sellers</h4>
+                <p class="chart-description">Underperforming products by selected metric.</p>
+                <div class="chart-wrapper">
+                    <canvas id="worstSellersChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Summary Highlights -->
     <div class="row mb-4">
         <div class="col-md-2 col-6">
@@ -1232,6 +1274,137 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else if (medicinesPieCtx) {
         medicinesPieCtx.parentElement.innerHTML = '<div class="chart-no-data"><p>No medication data available</p></div>';
+    }
+
+    // Sales Analytics Charts
+    const salesData = {{ sales_analytics_json|safe }};
+    let bestSellersChart = null;
+    let worstSellersChart = null;
+
+    function renderSalesCharts(metric) {
+        const isRevenue = metric === 'revenue';
+        const bestData = isRevenue ? salesData.best_by_revenue : salesData.best_by_quantity;
+        const worstData = isRevenue ? salesData.worst_by_revenue : salesData.worst_by_quantity;
+
+        const bestLabels = bestData.map(d => d.name);
+        const bestValues = bestData.map(d => isRevenue ? d.revenue : d.quantity);
+        const worstLabels = worstData.map(d => d.name);
+        const worstValues = worstData.map(d => isRevenue ? d.revenue : d.quantity);
+
+        const bestColors = ['#1B5E20', '#2E7D32', '#43A047', '#66BB6A', '#81C784'];
+        const worstColors = ['#E53935', '#EF5350', '#F44336', '#FF7043', '#FFA726'];
+
+        if (bestSellersChart) bestSellersChart.destroy();
+        if (worstSellersChart) worstSellersChart.destroy();
+
+        const bestCtx = document.getElementById('bestSellersChart');
+        const worstCtx = document.getElementById('worstSellersChart');
+
+        if (bestCtx) {
+            bestSellersChart = new Chart(bestCtx, {
+                type: 'bar',
+                data: {
+                    labels: bestLabels,
+                    datasets: [{
+                        label: isRevenue ? 'Revenue (₦)' : 'Units Sold',
+                        data: bestValues,
+                        backgroundColor: bestColors,
+                        borderColor: bestColors.map(c => c),
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (isRevenue) {
+                                        return '₦' + context.parsed.x.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    }
+                                    return context.parsed.x + ' units';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value) {
+                                    if (isRevenue) return '₦' + value.toLocaleString('en-NG');
+                                    return value;
+                                }
+                            }
+                        },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        if (worstCtx) {
+            worstSellersChart = new Chart(worstCtx, {
+                type: 'bar',
+                data: {
+                    labels: worstLabels,
+                    datasets: [{
+                        label: isRevenue ? 'Revenue (₦)' : 'Units Sold',
+                        data: worstValues,
+                        backgroundColor: worstColors,
+                        borderColor: worstColors.map(c => c),
+                        borderWidth: 2,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (isRevenue) {
+                                        return '₦' + context.parsed.x.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    }
+                                    return context.parsed.x + ' units';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value) {
+                                    if (isRevenue) return '₦' + value.toLocaleString('en-NG');
+                                    return value;
+                                }
+                            }
+                        },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
+
+    function switchSalesMetric(metric) {
+        document.getElementById('salesToggleUnits').classList.toggle('active', metric === 'units');
+        document.getElementById('salesToggleRevenue').classList.toggle('active', metric === 'revenue');
+        renderSalesCharts(metric);
+    }
+
+    if (salesData && salesData.has_data) {
+        renderSalesCharts('units');
     }
 
 });

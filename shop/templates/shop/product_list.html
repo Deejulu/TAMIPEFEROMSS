@@ -750,6 +750,37 @@ document.addEventListener('DOMContentLoaded', function() {
             const btn = form.querySelector('.btn-add-to-cart');
             const productId = form.dataset.productId;
             
+            const currentBadge = btn.querySelector('.cart-qty-badge');
+            const currentQty = currentBadge ? parseInt(currentBadge.textContent, 10) : 0;
+            const optimisticQty = currentQty + 1;
+            
+            let qtyBadge = btn.querySelector('.cart-qty-badge');
+            if (!qtyBadge) {
+                qtyBadge = document.createElement('span');
+                qtyBadge.className = 'cart-qty-badge';
+                qtyBadge.dataset.productId = productId;
+                btn.appendChild(qtyBadge);
+            }
+            qtyBadge.textContent = optimisticQty;
+            
+            const cartBadge = document.getElementById('cartBadge');
+            const currentCartCount = cartBadge ? parseInt(cartBadge.textContent, 10) : 0;
+            const optimisticCartCount = currentCartCount + 1;
+            if (cartBadge) {
+                cartBadge.textContent = optimisticCartCount;
+                cartBadge.style.transform = 'scale(1.2)';
+                setTimeout(() => { cartBadge.style.transform = 'scale(1)'; }, 200);
+            }
+            
+            if (floatingCartBadge) {
+                floatingCartBadge.textContent = optimisticCartCount;
+                floatingCartBadge.style.display = 'flex';
+                floatingCartBadge.style.transform = 'scale(1.3)';
+                setTimeout(() => { floatingCartBadge.style.transform = 'scale(1)'; }, 200);
+            }
+            
+            showCartToast(optimisticCartCount);
+            
             fetch(form.action, {
                 method: 'POST',
                 headers: {
@@ -761,39 +792,22 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update cart badge in header
-                    const cartBadge = document.getElementById('cartBadge');
-                    if (cartBadge) {
-                        cartBadge.textContent = data.item_count;
-                        cartBadge.style.transform = 'scale(1.2)';
-                        setTimeout(() => { cartBadge.style.transform = 'scale(1)'; }, 200);
-                    }
-                    
-                    // Update floating cart badge
-                    if (floatingCartBadge) {
-                        floatingCartBadge.textContent = data.item_count;
-                        floatingCartBadge.style.display = 'flex';
-                        floatingCartBadge.style.transform = 'scale(1.3)';
-                        setTimeout(() => { floatingCartBadge.style.transform = 'scale(1)'; }, 200);
-                    }
-                    
-                    // Show toast notification
-                    showCartToast(data.item_count);
-                    
-                    // Update button quantity badge
-                    let qtyBadge = btn.querySelector('.cart-qty-badge');
-                    if (!qtyBadge) {
-                        qtyBadge = document.createElement('span');
-                        qtyBadge.className = 'cart-qty-badge';
-                        qtyBadge.dataset.productId = productId;
-                        btn.appendChild(qtyBadge);
-                    }
+                    if (cartBadge) cartBadge.textContent = data.item_count;
+                    if (floatingCartBadge) floatingCartBadge.textContent = data.item_count;
                     qtyBadge.textContent = data.quantity;
                 } else {
+                    qtyBadge.textContent = currentQty;
+                    if (cartBadge) cartBadge.textContent = currentCartCount;
+                    if (floatingCartBadge) floatingCartBadge.textContent = currentCartCount;
+                    if (currentQty === 0) qtyBadge.remove();
                     alert(data.error || 'Failed to add to cart');
                 }
             })
             .catch(() => {
+                qtyBadge.textContent = currentQty;
+                if (cartBadge) cartBadge.textContent = currentCartCount;
+                if (floatingCartBadge) floatingCartBadge.textContent = currentCartCount;
+                if (currentQty === 0) qtyBadge.remove();
                 form.submit();
             });
         });

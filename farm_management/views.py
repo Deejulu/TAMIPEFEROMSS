@@ -15,6 +15,9 @@ from django.views.generic import ListView, TemplateView, DetailView, UpdateView,
 from django.db.models.functions import TruncMonth
 import io
 from contextlib import redirect_stdout
+from collections import defaultdict
+
+from shop.models import Order, OrderItem
 
 from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
 from .forms import BatchForm, FeedLogForm, GrowthRecordForm, MortalityLogForm, HarvestRecordForm, FeedInventoryForm, SupplierForm, SupplierUpdateForm, HealthMedicationLogForm, VaccinationRecordForm, DailyActivityLogForm, SpeciesForm, SpeciesUpdateForm, CategoryForm, CategoryUpdateForm
@@ -1007,6 +1010,37 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         # Top medications used (pie chart)
         sorted_medicines = sorted(health_medicines_data.items(), key=lambda x: x[1], reverse=True)[:8]
         context['health_medicines_json'] = json.dumps([{'medicine': m[0], 'count': m[1]} for m in sorted_medicines])
+
+        # Sales Analytics: best/worst sellers by units and revenue
+        sales_items = OrderItem.objects.select_related('order', 'product').filter(
+            order__status__in=['pending', 'confirmed', 'processing', 'awaiting_delivery', 'shipped', 'delivered']
+        ).exclude(product__isnull=True)
+
+        product_sales = defaultdict(lambda: {'quantity': 0, 'revenue': 0, 'name': ''})
+        for item in sales_items:
+            pid = item.product_id
+            product_sales[pid]['quantity'] += item.quantity
+            product_sales[pid]['revenue'] += float(item.subtotal)
+            product_sales[pid]['name'] = item.product_name or (item.product.name if item.product else 'Unknown')
+
+        sales_list = [
+            {'product_id': pid, 'name': data['name'], 'quantity': data['quantity'], 'revenue': data['revenue']}
+            for pid, data in product_sales.items()
+        ]
+
+        best_by_quantity = sorted(sales_list, key=lambda x: x['quantity'], reverse=True)[:5]
+        worst_by_quantity = sorted(sales_list, key=lambda x: x['quantity'])[:5]
+        best_by_revenue = sorted(sales_list, key=lambda x: x['revenue'], reverse=True)[:5]
+        worst_by_revenue = sorted(sales_list, key=lambda x: x['revenue'])[:5]
+
+        context['sales_analytics'] = {
+            'best_by_quantity': best_by_quantity,
+            'worst_by_quantity': worst_by_quantity,
+            'best_by_revenue': best_by_revenue,
+            'worst_by_revenue': worst_by_revenue,
+            'has_data': bool(sales_list),
+        }
+        context['sales_analytics_json'] = json.dumps(context['sales_analytics'])
 
         if analytics:
             context['highest_feed'] = max(analytics, key=lambda x: x['total_feed_cost'])

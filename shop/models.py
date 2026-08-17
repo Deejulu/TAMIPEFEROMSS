@@ -119,11 +119,15 @@ class Cart(models.Model):
     @property
     def total(self):
         """Calculate the total price of all items in the cart."""
+        if hasattr(self, '_total'):
+            return self._total
         return sum(item.subtotal for item in self.items.all())
 
     @property
     def item_count(self):
         """Return the total number of items in the cart."""
+        if hasattr(self, '_item_count'):
+            return self._item_count
         return sum(item.quantity for item in self.items.all())
 
     @property

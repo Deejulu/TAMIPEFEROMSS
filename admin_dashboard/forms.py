@@ -291,7 +291,7 @@ class UserCreateForm(forms.ModelForm):
             
             # For Customer role without email, generate placeholder
             if user.role == User.Role.CUSTOMER and not user.email:
-                user.email = f"{user.username}@tamipee.local"
+                user.email = f"{user.username}@tamipee.com"
             
             if commit:
                 user.save()

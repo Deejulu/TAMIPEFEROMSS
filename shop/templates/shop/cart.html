@@ -191,6 +191,15 @@
     margin: 0;
   }
 
+  .spin-icon {
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
   .btn-remove {
     background: none;
     border: none;
@@ -374,21 +383,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function getCartTotals() {
+        const totalEl = document.querySelector('.total-amount');
+        const summaryItemsEl = document.querySelector('.summary-row span:first-child');
+        const itemCountEls = document.querySelectorAll('.cart-header-content p');
+        
+        return {
+            cartTotal: totalEl ? parseFloat(totalEl.textContent.replace(/[₦,]/g, '')) : 0,
+            itemCount: summaryItemsEl ? parseInt(summaryItemsEl.textContent.match(/\d+/)?.[0] || '0', 10) : 0,
+        };
+    }
+
     document.querySelectorAll('.qty-plus').forEach(btn => {
         btn.addEventListener('click', async function() {
             const itemId = this.dataset.itemId;
             const input = document.querySelector(`.qty-input[data-item-id="${itemId}"]`);
+            const subtotalEl = document.getElementById(`subtotal-${itemId}`);
             const max = parseInt(input.max || 9999, 10);
             let newQty = parseInt(input.value, 10) + 1;
             if (newQty > max) newQty = max;
+            
+            const oldQty = parseInt(input.value, 10);
+            const oldSubtotal = subtotalEl ? parseFloat(subtotalEl.textContent.replace(/[₦,]/g, '')) : 0;
+            const pricePerUnit = oldQty > 0 ? oldSubtotal / oldQty : 0;
+            const newSubtotal = pricePerUnit * newQty;
+            
             input.value = newQty;
+            if (subtotalEl) {
+                subtotalEl.textContent = `₦${newSubtotal.toFixed(2)}`;
+            }
+            
+            const totals = getCartTotals();
+            const oldItemCount = totals.itemCount;
+            const oldCartTotal = totals.cartTotal;
+            const newItemCount = oldItemCount + 1;
+            const newCartTotal = oldCartTotal + pricePerUnit;
+            
+            const summaryItemsEl = document.querySelector('.summary-row span:first-child');
+            if (summaryItemsEl) {
+                summaryItemsEl.textContent = `Items (${newItemCount})`;
+            }
+            const totalEl = document.querySelector('.total-amount');
+            if (totalEl) {
+                totalEl.textContent = `₦${newCartTotal.toFixed(2)}`;
+            }
+            const itemCountEls = document.querySelectorAll('.cart-header-content p');
+            itemCountEls.forEach(el => {
+                el.textContent = `${newItemCount} item${newItemCount === 1 ? '' : 's'} in your cart`;
+            });
 
             const data = await updateQuantity(itemId, newQty);
-            if (data.success) {
-                updateCartTotals(data, itemId);
-            } else if (data.error) {
-                alert(data.error);
-                input.value = Math.max(1, newQty - 1);
+            if (!data.success) {
+                input.value = oldQty;
+                if (subtotalEl) subtotalEl.textContent = `₦${oldSubtotal.toFixed(2)}`;
+                if (summaryItemsEl) summaryItemsEl.textContent = `Items (${oldItemCount})`;
+                if (totalEl) totalEl.textContent = `₦${oldCartTotal.toFixed(2)}`;
+                itemCountEls.forEach(el => el.textContent = `${oldItemCount} item${oldItemCount === 1 ? '' : 's'} in your cart`);
+                alert(data.error || 'Failed to update quantity');
             }
         });
     });
@@ -397,16 +448,47 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', async function() {
             const itemId = this.dataset.itemId;
             const input = document.querySelector(`.qty-input[data-item-id="${itemId}"]`);
+            const subtotalEl = document.getElementById(`subtotal-${itemId}`);
             let newQty = parseInt(input.value, 10) - 1;
             if (newQty < 1) newQty = 1;
+            
+            const oldQty = parseInt(input.value, 10);
+            const oldSubtotal = subtotalEl ? parseFloat(subtotalEl.textContent.replace(/[₦,]/g, '')) : 0;
+            const pricePerUnit = oldQty > 0 ? oldSubtotal / oldQty : 0;
+            const newSubtotal = pricePerUnit * newQty;
+            
             input.value = newQty;
+            if (subtotalEl) {
+                subtotalEl.textContent = `₦${newSubtotal.toFixed(2)}`;
+            }
+            
+            const totals = getCartTotals();
+            const oldItemCount = totals.itemCount;
+            const oldCartTotal = totals.cartTotal;
+            const newItemCount = Math.max(1, oldItemCount - 1);
+            const newCartTotal = oldCartTotal - pricePerUnit;
+            
+            const summaryItemsEl = document.querySelector('.summary-row span:first-child');
+            if (summaryItemsEl) {
+                summaryItemsEl.textContent = `Items (${newItemCount})`;
+            }
+            const totalEl = document.querySelector('.total-amount');
+            if (totalEl) {
+                totalEl.textContent = `₦${newCartTotal.toFixed(2)}`;
+            }
+            const itemCountEls = document.querySelectorAll('.cart-header-content p');
+            itemCountEls.forEach(el => {
+                el.textContent = `${newItemCount} item${newItemCount === 1 ? '' : 's'} in your cart`;
+            });
 
             const data = await updateQuantity(itemId, newQty);
-            if (data.success) {
-                updateCartTotals(data, itemId);
-            } else if (data.error) {
-                alert(data.error);
-                input.value = Math.max(1, newQty + 1);
+            if (!data.success) {
+                input.value = oldQty;
+                if (subtotalEl) subtotalEl.textContent = `₦${oldSubtotal.toFixed(2)}`;
+                if (summaryItemsEl) summaryItemsEl.textContent = `Items (${oldItemCount})`;
+                if (totalEl) totalEl.textContent = `₦${oldCartTotal.toFixed(2)}`;
+                itemCountEls.forEach(el => el.textContent = `${oldItemCount} item${oldItemCount === 1 ? '' : 's'} in your cart`);
+                alert(data.error || 'Failed to update quantity');
             }
         });
     });
