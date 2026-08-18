@@ -418,8 +418,181 @@ body.dark-mode .table {
 }
 
 body.dark-mode .table > :not(caption) > * > * {
-    color: var(--text-body);
-    border-color: var(--border-color);
+    color: var(--text-body) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* ==========================================   BOOTSTRAP TABLE VARIANTS (GLOBAL)   ========================================== */
+body.dark-mode .table-warning {
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    color: #FCD34D !important;
+}
+
+body.dark-mode .table-secondary {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .table-danger {
+    background-color: rgba(220, 38, 38, 0.15) !important;
+    color: #FCA5A5 !important;
+}
+
+body.dark-mode .table-success {
+    background-color: rgba(46, 125, 50, 0.15) !important;
+    color: #86EFAC !important;
+}
+
+body.dark-mode .table-info {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    color: #93C5FD !important;
+}
+
+body.dark-mode .table-primary {
+    background-color: rgba(46, 125, 50, 0.15) !important;
+    color: #93C5FD !important;
+}
+
+body.dark-mode .table-light {
+    background-color: var(--bg-card) !important;
+    color: var(--text-body) !important;
+}
+
+body.dark-mode .table-active {
+    background-color: var(--bg-table-hover) !important;
+    color: var(--text-body) !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: var(--bg-table-hover) !important;
+}
+
+body.dark-mode .table {
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .table > :not(caption) > * > * {
+    background-color: transparent !important;
+}
+
+body.dark-mode .table thead th {
+    border-bottom: 2px solid var(--border-color) !important;
+}
+
+body.dark-mode .table tbody td {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* ==========================================   ALL ADMIN TABLE CARDS   ========================================== */
+body.dark-mode .product-table-card,
+body.dark-mode .orders-table-card,
+body.dark-mode .payments-table-card,
+body.dark-mode .category-table-card,
+body.dark-mode .overview-table-card,
+body.dark-mode .staff-table-card,
+body.dark-mode .user-table-card,
+body.dark-mode .contact-messages-table,
+body.dark-mode .farm-table-card,
+body.dark-mode .audit-log-table-card,
+body.dark-mode .shop-orders-table-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-card) !important;
+    box-shadow: var(--shadow-card) !important;
+}
+
+body.dark-mode .product-table-card .design-table thead,
+body.dark-mode .orders-table-card .design-table thead,
+body.dark-mode .payments-table-card .design-table thead,
+body.dark-mode .category-table-card .design-table thead,
+body.dark-mode .overview-table-card .design-table thead,
+body.dark-mode .farm-table-card .design-table thead,
+body.dark-mode .audit-log-table-card .design-table thead,
+body.dark-mode .shop-orders-table-card .design-table thead {
+    background: linear-gradient(135deg, var(--dark-green), var(--green), var(--light-green)) !important;
+}
+
+body.dark-mode .product-table-card .design-table thead th,
+body.dark-mode .orders-table-card .design-table thead th,
+body.dark-mode .payments-table-card .design-table thead th,
+body.dark-mode .category-table-card .design-table thead th,
+body.dark-mode .overview-table-card .design-table thead th,
+body.dark-mode .farm-table-card .design-table thead th,
+body.dark-mode .audit-log-table-card .design-table thead th,
+body.dark-mode .shop-orders-table-card .design-table thead th {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .product-table-card .design-table tbody td,
+body.dark-mode .orders-table-card .design-table tbody td,
+body.dark-mode .payments-table-card .design-table tbody td,
+body.dark-mode .category-table-card .design-table tbody td,
+body.dark-mode .overview-table-card .design-table tbody td,
+body.dark-mode .farm-table-card .design-table tbody td,
+body.dark-mode .audit-log-table-card .design-table tbody td,
+body.dark-mode .shop-orders-table-card .design-table tbody td,
+body.dark-mode .staff-table-card .staff-table tbody td,
+body.dark-mode .user-table-card .user-table tbody td,
+body.dark-mode .contact-messages-table tbody td {
+    color: var(--text-heading) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .product-table-card .design-table tbody tr,
+body.dark-mode .orders-table-card .design-table tbody tr,
+body.dark-mode .payments-table-card .design-table tbody tr,
+body.dark-mode .category-table-card .design-table tbody tr,
+body.dark-mode .overview-table-card .design-table tbody tr,
+body.dark-mode .farm-table-card .design-table tbody tr,
+body.dark-mode .audit-log-table-card .design-table tbody tr,
+body.dark-mode .shop-orders-table-card .design-table tbody tr,
+body.dark-mode .staff-table-card .staff-table tbody tr,
+body.dark-mode .user-table-card .user-table tbody tr,
+body.dark-mode .contact-messages-table tbody tr {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+body.dark-mode .product-table-card .design-table tbody tr:hover,
+body.dark-mode .orders-table-card .design-table tbody tr:hover,
+body.dark-mode .payments-table-card .design-table tbody tr:hover,
+body.dark-mode .category-table-card .design-table tbody tr:hover,
+body.dark-mode .overview-table-card .design-table tbody tr:hover,
+body.dark-mode .farm-table-card .design-table tbody tr:hover,
+body.dark-mode .audit-log-table-card .design-table tbody tr:hover,
+body.dark-mode .shop-orders-table-card .design-table tbody tr:hover,
+body.dark-mode .staff-table-card .staff-table tbody tr:hover,
+body.dark-mode .user-table-card .user-table tbody tr:hover,
+body.dark-mode .contact-messages-table tbody tr:hover {
+    background: linear-gradient(90deg, #2D2D2D, #333333) !important;
+}
+
+body.dark-mode .product-table-card .table-secondary,
+body.dark-mode .orders-table-card .table-secondary,
+body.dark-mode .payments-table-card .table-secondary,
+body.dark-mode .category-table-card .table-secondary,
+body.dark-mode .overview-table-card .table-secondary,
+body.dark-mode .farm-table-card .table-secondary,
+body.dark-mode .audit-log-table-card .table-secondary,
+body.dark-mode .shop-orders-table-card .table-secondary,
+body.dark-mode .staff-table-card .table-secondary,
+body.dark-mode .user-table-card .table-secondary,
+body.dark-mode .contact-messages-table .table-secondary {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .product-table-card .table-warning,
+body.dark-mode .orders-table-card .table-warning,
+body.dark-mode .payments-table-card .table-warning,
+body.dark-mode .category-table-card .table-warning,
+body.dark-mode .overview-table-card .table-warning,
+body.dark-mode .farm-table-card .table-warning,
+body.dark-mode .audit-log-table-card .table-warning,
+body.dark-mode .shop-orders-table-card .table-warning,
+body.dark-mode .staff-table-card .table-warning,
+body.dark-mode .user-table-card .table-warning,
+body.dark-mode .contact-messages-table .table-warning {
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    color: #FCD34D !important;
 }
 
 /* ==========================================   BADGES   ========================================== */
