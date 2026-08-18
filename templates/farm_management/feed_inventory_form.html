@@ -169,7 +169,7 @@
                                     <div class="batch-checkbox-list">
                                         {% for batch in category.list %}
                                         <div class="batch-checkbox-item" data-search="{{ batch.name|lower }} {{ batch.species.category.name|lower }} {{ batch.species.name|lower }}">
-                                            <input class="form-check-input" type="checkbox" name="compatible_batches" value="{{ batch.pk }}" id="batch_{{ batch.pk }}" {% if batch.pk in form.compatible_batches.value|default:[] %}checked{% endif %}>
+                                            <input class="form-check-input" type="checkbox" name="compatible_batches" value="{{ batch.pk }}" id="batch_{{ batch.pk }}"                                             {% if form.compatible_batches.value %}{% if batch.pk in form.compatible_batches.value %}checked{% endif %}{% endif %}>
                                             <label class="form-check-label" for="batch_{{ batch.pk }}">
                                                 {{ batch.name }} <span class="text-muted">({{ batch.species.category.name }} — {{ batch.species.name }})</span>
                                             </label>
