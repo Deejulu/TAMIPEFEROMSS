@@ -628,6 +628,125 @@ body {
     background-color: #6c757d;
     border-color: #6c757d;
 }
+
+/* Activity Stats */
+.activity-stats-container .stat-card {
+    animation: fadeInUp 0.6s ease-out both;
+}
+
+.activity-stats-container .stat-card:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.activity-stats-container .stat-card:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.activity-stats-container .stat-card:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+/* Activity Filter Card */
+.activity-filter-card {
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: white;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-filter-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: #2E7D32;
+    border-color: #e5e7eb;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32);
+    border-color: #1B5E20;
+    color: white;
+}
+
+.pagination .page-link:hover {
+    background: linear-gradient(135deg, #f8fdf8, #e8f5e9);
+    border-color: #2E7D32;
+    color: #1B5E20;
+}
+
+/* Action Badges */
+.badge.bg-success {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #EF4444, #DC2626) !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #FFC107, #FFB300) !important;
+}
+
+/* Responsive Activity Section */
+@media (max-width: 768px) {
+    .activity-stats-container .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .activity-filter-card .form-label {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .activity-stats-container .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .activity-stats-container .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    .activity-filter-card .card-body {
+        padding: 1rem;
+    }
+    
+    .pagination .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 414px) {
+    .activity-stats-container .stat-value {
+        font-size: 1.3rem;
+    }
+    
+    .activity-stats-container .stat-label {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .activity-stats-container .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .activity-stats-container .stat-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.25rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -950,6 +1069,225 @@ body {
                 </div>
                 {% endif %}
             </div>
+
+            {% if is_staff_user %}
+            <!-- Staff Activity Section -->
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="bi bi-activity"></i> Staff Activity
+                </h3>
+            </div>
+
+            <!-- Activity Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon orders">
+                            <i class="bi bi-list-ul"></i>
+                        </div>
+                        <div class="stat-value">{{ activity_stats.total_actions }}</div>
+                        <div class="stat-label">Total Actions</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon spent">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="stat-value">{{ activity_stats.actions_last_30_days }}</div>
+                        <div class="stat-label">Last 30 Days</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon orders" style="background: linear-gradient(135deg, #FFC107, #FFB300);">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-value" style="font-size: 1.25rem;">
+                            {% if activity_stats.most_recent_action %}
+                            {{ activity_stats.most_recent_action|date:"M d, Y" }}
+                            {% else %}
+                            Never
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Most Recent Action</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Filters -->
+            <div class="card mb-3" style="border: 1px solid rgba(229, 231, 235, 0.6); border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="actionFilter" class="form-label fw-semibold">Filter by Action</label>
+                            <select name="action" id="actionFilter" class="form-select">
+                                <option value="">All Actions</option>
+                                {% for value, label in action_choices %}
+                                <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="searchInput" class="form-label fw-semibold">Search</label>
+                            <input type="text" name="search" id="searchInput" class="form-control" placeholder="Search by object name or details..." value="{{ search_query }}">
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="bi bi-funnel"></i> Apply
+                            </button>
+                            <a href="{% url 'admin_dashboard:user_detail' viewed_user.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Log Table / Cards -->
+            <div class="history-table-container">
+                {% if activity_logs %}
+                <!-- Desktop Table View -->
+                <div class="table-responsive desktop-history-table">
+                    <table class="table history-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Action</th>
+                                <th>Object</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in activity_logs %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-semibold">{{ log.timestamp|date:"M d, Y" }}</span>
+                                        <span class="text-muted" style="font-size: 0.75rem;">{{ log.timestamp|date:"H:i" }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if log.action == 'create' %}
+                                    <span class="badge bg-success"><i class="bi bi-plus-circle"></i> Created</span>
+                                    {% elif log.action == 'update' %}
+                                    <span class="badge bg-primary"><i class="bi bi-pencil"></i> Updated</span>
+                                    {% elif log.action == 'delete' %}
+                                    <span class="badge bg-danger"><i class="bi bi-trash"></i> Deleted</span>
+                                    {% elif log.action == 'status_change' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> Status Change</span>
+                                    {% elif log.action == 'toggle' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-toggle-on"></i> Toggled</span>
+                                    {% elif log.action == 'reply' %}
+                                    <span class="badge bg-info"><i class="bi bi-reply"></i> Reply</span>
+                                    {% elif log.action == 'login' %}
+                                    <span class="badge bg-success"><i class="bi bi-box-arrow-in-right"></i> Login</span>
+                                    {% elif log.action == 'logout' %}
+                                    <span class="badge bg-secondary"><i class="bi bi-box-arrow-right"></i> Logout</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-dot"></i> {{ log.get_action_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">{{ log.target_model }}</span>
+                                    {% if log.target_id %}
+                                    <span class="text-muted">#{{ log.target_id }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.details|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="mobile-history-cards">
+                    {% for log in activity_logs %}
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <div class="history-card-title">
+                                <i class="bi bi-activity"></i>
+                                <strong>{{ log.target_model }}{% if log.target_id %} #{{ log.target_id }}{% endif %}</strong>
+                            </div>
+                            <div class="history-card-badge">
+                                {% if log.action == 'create' %}
+                                <span class="badge bg-success"><i class="bi bi-plus-circle"></i> Created</span>
+                                {% elif log.action == 'update' %}
+                                <span class="badge bg-primary"><i class="bi bi-pencil"></i> Updated</span>
+                                {% elif log.action == 'delete' %}
+                                <span class="badge bg-danger"><i class="bi bi-trash"></i> Deleted</span>
+                                {% elif log.action == 'status_change' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat"></i> Status Change</span>
+                                {% elif log.action == 'toggle' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-toggle-on"></i> Toggled</span>
+                                {% elif log.action == 'reply' %}
+                                <span class="badge bg-info"><i class="bi bi-reply"></i> Reply</span>
+                                {% elif log.action == 'login' %}
+                                <span class="badge bg-success"><i class="bi bi-box-arrow-in-right"></i> Login</span>
+                                {% elif log.action == 'logout' %}
+                                <span class="badge bg-secondary"><i class="bi bi-box-arrow-right"></i> Logout</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-dot"></i> {{ log.get_action_display }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="history-card-body">
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-calendar3"></i> Date</span>
+                                <span class="history-item-value">{{ log.timestamp|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="history-card-item">
+                                <span class="history-item-label"><i class="bi bi-info-circle"></i> Details</span>
+                                <span class="history-item-value">{{ log.details|default:"-" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-history">
+                    <i class="bi bi-activity"></i>
+                    <p>No activity found for this user.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Pagination -->
+            {% if activity_logs.has_other_pages %}
+            <nav aria-label="Activity log pagination" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if activity_logs.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?activity_page=1{% if action_filter %}&action={{ action_filter }}{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?activity_page={{ activity_logs.previous_page_number }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ activity_logs.number }} of {{ activity_logs.paginator.num_pages }}
+                            <span class="visually-hidden">(current)</span>
+                        </span>
+                    </li>
+                    
+                    {% if activity_logs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?activity_page={{ activity_logs.next_page_number }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?activity_page={{ activity_logs.paginator.num_pages }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}">Last &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-center text-muted mt-2">
+                Showing {{ activity_logs.start_index }} to {{ activity_logs.end_index }} of {{ activity_log_count }} entries
+            </p>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
 </div>

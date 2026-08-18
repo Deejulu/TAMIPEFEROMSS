@@ -286,6 +286,12 @@ class ProfileEditForm(forms.ModelForm):
     and require a separate re-verification flow.
     """
 
+    remove_profile_picture = forms.BooleanField(
+        label=_("Remove current photo"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+
     class Meta:
         model = CustomUser
         fields = [
@@ -315,6 +321,7 @@ class ProfileEditForm(forms.ModelForm):
             }),
             "profile_picture": forms.FileInput(attrs={
                 "class": "form-control",
+                "accept": "image/jpeg,image/png,image/webp,image/gif"
             }),
         }
         labels = {
@@ -324,6 +331,15 @@ class ProfileEditForm(forms.ModelForm):
             "username": _("Username"),
             "profile_picture": _("Profile Picture"),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show remove checkbox only when editing existing user with photo
+        if self.instance and self.instance.pk and self.instance.profile_picture:
+            self.fields['remove_profile_picture'].widget.attrs.pop('disabled', None)
+        else:
+            self.fields['remove_profile_picture'].widget.attrs['disabled'] = 'disabled'
+            self.fields['remove_profile_picture'].help_text = _("No photo to remove.")
 
     def clean_username(self):
         """
@@ -356,12 +372,11 @@ class ProfileEditForm(forms.ModelForm):
         """Validate profile picture file type and size."""
         picture = self.cleaned_data.get("profile_picture")
         if picture:
-            # Check file extension
             import os
             ext = os.path.splitext(picture.name)[1].lower()
-            if ext not in (".jpg", ".jpeg", ".png", ".gif"):
+            if ext not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
                 raise forms.ValidationError(
-                    _("Only JPG, PNG, and GIF images are allowed."),
+                    _("Only JPG, PNG, WebP, and GIF images are allowed."),
                     code="invalid_image_type",
                 )
             # Check file size (max 5MB)

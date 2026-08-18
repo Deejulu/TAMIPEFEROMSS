@@ -367,7 +367,7 @@ body {
             </div>
             {% endif %}
             
-            <form method="post" class="user-edit-form">
+            <form method="post" enctype="multipart/form-data" class="user-edit-form">
                 {% csrf_token %}
                 
                 <div class="form-group">
@@ -377,6 +377,50 @@ body {
                     {{ form.full_name }}
                     {{ form.full_name.errors }}
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Current Profile Photo</label>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        {% if viewed_user.profile_picture %}
+                            <img src="{{ viewed_user.profile_picture.url }}" alt="{{ viewed_user.full_name }}" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 1.5rem; font-weight: 700; color: #6B7280;">
+                                {{ viewed_user.full_name|first|upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <p class="mb-0 fw-semibold">Current photo</p>
+                            <p class="mb-0 text-muted small">64 x 64px preview</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.profile_picture.id_for_label }}" class="form-label">
+                        {{ form.profile_picture.label }}
+                    </label>
+                    {{ form.profile_picture }}
+                    {% if form.profile_picture.help_text %}
+                    <div class="help-text">{{ form.profile_picture.help_text }}</div>
+                    {% endif %}
+                    {{ form.profile_picture.errors }}
+                    <div id="adminPhotoPreview" class="mt-2" style="display: none;">
+                        <img src="" alt="Preview" class="rounded-circle" style="width: 64px; height: 64px; object-fit: cover;" id="adminPreviewImage">
+                        <p class="text-muted small mt-1">New photo preview</p>
+                    </div>
+                </div>
+                
+                {% if viewed_user.profile_picture %}
+                <div class="form-group">
+                    <div class="form-check">
+                        {{ form.remove_profile_picture }}
+                        <label class="form-check-label" for="{{ form.remove_profile_picture.id_for_label }}">
+                            Remove current photo
+                        </label>
+                    </div>
+                    {{ form.remove_profile_picture.errors }}
+                </div>
+                {% endif %}
                 
                 <div class="form-group">
                     <label for="{{ form.email.id_for_label }}" class="form-label">
@@ -441,4 +485,30 @@ body {
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
+    const previewContainer = document.getElementById('adminPhotoPreview');
+    const previewImage = document.getElementById('adminPreviewImage');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

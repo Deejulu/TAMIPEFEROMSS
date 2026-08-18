@@ -1,6 +1,7 @@
 """
 Forms for the admin dashboard.
 """
+import os
 import bleach
 from django import forms
 from django.contrib.auth import get_user_model
@@ -25,9 +26,25 @@ class UserEditForm(forms.ModelForm):
     the standard password reset flow.
     """
     
+    profile_picture = forms.ImageField(
+        label=_("Profile Photo"),
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp,image/gif'
+        }),
+        help_text=_("JPG, PNG, WebP or GIF. Max 5MB. Leave blank to keep existing photo."),
+    )
+    
+    remove_profile_picture = forms.BooleanField(
+        label=_("Remove current photo"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+    
     class Meta:
         model = User
-        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active']
+        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active', 'profile_picture']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -50,32 +67,48 @@ class UserEditForm(forms.ModelForm):
         }
         help_texts = {
             'role': _('Changing role affects user permissions and access levels.'),
-            'is_active': _('Unchecking will deactivate the user account.'),
+            'is_active': _('Unchecking this will deactivate the user account.'),
         }
     
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
+        # Show remove checkbox only when editing existing user with photo
+        if self.instance and self.instance.pk and self.instance.profile_picture:
+            self.fields['remove_profile_picture'].widget.attrs.pop('disabled', None)
+        else:
+            self.fields['remove_profile_picture'].widget.attrs['disabled'] = 'disabled'
+            self.fields['remove_profile_picture'].help_text = _("No photo to remove.")
+    
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            ext = os.path.splitext(picture.name)[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+                raise forms.ValidationError(
+                    _("Only JPG, PNG, WebP and GIF images are allowed."),
+                    code="invalid_image_type",
+                )
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError(
+                    _("Image size must be less than 5MB."),
+                    code="image_too_large",
+                )
+        return picture
     
     def clean(self):
-        """
-        Validate that admin doesn't lock themselves out.
-        """
         cleaned_data = super().clean()
         
         # If editing the current logged-in user
         if self.request_user and self.instance.pk == self.request_user.pk:
-            # Check if they're trying to deactivate themselves
             if not cleaned_data.get('is_active'):
                 raise forms.ValidationError(
                     _("You cannot deactivate your own account.")
                 )
             
-            # Check if they're trying to demote themselves from SUPER_ADMIN
             if self.request_user.role == User.Role.SUPER_ADMIN:
                 new_role = cleaned_data.get('role')
                 if new_role != User.Role.SUPER_ADMIN:
-                    # Check if there are other super admins
                     other_super_admins = User.objects.filter(
                         role=User.Role.SUPER_ADMIN,
                         is_active=True
@@ -88,6 +121,20 @@ class UserEditForm(forms.ModelForm):
                         )
         
         return cleaned_data
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        remove_photo = self.cleaned_data.get('remove_profile_picture')
+        
+        if remove_photo and user.profile_picture:
+            user.profile_picture.delete(save=False)
+            user.profile_picture = None
+        
+        if commit:
+            user.save()
+            self.save_m2m()
+        
+        return user
 
 
 class UserCreateForm(forms.ModelForm):
@@ -167,9 +214,19 @@ class UserCreateForm(forms.ModelForm):
         required=False,
     )
     
+    profile_picture = forms.ImageField(
+        label=_("Profile Photo"),
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp,image/gif'
+        }),
+        help_text=_("JPG, PNG, WebP or GIF. Max 5MB."),
+    )
+    
     class Meta:
         model = User
-        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active']
+        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active', 'profile_picture']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -200,6 +257,22 @@ class UserCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Make email not required by default - will be enforced in clean()
         self.fields['email'].required = False
+    
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            ext = os.path.splitext(picture.name)[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+                raise forms.ValidationError(
+                    _("Only JPG, PNG, WebP and GIF images are allowed."),
+                    code="invalid_image_type",
+                )
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError(
+                    _("Image size must be less than 5MB."),
+                    code="image_too_large",
+                )
+        return picture
     
     def clean(self):
         """
@@ -343,9 +416,19 @@ class StaffCreateForm(forms.ModelForm):
         help_text=_("Enter the same password for verification."),
     )
 
+    profile_picture = forms.ImageField(
+        label=_("Profile Photo"),
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp,image/gif'
+        }),
+        help_text=_("JPG, PNG, WebP or GIF. Max 5MB."),
+    )
+
     class Meta:
         model = User
-        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active']
+        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active', 'profile_picture']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -382,6 +465,22 @@ class StaffCreateForm(forms.ModelForm):
                 (User.Role.STAFF, User.Role.STAFF.label),
             ]
 
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            ext = os.path.splitext(picture.name)[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+                raise forms.ValidationError(
+                    _("Only JPG, PNG, WebP and GIF images are allowed."),
+                    code="invalid_image_type",
+                )
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError(
+                    _("Image size must be less than 5MB."),
+                    code="image_too_large",
+                )
+        return picture
+
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')
         password2 = self.cleaned_data.get('password2')
@@ -417,9 +516,25 @@ class StaffEditForm(forms.ModelForm):
     Super Admin can edit any staff account.
     Super Staff can only edit regular Staff accounts.
     """
+    profile_picture = forms.ImageField(
+        label=_("Profile Photo"),
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/png,image/webp,image/gif'
+        }),
+        help_text=_("JPG, PNG, WebP or GIF. Max 5MB. Leave blank to keep existing photo."),
+    )
+    
+    remove_profile_picture = forms.BooleanField(
+        label=_("Remove current photo"),
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+    
     class Meta:
         model = User
-        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active']
+        fields = ['full_name', 'email', 'phone_number', 'role', 'is_active', 'profile_picture']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -461,6 +576,29 @@ class StaffEditForm(forms.ModelForm):
                 (User.Role.STAFF, User.Role.STAFF.label),
                 (User.Role.SUPER_STAFF, User.Role.SUPER_STAFF.label),
             ]
+        
+        # Show remove checkbox only when editing existing user with photo
+        if self.instance and self.instance.pk and self.instance.profile_picture:
+            self.fields['remove_profile_picture'].widget.attrs.pop('disabled', None)
+        else:
+            self.fields['remove_profile_picture'].widget.attrs['disabled'] = 'disabled'
+            self.fields['remove_profile_picture'].help_text = _("No photo to remove.")
+
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            ext = os.path.splitext(picture.name)[1].lower()
+            if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+                raise forms.ValidationError(
+                    _("Only JPG, PNG, WebP and GIF images are allowed."),
+                    code="invalid_image_type",
+                )
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError(
+                    _("Image size must be less than 5MB."),
+                    code="image_too_large",
+                )
+        return picture
 
     def clean(self):
         cleaned_data = super().clean()
@@ -488,6 +626,20 @@ class StaffEditForm(forms.ModelForm):
                         )
         
         return cleaned_data
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        remove_photo = self.cleaned_data.get('remove_profile_picture')
+        
+        if remove_photo and user.profile_picture:
+            user.profile_picture.delete(save=False)
+            user.profile_picture = None
+        
+        if commit:
+            user.save()
+            self.save_m2m()
+        
+        return user
 
 
 class CategoryForm(forms.ModelForm):

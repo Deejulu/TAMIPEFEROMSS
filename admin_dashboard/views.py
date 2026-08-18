@@ -4,6 +4,7 @@ import secrets
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum, F
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -619,6 +620,47 @@ class UserDetailView(SuperAdminRequiredMixin, LoginRequiredMixin, DetailView):
         context['total_orders'] = orders.count()
         context['total_spent'] = sum(order.total for order in orders)
         context['can_delete'] = orders.count() == 0  # Can only delete if no order history
+
+        # Staff Activity Log for non-customer roles
+        if user.role != User.Role.CUSTOMER:
+            activity_logs_qs = AuditLogEntry.objects.filter(actor=user).select_related('actor').order_by('-timestamp')
+            
+            action_filter = self.request.GET.get('action', '')
+            if action_filter and action_filter in dict(AuditLogEntry.ACTION_CHOICES):
+                activity_logs_qs = activity_logs_qs.filter(action=action_filter)
+            
+            search_query = self.request.GET.get('search', '')
+            if search_query:
+                activity_logs_qs = activity_logs_qs.filter(
+                    Q(details__icontains=search_query) | 
+                    Q(target_model__icontains=search_query)
+                )
+            
+            total_actions = activity_logs_qs.count()
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+            actions_last_30_days = activity_logs_qs.filter(timestamp__gte=thirty_days_ago).count()
+            most_recent_action = activity_logs_qs.first().timestamp if activity_logs_qs.exists() else None
+            
+            paginator = Paginator(activity_logs_qs, 25)
+            page_number = self.request.GET.get('activity_page')
+            activity_logs = paginator.get_page(page_number)
+            
+            context['activity_logs'] = activity_logs
+            context['activity_log_count'] = total_actions
+            context['activity_log_page_obj'] = activity_logs
+            context['activity_log_paginator'] = paginator
+            context['activity_stats'] = {
+                'total_actions': total_actions,
+                'actions_last_30_days': actions_last_30_days,
+                'most_recent_action': most_recent_action,
+            }
+            context['action_filter'] = action_filter
+            context['search_query'] = search_query
+            context['action_choices'] = AuditLogEntry.ACTION_CHOICES
+            context['is_staff_user'] = True
+        else:
+            context['is_staff_user'] = False
+        
         return context
 
 
@@ -635,8 +677,16 @@ class UserCreateView(SuperAdminRequiredMixin, LoginRequiredMixin, CreateView):
         return UserCreateForm
     
     def form_valid(self, form):
+        # Process profile photo if uploaded
+        profile_picture = form.cleaned_data.get('profile_picture')
+        if profile_picture:
+            from accounts.utils import process_profile_photo
+            processed = process_profile_photo(profile_picture)
+            form.instance.profile_picture = processed
+        
         self.object = form.save()
         messages.success(self.request, f'User {self.object.full_name} ({self.object.email}) created successfully.')
+        log_audit(self.request, 'create', 'User', self.object.pk, f'Created user {self.object.full_name} ({self.object.email})')
         return HttpResponseRedirect(self.get_success_url())
     
     def get_context_data(self, **kwargs):
@@ -663,6 +713,13 @@ class UserEditView(SuperAdminRequiredMixin, LoginRequiredMixin, UpdateView):
         return kwargs
 
     def form_valid(self, form):
+        # Process profile photo if uploaded
+        profile_picture = form.cleaned_data.get('profile_picture')
+        if profile_picture:
+            from accounts.utils import process_profile_photo
+            processed = process_profile_photo(profile_picture)
+            form.instance.profile_picture = processed
+        
         response = super().form_valid(form)
         log_audit(self.request, 'update', 'User', self.object.pk, f'Updated user {self.object.full_name} ({self.object.email})')
         messages.success(self.request, f'User {self.object.full_name} updated successfully.')

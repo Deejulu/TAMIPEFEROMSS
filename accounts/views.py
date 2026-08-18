@@ -389,6 +389,18 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return reverse("accounts:profile")
 
     def form_valid(self, form):
+        # Process profile photo if uploaded
+        profile_picture = form.cleaned_data.get('profile_picture')
+        if profile_picture:
+            from accounts.utils import process_profile_photo
+            processed = process_profile_photo(profile_picture)
+            form.instance.profile_picture = processed
+        
+        # Handle photo removal
+        if form.cleaned_data.get('remove_profile_picture') and self.object.profile_picture:
+            self.object.profile_picture.delete(save=False)
+            self.object.profile_picture = None
+        
         messages.success(self.request, _("Your profile has been updated."))
         return super().form_valid(form)
 

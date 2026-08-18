@@ -658,6 +658,113 @@ class UserManagementTests(TestCase):
         self.assertIn(f'#{order.pk}', content)
         self.assertIn('100.00', content)
     
+    def test_user_detail_shows_staff_activity_for_non_customer(self):
+        """User detail page shows staff activity section for staff/farm manager."""
+        self.login(self.super_admin)
+        staff_user = User.objects.create_user(
+            email="staff_activity@test.com",
+            full_name="Staff Activity",
+            password="StaffPass123!",
+            role=CustomUser.Role.STAFF,
+        )
+        AuditLogEntry.objects.create(
+            actor=staff_user,
+            action='create',
+            target_model='Batch',
+            target_id=1,
+            details='Created batch "Test Batch"',
+        )
+        AuditLogEntry.objects.create(
+            actor=staff_user,
+            action='update',
+            target_model='FeedLog',
+            target_id=2,
+            details='Updated feed log',
+        )
+        response = self.client.get(reverse('admin_dashboard:user_detail', args=[staff_user.pk]))
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Staff Activity', content)
+        self.assertIn('Created', content)
+        self.assertIn('Updated', content)
+        self.assertIn('Test Batch', content)
+    
+    def test_user_detail_hides_staff_activity_for_customer(self):
+        """User detail page does not show staff activity section for customers."""
+        self.login(self.super_admin)
+        response = self.client.get(reverse('admin_dashboard:user_detail', args=[self.customer.pk]))
+        content = response.content.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('Staff Activity', content)
+    
+    def test_user_detail_activity_filter_by_action(self):
+        """User detail page filters activity logs by action type."""
+        self.login(self.super_admin)
+        AuditLogEntry.objects.create(
+            actor=self.farm_manager,
+            action='create',
+            target_model='Batch',
+            target_id=1,
+            details='Created batch',
+        )
+        AuditLogEntry.objects.create(
+            actor=self.farm_manager,
+            action='delete',
+            target_model='Species',
+            target_id=2,
+            details='Deleted species',
+        )
+        response = self.client.get(reverse('admin_dashboard:user_detail', args=[self.farm_manager.pk]) + '?action=create')
+        content = response.content.decode()
+        self.assertIn('Created', content)
+        self.assertNotIn('Deleted species', content)
+    
+    def test_user_detail_activity_stats(self):
+        """User detail page shows correct activity statistics."""
+        self.login(self.super_admin)
+        staff_user = User.objects.create_user(
+            email="staff_stats@test.com",
+            full_name="Staff Stats",
+            password="StaffPass123!",
+            role=CustomUser.Role.STAFF,
+        )
+        now = timezone.now()
+        entry1 = AuditLogEntry.objects.create(
+            actor=staff_user,
+            action='create',
+            target_model='Batch',
+            target_id=1,
+            details='Created batch',
+        )
+        entry1.timestamp = now
+        entry1.save(update_fields=['timestamp'])
+        
+        entry2 = AuditLogEntry.objects.create(
+            actor=staff_user,
+            action='update',
+            target_model='FeedLog',
+            target_id=2,
+            details='Updated feed log',
+        )
+        entry2.timestamp = now - timedelta(days=10)
+        entry2.save(update_fields=['timestamp'])
+        
+        entry3 = AuditLogEntry.objects.create(
+            actor=staff_user,
+            action='delete',
+            target_model='Species',
+            target_id=3,
+            details='Deleted species',
+        )
+        entry3.timestamp = now - timedelta(days=45)
+        entry3.save(update_fields=['timestamp'])
+        
+        response = self.client.get(reverse('admin_dashboard:user_detail', args=[staff_user.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['activity_stats']['total_actions'], 3)
+        self.assertEqual(response.context['activity_stats']['actions_last_30_days'], 2)
+        self.assertEqual(response.context['activity_log_count'], 3)
+    
     # === Edit View Tests ===
     
     def test_user_edit_view_loads(self):

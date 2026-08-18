@@ -96,7 +96,7 @@ if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-            conn_max_age=600,
+            conn_max_age=0,
         )
     }
 else:
@@ -205,6 +205,7 @@ PAYSTACK_CALLBACK_URL = os.environ.get(
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_BUCKET_NAME = os.environ.get("SUPABASE_BUCKET_NAME", "product-images")
+PROFILE_PHOTO_BUCKET_NAME = os.environ.get("PROFILE_PHOTO_BUCKET_NAME", "profile_photos")
 
 # Test mode detection - disables notification signals and other unnecessary operations during testing
 import sys

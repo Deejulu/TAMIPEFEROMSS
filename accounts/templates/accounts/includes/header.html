@@ -145,9 +145,13 @@
              aria-expanded="false">
 
             <!-- Avatar -->
-            <div class="user-avatar">
-              {{ user.full_name|slice:":1"|upper }}
-            </div>
+            {% if user.profile_picture %}
+              <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="user-avatar" style="object-fit: cover;">
+            {% else %}
+              <div class="user-avatar">
+                {{ user.full_name|slice:":1"|upper }}
+              </div>
+            {% endif %}
 
             <!-- User Name (hidden on mobile) -->
             <span class="d-none d-md-inline" style="font-weight: 500; font-size: 14px;">

@@ -2,8 +2,24 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+import os
+import time
 
 from .constants import SECURITY_QUESTIONS
+
+
+def profile_photo_upload_to(instance, filename):
+    """
+    Generate upload path for profile photos.
+    
+    Stores files in profile_photos/ with format: {username}_{timestamp}.{ext}
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    timestamp = int(time.time())
+    username = instance.username or 'user'
+    # Sanitize username to be filesystem-safe
+    username = ''.join(c for c in username if c.isalnum() or c in '-_')
+    return f"profile_photos/{username}_{timestamp}{ext}"
 
 
 class CustomUserManager(BaseUserManager):
@@ -141,7 +157,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     profile_picture = models.ImageField(
         _("profile picture"),
-        upload_to="profile_pictures/",
+        upload_to=profile_photo_upload_to,
         blank=True,
         null=True,
     )

@@ -20,13 +20,19 @@
         </div>
         <div class="card-body">
             <div class="text-center mb-4">
-                {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle profile-avatar dashboard-avatar-ring profile-avatar-lg mb-3">
-                {% else %}
-                    <div class="rounded-circle profile-avatar-placeholder dashboard-avatar-ring profile-avatar-lg mb-3">
-                        {{ user.full_name|first|upper }}
-                    </div>
-                {% endif %}
+                <div id="profilePhotoPreview" class="position-relative d-inline-block">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="rounded-circle profile-avatar dashboard-avatar-ring profile-avatar-lg mb-3" id="currentProfilePhoto">
+                    {% else %}
+                        <div class="rounded-circle profile-avatar-placeholder dashboard-avatar-ring profile-avatar-lg mb-3" id="currentProfilePhoto">
+                            {{ user.full_name|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div id="newPhotoPreview" class="mt-2" style="display: none;">
+                    <img src="" alt="Preview" class="rounded-circle profile-avatar dashboard-avatar-ring profile-avatar-lg mb-2" id="previewImage">
+                    <p class="text-muted small">{% trans "New photo preview" %}</p>
+                </div>
             </div>
 
             <form method="post" enctype="multipart/form-data" novalidate>
@@ -122,8 +128,22 @@
                             {% endfor %}
                         </div>
                     {% endif %}
-                    <div class="form-text">{% trans "Accepted formats: JPG, PNG, GIF. Max size: 5MB." %}</div>
+                    <div class="form-text">{% trans "Accepted formats: JPG, PNG, WebP, GIF. Max size: 5MB." %}</div>
                 </div>
+
+                {% if user.profile_picture %}
+                <div class="design-form-group">
+                    <div class="form-check">
+                        {{ form.remove_profile_picture }}
+                        <label class="form-check-label" for="{{ form.remove_profile_picture.id_for_label }}">
+                            {{ form.remove_profile_picture.label }}
+                        </label>
+                    </div>
+                    {% if form.remove_profile_picture.help_text %}
+                        <div class="form-text">{% trans form.remove_profile_picture.help_text %}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
 
                 <div class="design-form-actions">
                     <button type="submit" class="btn btn-primary btn-lg">
@@ -140,4 +160,30 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
+    const previewContainer = document.getElementById('newPhotoPreview');
+    const previewImage = document.getElementById('previewImage');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

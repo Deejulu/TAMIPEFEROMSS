@@ -2,15 +2,25 @@
 Utility functions for the accounts app.
 
 This module provides reusable helper functions for user management,
-including automatic username generation with collision detection.
+including automatic username generation with collision detection,
+and profile photo processing.
 """
 
 import re
 import unicodedata
 from datetime import datetime
+from io import BytesIO
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.utils.translation import gettext_lazy as _
+
+try:
+    from PIL import Image
+    HAS_PILLOW = True
+except ImportError:
+    HAS_PILLOW = False
 
 
 def generate_unique_username(first_name: str, last_name: str, year: int = None) -> str:
@@ -91,3 +101,84 @@ def generate_unique_username_legacy(first_name: str, last_name: str) -> str:
 
     import time
     return f"{base}{int(time.time())}"
+
+
+def process_profile_photo(uploaded_file):
+    """
+    Process an uploaded profile photo:
+    - Resize to max 500x500 while maintaining aspect ratio
+    - Crop to square from center
+    - Convert to RGB for JPEG compatibility
+    - Optimize and compress
+    
+    Returns a ContentFile with the processed image, or the original file
+    if Pillow is not available or processing fails.
+    """
+    if not HAS_PILLOW:
+        return uploaded_file
+
+    try:
+        image = Image.open(uploaded_file)
+        
+        # Convert to RGB if necessary (e.g., RGBA -> RGB for JPEG)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
+            image = background
+        elif image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Get current dimensions
+        width, height = image.size
+        
+        # Crop to square from center
+        min_dim = min(width, height)
+        left = (width - min_dim) / 2
+        top = (height - min_dim) / 2
+        right = (width + min_dim) / 2
+        bottom = (height + min_dim) / 2
+        image = image.crop((left, top, right, bottom))
+        
+        # Resize to max 500x500
+        image = image.resize((500, 500), Image.Resampling.LANCZOS)
+        
+        # Save to BytesIO
+        output = BytesIO()
+        
+        # Determine format
+        original_name = uploaded_file.name.lower()
+        if original_name.endswith('.png'):
+            image.save(output, format='PNG', optimize=True)
+            content_type = 'image/png'
+            extension = '.png'
+        elif original_name.endswith('.gif'):
+            # For GIF, we keep it as is if it's animated, otherwise convert to PNG
+            image.save(output, format='PNG', optimize=True)
+            content_type = 'image/png'
+            extension = '.png'
+        elif original_name.endswith('.webp'):
+            image.save(output, format='WEBP', quality=85)
+            content_type = 'image/webp'
+            extension = '.webp'
+        else:
+            # Default to JPEG
+            image.save(output, format='JPEG', quality=85, optimize=True)
+            content_type = 'image/jpeg'
+            extension = '.jpg'
+        
+        output.seek(0)
+        
+        # Create new filename with processed extension
+        new_name = uploaded_file.name
+        if '.' in new_name:
+            new_name = new_name.rsplit('.', 1)[0] + extension
+        else:
+            new_name = new_name + extension
+        
+        return ContentFile(output.read(), name=new_name)
+    
+    except Exception:
+        # If anything goes wrong, return the original file
+        return uploaded_file

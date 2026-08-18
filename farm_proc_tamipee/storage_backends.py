@@ -22,8 +22,15 @@ class SupabaseStorage(FileSystemStorage):
         super().__init__(*args, **kwargs)
         self.supabase_url = getattr(settings, 'SUPABASE_URL', '')
         self.supabase_key = getattr(settings, 'SUPABASE_SERVICE_ROLE_KEY', '')
-        self.bucket_name = getattr(settings, 'SUPABASE_BUCKET_NAME', 'product-images')
+        self.default_bucket = getattr(settings, 'SUPABASE_BUCKET_NAME', 'product-images')
+        self.profile_photo_bucket = getattr(settings, 'PROFILE_PHOTO_BUCKET_NAME', 'profile_photos')
         self.use_supabase = bool(self.supabase_url and self.supabase_key)
+
+    def _get_bucket_for_name(self, name):
+        """Return the appropriate Supabase bucket based on file path."""
+        if name.startswith('profile_photos/') or name.startswith('profile_photos\\'):
+            return self.profile_photo_bucket
+        return self.default_bucket
 
     def _get_supabase_headers(self):
         return {
@@ -40,11 +47,18 @@ class SupabaseStorage(FileSystemStorage):
         file_content = content.read()
         content.seek(0)
 
-        # Generate a unique path to avoid collisions
-        ext = os.path.splitext(name)[1]
-        unique_name = f"{uuid.uuid4().hex}{ext}"
+        bucket = self._get_bucket_for_name(name)
 
-        upload_url = f"{self.supabase_url}/storage/v1/object/{self.bucket_name}/{unique_name}"
+        # For profile photos, preserve the provided name format
+        # For other files, generate a UUID to avoid collisions
+        if bucket == self.profile_photo_bucket:
+            # Extract just the filename from the path for Supabase
+            filename = os.path.basename(name)
+        else:
+            ext = os.path.splitext(name)[1]
+            filename = f"{uuid.uuid4().hex}{ext}"
+
+        upload_url = f"{self.supabase_url}/storage/v1/object/{bucket}/{filename}"
 
         req = Request(
             upload_url,
@@ -58,7 +72,7 @@ class SupabaseStorage(FileSystemStorage):
                 result = json.loads(response.read().decode('utf-8'))
                 if result.get('Key') or result.get('name'):
                     # Return the public URL
-                    public_url = f"{self.supabase_url}/storage/v1/object/public/{self.bucket_name}/{unique_name}"
+                    public_url = f"{self.supabase_url}/storage/v1/object/public/{bucket}/{filename}"
                     return public_url
         except URLError as e:
             print(f"Supabase upload failed: {e}")
@@ -70,7 +84,6 @@ class SupabaseStorage(FileSystemStorage):
             public_url = self._upload_to_supabase(name, content)
             if public_url:
                 # Store the URL in the database instead of a local path
-                # We return the URL as the "name" so it can be retrieved later
                 return public_url
 
         # Fallback to local storage
@@ -78,7 +91,6 @@ class SupabaseStorage(FileSystemStorage):
 
     def exists(self, name):
         if self.use_supabase and name.startswith('http'):
-            # If name is a URL, we consider it as existing
             return True
         return super().exists(name)
 
@@ -89,7 +101,6 @@ class SupabaseStorage(FileSystemStorage):
 
     def open(self, name, mode='rb'):
         if self.use_supabase and name.startswith('http'):
-            # For URLs, return a ContentFile with the remote content
             req = Request(name, method='GET')
             try:
                 with urlopen(req, timeout=30) as response:

@@ -2411,6 +2411,179 @@ class SecurityAnswerExposureTests(TestCase):
             response = self.client.get(url)
             if response.status_code == 200:
                 content = response.content.decode()
-                self.assertNotIn("Fluffy", content)
-                self.assertNotIn("Lagos", content)
-                self.assertNotIn("Springfield", content)
+        self.assertNotIn("Fluffy", content)
+        self.assertNotIn("Lagos", content)
+        self.assertNotIn("Springfield", content)
+
+
+# =============================================================================
+# Profile Photo Upload Tests
+# =============================================================================
+
+class ProfilePhotoUploadTests(TestCase):
+    """Tests for profile photo upload functionality."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="photouser@example.com",
+            full_name="Photo User",
+            password="StrongPass1",
+            username="photouser",
+        )
+        self.client.login(username=self.user.username, password="StrongPass1")
+
+    def test_profile_edit_form_accepts_valid_jpeg(self):
+        """ProfileEditForm should accept a valid JPEG image."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from accounts.forms import ProfileEditForm
+        from PIL import Image as PILImage
+        import io
+
+        image = PILImage.new('RGB', (100, 100), color='red')
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        jpeg_file = SimpleUploadedFile(
+            "photo.jpg", buffer.read(), content_type="image/jpeg"
+        )
+        form = ProfileEditForm(
+            data={
+                "full_name": self.user.full_name,
+                "phone_number": self.user.phone_number,
+                "default_delivery_address": self.user.default_delivery_address,
+                "username": self.user.username,
+            },
+            files={"profile_picture": jpeg_file},
+            instance=self.user,
+        )
+        self.assertTrue(form.is_valid(), msg=str(form.errors))
+
+    def test_profile_edit_form_rejects_invalid_file_type(self):
+        """ProfileEditForm should reject non-image files."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from accounts.forms import ProfileEditForm
+
+        txt_file = SimpleUploadedFile(
+            "photo.txt", b"not an image", content_type="text/plain"
+        )
+        form = ProfileEditForm(
+            data={
+                "full_name": self.user.full_name,
+                "phone_number": self.user.phone_number,
+                "default_delivery_address": self.user.default_delivery_address,
+                "username": self.user.username,
+            },
+            files={"profile_picture": txt_file},
+            instance=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("profile_picture", form.errors)
+
+    def test_profile_edit_form_rejects_oversized_image(self):
+        """ProfileEditForm should reject images larger than 5MB."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from accounts.forms import ProfileEditForm
+        from PIL import Image as PILImage
+        import io
+
+        image = PILImage.new('RGB', (5000, 5000), color='blue')
+        buffer = io.BytesIO()
+        image.save(buffer, format='BMP')
+        buffer.seek(0)
+        large_file = SimpleUploadedFile(
+            "large.bmp", buffer.read(), content_type="image/bmp"
+        )
+        form = ProfileEditForm(
+            data={
+                "full_name": self.user.full_name,
+                "phone_number": self.user.phone_number,
+                "default_delivery_address": self.user.default_delivery_address,
+                "username": self.user.username,
+            },
+            files={"profile_picture": large_file},
+            instance=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("profile_picture", form.errors)
+
+    def test_admin_user_edit_form_accepts_valid_image(self):
+        """Admin UserEditForm should accept a valid profile photo."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from admin_dashboard.forms import UserEditForm
+        from PIL import Image as PILImage
+        import io
+
+        super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            username="superadmin",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+            is_superuser=True,
+        )
+
+        image = PILImage.new('RGB', (100, 100), color='green')
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        jpeg_file = SimpleUploadedFile(
+            "admin_photo.jpg", buffer.read(), content_type="image/jpeg"
+        )
+        form = UserEditForm(
+            data={
+                "full_name": self.user.full_name,
+                "email": self.user.email,
+                "phone_number": self.user.phone_number,
+                "role": self.user.role,
+                "is_active": self.user.is_active,
+                "remove_profile_picture": False,
+            },
+            files={"profile_picture": jpeg_file},
+            instance=self.user,
+            request_user=super_admin,
+        )
+        self.assertTrue(form.is_valid(), msg=str(form.errors))
+
+    def test_admin_user_edit_form_removes_photo(self):
+        """Admin UserEditForm should remove photo when checkbox is checked."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from admin_dashboard.forms import UserEditForm
+        from PIL import Image as PILImage
+        import io
+
+        super_admin = User.objects.create_user(
+            email="superadmin2@example.com",
+            full_name="Super Admin 2",
+            password="StrongPass1!",
+            username="superadmin2",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+            is_superuser=True,
+        )
+
+        image = PILImage.new('RGB', (100, 100), color='red')
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG')
+        buffer.seek(0)
+        self.user.profile_picture = SimpleUploadedFile(
+            "old.jpg", buffer.read(), content_type="image/jpeg"
+        )
+        self.user.save()
+
+        form = UserEditForm(
+            data={
+                "full_name": self.user.full_name,
+                "email": self.user.email,
+                "phone_number": self.user.phone_number,
+                "role": self.user.role,
+                "is_active": self.user.is_active,
+                "remove_profile_picture": True,
+            },
+            files={},
+            instance=self.user,
+            request_user=super_admin,
+        )
+        self.assertTrue(form.is_valid())
+        user = form.save()
+        self.assertFalse(user.profile_picture)
