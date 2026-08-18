@@ -241,6 +241,11 @@ class CustomerOrderDetailView(LoginRequiredMixin, DetailView):
             .order_by("-created_at")
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["timeline_progress"] = self.object.timeline_progress
+        return context
+
 
 class CustomerPaymentHistoryView(LoginRequiredMixin, ListView):
     """Display the authenticated customer's payment history."""

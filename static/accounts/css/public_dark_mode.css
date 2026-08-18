@@ -833,3 +833,133 @@ body.dark-mode .public-dark-mode-toggle:hover {
         font-size: 0.95rem;
     }
 }
+
+/* ==========================================   ORDER DETAIL PAGE ========================================== */
+
+body.dark-mode .order-detail-hero {
+    background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 50%, #252525 100%) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .order-detail-hero::before {
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, transparent 70%) !important;
+}
+
+body.dark-mode .order-detail-hero::after {
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.04) 0%, transparent 70%) !important;
+}
+
+body.dark-mode .order-number-display {
+    color: #E0E0E0 !important;
+}
+
+body.dark-mode .order-detail-date {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .order-detail-hero-divider {
+    background: linear-gradient(90deg, var(--farm-accent) 0%, var(--farm-secondary-light) 100%) !important;
+}
+
+body.dark-mode .order-status-glow {
+    box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.2) !important;
+}
+
+body.dark-mode .order-status-glow.order-status-pending {
+    background: linear-gradient(135deg, #B8860B, #DAA520) !important;
+    color: #1A1A1A !important;
+}
+
+body.dark-mode .order-status-glow.order-status-confirmed {
+    background: linear-gradient(135deg, #0E7490, #06B6D4) !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-status-glow.order-status-processing {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32) !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-status-glow.order-status-shipped {
+    background: linear-gradient(135deg, #4B5563, #6B7280) !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-status-glow.order-status-delivered {
+    background: linear-gradient(135deg, #15803D, #22C55E) !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-status-glow.order-status-cancelled {
+    background: linear-gradient(135deg, #B91C1C, #EF4444) !important;
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-item-row:hover {
+    background-color: var(--farm-bg-alt) !important;
+    border-left-color: var(--farm-accent) !important;
+}
+
+body.dark-mode .order-item-name {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .order-item-price {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .order-items-footer {
+    background: var(--farm-bg-alt) !important;
+    border-top-color: var(--farm-border-light) !important;
+}
+
+body.dark-mode .order-total-display {
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .gold-icon-bg {
+    background: linear-gradient(135deg, var(--farm-accent) 0%, var(--farm-accent-dark) 100%) !important;
+    color: var(--farm-primary-dark) !important;
+}
+
+body.dark-mode .delivery-detail-icon {
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.2) 0%, rgba(201, 168, 76, 0.1) 100%) !important;
+    border-color: rgba(201, 168, 76, 0.3) !important;
+    color: var(--farm-accent) !important;
+}
+
+body.dark-mode .delivery-detail-label {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .delivery-detail-value {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .delivery-eta {
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.1) 0%, rgba(201, 168, 76, 0.05) 100%) !important;
+    border-left-color: var(--farm-accent) !important;
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .order-timeline-track {
+    background: var(--farm-border) !important;
+}
+
+body.dark-mode .order-timeline-step--upcoming .order-timeline-marker {
+    background: var(--farm-white) !important;
+    border-color: var(--farm-border) !important;
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .order-timeline-step--upcoming .order-timeline-label {
+    color: var(--farm-text-muted) !important;
+}
+
+body.dark-mode .order-timeline-step--done .order-timeline-label {
+    color: var(--farm-text) !important;
+}
+
+body.dark-mode .order-timeline-step--current .order-timeline-label {
+    color: var(--farm-accent) !important;
+}

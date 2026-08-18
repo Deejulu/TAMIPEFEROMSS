@@ -39,6 +39,7 @@ class Product(models.Model):
     image = models.ImageField(
         _("image"),
         upload_to="products/",
+        max_length=255,
         blank=True,
         null=True,
     )
@@ -319,6 +320,19 @@ class Order(models.Model):
                 state = "upcoming"
             steps.append({"code": code, "label": labels[code], "state": state})
         return steps
+
+    @property
+    def timeline_progress(self):
+        if self.status == self.Status.CANCELLED:
+            return 0
+        try:
+            current_index = self.STATUS_FLOW.index(self.status)
+        except ValueError:
+            return 0
+        max_index = len(self.STATUS_FLOW) - 1
+        if max_index <= 0:
+            return 100
+        return round((current_index / max_index) * 100)
 
 
 class OrderItem(models.Model):

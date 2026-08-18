@@ -3203,3 +3203,144 @@ body.dark-mode .message-thread-subject {
 body.dark-mode .message-thread-text {
     color: var(--text-muted) !important;
 }
+
+/* ==========================================   ORDER DETAIL PAGE ========================================== */
+
+body.dark-mode .order-detail-hero {
+    background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 50%, #252525 100%) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    border-color: rgba(201, 168, 76, 0.15) !important;
+}
+
+body.dark-mode .order-detail-hero::before {
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.06) 0%, transparent 70%) !important;
+}
+
+body.dark-mode .order-detail-hero::after {
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.03) 0%, transparent 70%) !important;
+}
+
+body.dark-mode .order-detail-header h2 {
+    color: #F5F5F5 !important;
+}
+
+body.dark-mode .order-number-accent {
+    color: var(--gold-accent) !important;
+}
+
+body.dark-mode .order-detail-back-btn {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-body) !important;
+}
+
+body.dark-mode .order-detail-back-btn:hover {
+    background: var(--bg-body-alt) !important;
+    border-color: var(--gold-accent) !important;
+    color: var(--gold-accent) !important;
+}
+
+body.dark-mode .order-detail-meta-item {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .order-detail-meta-item i {
+    color: var(--gold-accent) !important;
+}
+
+body.dark-mode .order-detail-hero-divider {
+    background: linear-gradient(90deg, var(--gold-accent) 0%, var(--light-green) 100%) !important;
+}
+
+body.dark-mode .order-detail-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-card) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .order-detail-card:hover {
+    border-color: rgba(201, 168, 76, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .order-section-title {
+    color: #FFFFFF !important;
+}
+
+body.dark-mode .order-section-title i {
+    color: var(--gold-accent) !important;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.08) 100%) !important;
+    border-color: rgba(201, 168, 76, 0.3) !important;
+}
+
+body.dark-mode .order-detail-row {
+    border-bottom-color: var(--border-light) !important;
+}
+
+body.dark-mode .order-detail-row:hover {
+    padding-left: 0.5rem;
+}
+
+body.dark-mode .order-detail-label {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .order-detail-label i {
+    color: var(--gold-accent) !important;
+}
+
+body.dark-mode .order-detail-value {
+    color: var(--text-body) !important;
+}
+
+body.dark-mode .design-table tfoot tr {
+    background: linear-gradient(135deg, #1A1A1A, #242424) !important;
+    border-top-color: var(--border-color) !important;
+}
+
+body.dark-mode .design-table tfoot td {
+    color: var(--gold-accent) !important;
+}
+
+body.dark-mode .status-update-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border-card) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .status-update-card:hover {
+    border-color: rgba(201, 168, 76, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .status-update-card .design-form-select {
+    background: var(--bg-input) !important;
+    border-color: var(--border-input) !important;
+    color: var(--text-body) !important;
+}
+
+body.dark-mode .status-update-card .design-form-select:focus {
+    border-color: var(--gold-accent) !important;
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15) !important;
+}
+
+/* ---- Corner Accents & Torches ---- */
+body.dark-mode .corner-accent {
+    border-top-color: var(--gold-accent) !important;
+    border-left-color: var(--gold-accent) !important;
+    border-bottom-color: var(--gold-accent) !important;
+    border-right-color: var(--gold-accent) !important;
+}
+
+body.dark-mode .torch-decoration span {
+    background: linear-gradient(135deg, var(--gold-accent), var(--gold-dark)) !important;
+    box-shadow: 0 0 10px rgba(201, 168, 76, 0.5) !important;
+}
+
+body.dark-mode .order-detail-header h2 {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-mode .order-detail-back-btn {
+    text-shadow: none !important;
+}

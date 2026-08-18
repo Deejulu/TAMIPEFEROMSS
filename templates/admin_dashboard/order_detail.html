@@ -4,40 +4,254 @@
 {% block extra_head %}
 {{ block.super }}
 <style>
+/* ==========================================   ORDER DETAIL - PREMIUM STYLES ========================================== */
+
 .order-detail-container {
     max-width: 1400px;
     margin: 0 auto;
     animation: fadeInDown 0.4s ease-out;
 }
 
+/* ---- Premium Header ---- */
+.order-detail-hero {
+    background: linear-gradient(135deg, #FAF9F6 0%, #F5ECD7 50%, #F3F1EC 100%);
+    border-radius: 16px;
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    margin-bottom: 1.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+/* ---- 4 Corner Accents ---- */
+.corner-accent {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.corner-accent.tl {
+    top: 16px;
+    left: 16px;
+    border-top: 3px solid #0F2A1D;
+    border-left: 3px solid #0F2A1D;
+}
+
+.corner-accent.tr {
+    top: 16px;
+    right: 16px;
+    border-top: 3px solid #0F2A1D;
+    border-right: 3px solid #0F2A1D;
+}
+
+.corner-accent.bl {
+    bottom: 16px;
+    left: 16px;
+    border-bottom: 3px solid #0F2A1D;
+    border-left: 3px solid #0F2A1D;
+}
+
+.corner-accent.br {
+    bottom: 16px;
+    right: 16px;
+    border-bottom: 3px solid #0F2A1D;
+    border-right: 3px solid #0F2A1D;
+}
+
+/* ---- Torch Decorations (ornamental dots + lines at corners) ---- */
+.torch-decoration {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.torch-decoration span {
+    display: block;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #D4AF37, #C5A028);
+    box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
+}
+
+.torch-decoration span:first-child {
+    width: 8px;
+    height: 8px;
+}
+
+.torch-decoration span:last-child {
+    width: 5px;
+    height: 5px;
+    opacity: 0.7;
+}
+
+.torch-tl {
+    top: 20px;
+    left: 52px;
+    flex-direction: row;
+}
+
+.torch-tr {
+    top: 20px;
+    right: 52px;
+    flex-direction: row-reverse;
+}
+
+.torch-bl {
+    bottom: 20px;
+    left: 52px;
+    flex-direction: row;
+}
+
+.torch-br {
+    bottom: 20px;
+    right: 52px;
+    flex-direction: row-reverse;
+}
+
+.order-detail-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.order-detail-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(27, 94, 32, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
 .order-detail-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
     flex-wrap: wrap;
     gap: 1rem;
+    position: relative;
+    z-index: 1;
 }
 
 .order-detail-header h2 {
     font-family: "Poppins", sans-serif;
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: #1B5E20;
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 900;
+    color: #0F2A1D;
     margin: 0;
+    letter-spacing: -0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+.order-detail-header h2 i {
+    color: #D4AF37;
+    font-size: 0.95em;
+    filter: drop-shadow(0 1px 1px rgba(201, 168, 76, 0.3));
+}
+
+.order-number-accent {
+    color: #D4AF37;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.order-detail-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    letter-spacing: 0.01em;
+}
+
+.order-detail-back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #9CA3AF;
+    color: #1B5E20;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.order-detail-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.order-detail-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    color: #6B6B6B;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.order-detail-meta-item i {
+    color: #D4AF37;
+    font-size: 1rem;
+    filter: drop-shadow(0 1px 1px rgba(201, 168, 76, 0.25));
+}
+
+.order-detail-hero-divider {
+    height: 3px;
+    background: linear-gradient(90deg, #D4AF37 0%, #1B5E20 100%);
+    border-radius: 2px;
+    margin-top: 1.25rem;
+    opacity: 0.5;
+    position: relative;
+    z-index: 1;
+}
+
+/* ---- Premium Cards ---- */
 .order-detail-card {
     border: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 1.5rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    border: 1px solid rgba(229, 231, 235, 0.6);
 }
 
 .order-detail-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    border-color: rgba(201, 168, 76, 0.3);
 }
 
 .order-detail-card .card-gold-bar-top {
@@ -46,67 +260,119 @@
 }
 
 .order-detail-card .card-body {
-    padding: 1.5rem;
+    padding: 1.75rem;
 }
 
 .order-detail-card .card-body.p-0 {
     padding: 0;
 }
 
+/* ---- Section Titles ---- */
+.order-section-title {
+    font-family: "Poppins", sans-serif;
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    font-weight: 800;
+    color: #0F2A1D;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.order-section-title i {
+    color: #D4AF37;
+    font-size: 1.2rem;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.12) 0%, rgba(201, 168, 76, 0.06) 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    box-shadow: 0 2px 6px rgba(201, 168, 76, 0.15);
+}
+
+/* ---- Detail Rows ---- */
 .order-detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.875rem 0;
+    padding: 1rem 0;
     border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
 }
 
 .order-detail-row:last-child {
     border-bottom: none;
 }
 
+.order-detail-row:hover {
+    padding-left: 0.5rem;
+}
+
 .order-detail-label {
     font-weight: 700;
-    color: #4B5563;
+    color: #6B6B6B;
     font-size: 0.8125rem;
     text-transform: uppercase;
-    letter-spacing: 0.075em;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-detail-label i {
+    color: #D4AF37;
+    font-size: 0.9rem;
 }
 
 .order-detail-value {
     color: #1f2937;
-    font-weight: 500;
+    font-weight: 600;
     text-align: right;
+    font-size: 0.9375rem;
 }
 
-.order-section-title {
-    font-family: "Poppins", sans-serif;
-    font-size: 1.25rem;
+.order-detail-value .badge {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Tables ---- */
+.design-table tfoot tr {
+    background: linear-gradient(135deg, #f8fdf8, #f9faf9);
+    border-top: 2px solid #E8F5E9;
+}
+
+.design-table tfoot td {
     font-weight: 700;
     color: #1B5E20;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    font-size: 1rem;
 }
 
-.order-section-title i {
-    color: #D4AF37;
-}
-
-.design-table tbody tr:hover {
-    background: linear-gradient(90deg, #f8fdf8, #ffffff);
-    transform: translateY(-2px) translateX(4px);
-    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.12);
-    border-left: 3px solid #2E7D32;
-}
-
+/* ---- Status Update Card ---- */
 .status-update-card {
     border: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
     border-radius: 16px;
     overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    position: sticky;
+    top: 1.5rem;
+}
+
+.status-update-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    border-color: rgba(201, 168, 76, 0.3);
 }
 
 .status-update-card .card-gold-bar-top {
@@ -115,36 +381,106 @@
 }
 
 .status-update-card .card-body {
-    padding: 1.5rem;
+    padding: 1.75rem;
 }
 
+.status-update-card .design-btn-primary {
+    background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(27, 94, 32, 0.15);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.status-update-card .design-btn-primary:hover {
+    background: linear-gradient(135deg, #123e16, #1B5E20, #2E7D32);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(27, 94, 32, 0.25);
+    color: white;
+}
+
+.status-update-card .design-form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    background: white;
+}
+
+.status-update-card .design-form-select:focus {
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    outline: none;
+}
+
+/* ---- Animations ---- */
+.order-detail-card,
+.status-update-card {
+    opacity: 0;
+    animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.order-detail-card:nth-child(1) { animation-delay: 0.1s; }
+.order-detail-card:nth-child(2) { animation-delay: 0.2s; }
+.order-detail-card:nth-child(3) { animation-delay: 0.3s; }
+
+.status-update-card {
+    animation-delay: 0.15s;
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 768px) {
+    .order-detail-hero {
+        padding: 1.25rem 1rem;
+    }
+
+    .order-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
     .order-detail-header h2 {
         font-size: 1.5rem;
     }
-    
+
     .order-detail-card .card-body {
-        padding: 1rem;
+        padding: 1.25rem;
     }
-    
+
     .order-detail-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.25rem;
+        padding: 0.875rem 0;
     }
-    
+
     .order-detail-value {
         text-align: left;
     }
-    
+
     .design-table thead th:nth-child(3),
     .design-table tbody td:nth-child(3) {
         display: none;
     }
-    
+
     .design-table thead th:nth-child(6),
     .design-table tbody td:nth-child(6) {
         display: none;
+    }
+
+    .status-update-card {
+        position: static;
     }
 }
 
@@ -153,35 +489,54 @@
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .order-detail-header h2 {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
+    }
+
+    .order-detail-card .card-body {
+        padding: 1rem;
+    }
+
+    .order-detail-row {
+        padding: 0.75rem 0;
+    }
+
+    .order-section-title {
+        font-size: 1.1rem;
     }
 }
 
 @media (max-width: 414px) {
     .order-detail-header h2 {
-        font-size: 1.15rem;
+        font-size: 1.2rem;
     }
+
     .order-detail-card .card-body {
         padding: 0.875rem;
     }
+
     .order-detail-row {
         padding: 0.6rem 0;
     }
+
     .order-detail-label {
         font-size: 0.7rem;
     }
+
     .order-detail-value {
         font-size: 0.85rem;
     }
+
     .order-section-title {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
+
     .design-table thead th {
         font-size: 0.65rem;
         padding: 0.6rem 0.4rem;
     }
+
     .design-table tbody td {
         padding: 0.6rem 0.4rem;
         font-size: 0.8rem;
@@ -190,18 +545,22 @@
 
 @media (max-width: 390px) {
     .order-detail-header h2 {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
+
     .order-detail-card .card-body {
         padding: 0.75rem;
     }
+
     .order-detail-row {
         padding: 0.5rem 0;
     }
+
     .design-table thead th {
         font-size: 0.6rem;
         padding: 0.5rem 0.3rem;
     }
+
     .design-table tbody td {
         padding: 0.5rem 0.3rem;
         font-size: 0.75rem;
@@ -212,19 +571,24 @@
     .order-detail-header h2 {
         font-size: 1rem;
     }
+
     .order-detail-card .card-body {
         padding: 0.6rem;
     }
+
     .order-detail-label {
         font-size: 0.65rem;
     }
+
     .order-detail-value {
         font-size: 0.8rem;
     }
+
     .design-table thead th {
         font-size: 0.55rem;
         padding: 0.4rem 0.25rem;
     }
+
     .design-table tbody td {
         padding: 0.4rem 0.25rem;
         font-size: 0.7rem;
@@ -235,12 +599,15 @@
     .order-detail-header h2 {
         font-size: 0.9rem;
     }
+
     .order-detail-card .card-body {
         padding: 0.5rem;
     }
+
     .order-detail-label {
         font-size: 0.6rem;
     }
+
     .order-detail-value {
         font-size: 0.75rem;
     }
@@ -250,11 +617,36 @@
 
 {% block admin_content %}
 <div class="order-detail-container">
-    <div class="order-detail-header">
-        <h2><i class="bi bi-receipt me-2"></i>Order #{{ order.pk }}</h2>
-        <a href="{% url 'admin_dashboard:orders' %}" class="design-btn design-btn-outline-secondary design-btn-sm">
-            <i class="bi bi-arrow-left"></i> Back to Orders
-        </a>
+    <div class="order-detail-hero">
+        <div class="corner-accent tl"></div>
+        <div class="corner-accent tr"></div>
+        <div class="corner-accent bl"></div>
+        <div class="corner-accent br"></div>
+        <div class="torch-decoration torch-tl"><span></span><span></span></div>
+        <div class="torch-decoration torch-tr"><span></span><span></span></div>
+        <div class="torch-decoration torch-bl"><span></span><span></span></div>
+        <div class="torch-decoration torch-br"><span></span><span></span></div>
+        <div class="order-detail-header">
+            <h2><i class="bi bi-receipt"></i>Order <span class="order-number-accent">#{{ order.pk }}</span></h2>
+            <a href="{% url 'admin_dashboard:orders' %}" class="order-detail-back-btn">
+                <i class="bi bi-arrow-left"></i> Back to Orders
+            </a>
+        </div>
+        <div class="order-detail-hero-meta">
+            <span class="order-detail-meta-item">
+                <i class="bi bi-person"></i>
+                <span>{{ order.user.full_name|default:"Deleted User" }}</span>
+            </span>
+            <span class="order-detail-meta-item">
+                <i class="bi bi-calendar"></i>
+                <span>{{ order.created_at|date:"M d, Y H:i" }}</span>
+            </span>
+            <span class="order-detail-meta-item">
+                <i class="bi bi-currency-dollar"></i>
+                <span>₦{{ order.total }}</span>
+            </span>
+        </div>
+        <div class="order-detail-hero-divider"></div>
     </div>
 
     <div class="row">
@@ -267,7 +659,7 @@
                         <i class="bi bi-info-circle"></i> Order Details
                     </h3>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Status</span>
+                        <span class="order-detail-label"><i class="bi bi-arrow-repeat"></i> Status</span>
                         <span class="order-detail-value">
                             <span class="badge design-badge-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% elif order.status == 'processing' %}primary{% elif order.status == 'shipped' %}secondary{% elif order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% endif %}">
                                 {{ order.get_status_display }}
@@ -275,31 +667,23 @@
                         </span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Customer</span>
-                        <span class="order-detail-value">{{ order.user.full_name|default:"Deleted User" }}</span>
-                    </div>
-                    <div class="order-detail-row">
-                        <span class="order-detail-label">Email</span>
+                        <span class="order-detail-label"><i class="bi bi-envelope"></i> Email</span>
                         <span class="order-detail-value">{{ order.user.email|default:"N/A" }}</span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Total</span>
-                        <span class="order-detail-value" style="color: #1B5E20; font-weight: 700;">₦{{ order.total }}</span>
-                    </div>
-                    <div class="order-detail-row">
-                        <span class="order-detail-label">Payment Method</span>
+                        <span class="order-detail-label"><i class="bi bi-credit-card"></i> Payment Method</span>
                         <span class="order-detail-value">{{ order.payment_method|default:"N/A" }}</span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Delivery Address</span>
+                        <span class="order-detail-label"><i class="bi bi-geo-alt"></i> Delivery Address</span>
                         <span class="order-detail-value">{{ order.delivery_address|default:"N/A" }}</span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Date Placed</span>
+                        <span class="order-detail-label"><i class="bi bi-calendar-event"></i> Date Placed</span>
                         <span class="order-detail-value">{{ order.created_at|date:"M d, Y H:i" }}</span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="order-detail-label">Last Updated</span>
+                        <span class="order-detail-label"><i class="bi bi-clock"></i> Last Updated</span>
                         <span class="order-detail-value">{{ order.updated_at|date:"M d, Y H:i" }}</span>
                     </div>
                 </div>
