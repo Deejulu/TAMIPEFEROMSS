@@ -11,7 +11,6 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_design.css' %}">
-<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_dark_mode.css' %}">
 {% block extra_css %}{% endblock %}
 {% if user.is_authenticated %}
 <meta name="csrf-token" content="{{ csrf_token }}">
@@ -401,6 +400,7 @@
         </footer>
     </div>
 </div>
+<link rel="stylesheet" href="{% static 'admin_dashboard/css/admin_dashboard_dark_mode.css' %}">
 {% endblock %}
 
 {% block site_footer %}{% endblock %}
@@ -497,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function initializeDarkMode() {
         const stored = getStoredPreference();
-        const isDark = stored === 'dark';
+        const isDark = stored === true;
         applyTheme(isDark);
     }
 
