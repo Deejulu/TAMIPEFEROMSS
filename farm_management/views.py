@@ -19,8 +19,8 @@ from collections import defaultdict
 
 from shop.models import Order, OrderItem
 
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
-from .forms import BatchForm, FeedLogForm, GrowthRecordForm, MortalityLogForm, HarvestRecordForm, FeedInventoryForm, SupplierForm, SupplierUpdateForm, HealthMedicationLogForm, VaccinationRecordForm, DailyActivityLogForm, SpeciesForm, SpeciesUpdateForm, CategoryForm, CategoryUpdateForm
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog
+from .forms import BatchForm, FeedLogForm, GrowthRecordForm, MortalityLogForm, HarvestRecordForm, FeedInventoryForm, SupplierForm, SupplierUpdateForm, HealthMedicationLogForm, VaccinationRecordForm, DailyActivityLogForm, SpeciesForm, SpeciesUpdateForm, CategoryForm, CategoryUpdateForm, WaterQualityLogForm
 
 from admin_dashboard.mixins import AdminRequiredMixin
 from admin_dashboard.views import log_audit
@@ -203,6 +203,9 @@ class FeedLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView):
             feed_inventory.save(update_fields=['quantity_on_hand_kg'])
 
         log_audit(self.request, 'create', 'FeedLog', self.object.pk, f'Created feed log for {self.object.batch.name}: {self.object.quantity_kg}kg')
+        if feed_inventory and quantity_kg:
+            feed_inventory.refresh_from_db()
+            log_audit(self.request, 'update', 'FeedInventory', feed_inventory.pk, f'Feed inventory adjusted for "{feed_inventory.feed_type}": -{quantity_kg}kg (new stock: {feed_inventory.quantity_on_hand_kg}kg)')
         return response
 
     def get_success_url(self):
@@ -254,6 +257,12 @@ class FeedLogUpdateView(AdminRequiredMixin, LoginRequiredMixin, UpdateView):
             new_feed_inventory.save(update_fields=['quantity_on_hand_kg'])
 
         log_audit(self.request, 'update', 'FeedLog', self.object.pk, f'Updated feed log for {self.object.batch.name}: {old_quantity_kg}kg → {new_quantity_kg}kg')
+        if old_feed_inventory and old_quantity_kg:
+            old_feed_inventory.refresh_from_db()
+            log_audit(self.request, 'update', 'FeedInventory', old_feed_inventory.pk, f'Feed inventory adjusted for "{old_feed_inventory.feed_type}": +{old_quantity_kg}kg (new stock: {old_feed_inventory.quantity_on_hand_kg}kg)')
+        if new_feed_inventory and new_quantity_kg:
+            new_feed_inventory.refresh_from_db()
+            log_audit(self.request, 'update', 'FeedInventory', new_feed_inventory.pk, f'Feed inventory adjusted for "{new_feed_inventory.feed_type}": -{new_quantity_kg}kg (new stock: {new_feed_inventory.quantity_on_hand_kg}kg)')
         return response
 
     def get_success_url(self):
@@ -366,6 +375,15 @@ class MortalityLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView)
             initial['batch'] = batch_pk
         return initial
 
+    def form_valid(self, form):
+        batch = form.cleaned_data.get('batch')
+        old_stock = batch.current_stock if batch else None
+        response = super().form_valid(form)
+        if batch and old_stock is not None:
+            batch.refresh_from_db()
+            log_audit(self.request, 'update', 'Batch', batch.pk, f'Batch "{batch.name}" stock decreased from {old_stock} to {batch.current_stock} due to {self.object.count} deaths')
+        return response
+
     def get_success_url(self):
         messages.success(self.request, 'Mortality log added successfully.')
         log_audit(self.request, 'create', 'MortalityLog', self.object.pk, f'Created mortality log for {self.object.batch.name}: {self.object.count} deaths')
@@ -447,6 +465,7 @@ class HarvestRecordCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView
             form.add_error('batch', _('A harvest record already exists for this batch.'))
             return self.form_invalid(form)
         log_audit(self.request, 'create', 'HarvestRecord', self.object.pk, f'Recorded harvest for {self.object.batch.name}: {self.object.quantity_sold} sold')
+        log_audit(self.request, 'status_change', 'Batch', self.object.batch.pk, f'Batch "{self.object.batch.name}" status changed to closed after harvest')
         return response
 
 
@@ -830,6 +849,88 @@ class DailyActivityLogDeleteView(AdminRequiredMixin, LoginRequiredMixin, DeleteV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Delete Daily Activity Log'
+        return context
+
+
+# =============================================================================
+# Water Quality Log CRUD
+# =============================================================================
+
+class WaterQualityLogListView(AdminRequiredMixin, LoginRequiredMixin, ListView):
+    template_name = 'farm_management/water_quality_list.html'
+    model = WaterQualityLog
+    context_object_name = 'water_logs'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = WaterQualityLog.objects.select_related('batch', 'batch__species').all()
+        batch_filter = self.request.GET.get('batch', '')
+        if batch_filter:
+            qs = qs.filter(batch_id=batch_filter)
+        return qs.order_by('-date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Water Quality Logs'
+        context['batches'] = Batch.objects.filter(status='active').order_by('-start_date')
+        context['selected_batch'] = self.request.GET.get('batch', '')
+        return context
+
+
+class WaterQualityLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView):
+    template_name = 'farm_management/water_quality_form.html'
+    model = WaterQualityLog
+    form_class = WaterQualityLogForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        batch_pk = self.kwargs.get('batch_pk')
+        if batch_pk:
+            initial['batch'] = batch_pk
+        return initial
+
+    def get_success_url(self):
+        messages.success(self.request, 'Water quality log added successfully.')
+        log_audit(self.request, 'create', 'WaterQualityLog', self.object.pk, f'Created water quality log for {self.object.batch.name}: pH {self.object.ph_level}, {self.object.temperature_c}°C')
+        if self.kwargs.get('batch_pk'):
+            return reverse('farm_management:batch_detail', kwargs={'pk': self.object.batch.pk})
+        return reverse('farm_management:water_quality_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Add Water Quality Log'
+        return context
+
+
+class WaterQualityLogUpdateView(AdminRequiredMixin, LoginRequiredMixin, UpdateView):
+    template_name = 'farm_management/water_quality_form.html'
+    model = WaterQualityLog
+    form_class = WaterQualityLogForm
+
+    def get_success_url(self):
+        messages.success(self.request, 'Water quality log updated successfully.')
+        log_audit(self.request, 'update', 'WaterQualityLog', self.object.pk, f'Updated water quality log for {self.object.batch.name}: pH {self.object.ph_level}, {self.object.temperature_c}°C')
+        return reverse('farm_management:batch_detail', kwargs={'pk': self.object.batch.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Edit Water Quality Log'
+        return context
+
+
+class WaterQualityLogDeleteView(AdminRequiredMixin, LoginRequiredMixin, DeleteView):
+    template_name = 'farm_management/water_quality_confirm_delete.html'
+    model = WaterQualityLog
+    context_object_name = 'log'
+
+    def get_success_url(self):
+        messages.success(self.request, 'Water quality log deleted.')
+        log_audit(self.request, 'delete', 'WaterQualityLog', self.object.pk, f'Deleted water quality log for {self.object.batch.name}')
+        return reverse('farm_management:batch_detail', kwargs={'pk': self.object.batch.pk})
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Delete Water Quality Log'
         return context
 
 

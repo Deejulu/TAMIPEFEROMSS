@@ -1,0 +1,81 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="farm-management-page log-form-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2>{{ page_title }}</h2>
+        <a href="{% if batch %}{% url 'farm_management:batch_detail' batch.pk %}{% else %}{% url 'farm_management:water_quality_list' %}{% endif %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="card farm-form-card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {{ form.batch }}
+
+                <div class="row mt-3">
+                    <div class="col-md-3 col-12 mb-3">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                        <div class="text-danger mt-1">{% for error in form.date.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 col-12 mb-3">
+                        <label for="{{ form.ph_level.id_for_label }}" class="form-label">pH Level</label>
+                        {{ form.ph_level }}
+                        {% if form.ph_level.errors %}
+                        <div class="text-danger mt-1">{% for error in form.ph_level.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 col-12 mb-3">
+                        <label for="{{ form.temperature_c.id_for_label }}" class="form-label">Temperature (°C)</label>
+                        {{ form.temperature_c }}
+                        {% if form.temperature_c.errors %}
+                        <div class="text-danger mt-1">{% for error in form.temperature_c.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 col-12 mb-3">
+                        <label for="{{ form.oxygen_level.id_for_label }}" class="form-label">Oxygen Level (mg/L)</label>
+                        {{ form.oxygen_level }}
+                        {% if form.oxygen_level.errors %}
+                        <div class="text-danger mt-1">{% for error in form.oxygen_level.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="text-danger mt-1">{% for error in form.notes.errors %}<small>{{ error }}</small>{% endfor %}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Water Quality Log
+                    </button>
+                    <a href="{% if batch %}{% url 'farm_management:batch_detail' batch.pk %}{% else %}{% url 'farm_management:water_quality_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

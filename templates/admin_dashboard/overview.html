@@ -28,16 +28,17 @@
                         <i class="bi bi-house"></i>
                     </div>
                     <h3 class="card-title">Active Batches</h3>
-                    <div class="card-value">{{ active_batches_count }}</div>
-                    {% if batches_by_species %}
-                    <div class="card-detail">
-                        {% for entry in batches_by_species %}
-                        <span class="species-badge">
-                            {{ entry.species|title }}: {{ entry.count }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
+                     <div class="card-value">{{ active_batches_count }}</div>
+                     {% if batches_by_species %}
+                     <div class="card-detail">
+                         <small class="text-muted d-block mb-1">Species — number of active batches per species</small>
+                         {% for entry in batches_by_species %}
+                         <span class="species-badge" title="{{ entry.count }} active batch{{ entry.count|pluralize }} of {{ entry.species__name|title }} ({{ entry.species__category__name|title }})">
+                             {{ entry.species__name|title }}: {{ entry.count }}
+                         </span>
+                         {% endfor %}
+                     </div>
+                     {% endif %}
                 </div>
             </div>
 

@@ -271,6 +271,10 @@ class AdminDashboardShellTests(TestCase):
         self.assertEqual(context['active_batches_count'], 2)
         self.assertEqual(context['low_feed_inventory_count'], 1)
         self.assertEqual(context['active_alerts'].count(), 1)
+        content = response.content.decode()
+        self.assertIn('Catfish', content)
+        self.assertIn('Tilapia', content)
+        self.assertIn('Species', content)
 
     def test_overview_orders_snapshot_counts(self):
         """Overview page shows correct count for recent orders."""
@@ -3417,3 +3421,49 @@ class FarmManagementAuditLoggingTests(TestCase):
             'reorder_point_kg': 100,
         })
         self._assert_audit_entry('create', 'FeedInventory', 'Audit Feed')
+
+    def test_water_quality_log_create_logs_audit_entry(self):
+        """Creating a water quality log creates an audit log entry."""
+        self.login(self.super_admin)
+        self.client.post(reverse('farm_management:water_quality_add', args=[self.batch.pk]), {
+            'batch': self.batch.pk,
+            'date': timezone.now().date().isoformat(),
+            'ph_level': '7.2',
+            'temperature_c': '28.5',
+            'oxygen_level': '5.5',
+        })
+        self._assert_audit_entry('create', 'WaterQualityLog', 'water quality log')
+
+    def test_harvest_creates_batch_status_change_audit_entry(self):
+        """Recording a harvest logs a batch status change audit entry."""
+        self.login(self.super_admin)
+        self.client.post(reverse('farm_management:harvest_add', args=[self.batch.pk]), {
+            'batch': self.batch.pk,
+            'harvest_date': timezone.now().date().isoformat(),
+            'quantity_sold': 10,
+            'total_revenue': '5000.00',
+        })
+        self._assert_audit_entry('status_change', 'Batch', 'status changed to closed')
+
+    def test_mortality_log_creates_batch_stock_audit_entry(self):
+        """Creating a mortality log logs a batch stock change audit entry."""
+        self.login(self.super_admin)
+        self.client.post(reverse('farm_management:mortality_add', args=[self.batch.pk]), {
+            'batch': self.batch.pk,
+            'date': timezone.now().date().isoformat(),
+            'count': 5,
+            'cause': 'Disease',
+        })
+        self._assert_audit_entry('update', 'Batch', 'stock decreased')
+
+    def test_feed_log_creates_inventory_adjustment_audit_entry(self):
+        """Creating a feed log logs a feed inventory adjustment audit entry."""
+        self.login(self.super_admin)
+        self.client.post(reverse('farm_management:feed_log_add', args=[self.batch.pk]), {
+            'batch': self.batch.pk,
+            'date': timezone.now().date().isoformat(),
+            'feed_inventory': self.feed_inventory.pk,
+            'quantity_kg': 25,
+            'notes': 'Audit test',
+        })
+        self._assert_audit_entry('update', 'FeedInventory', 'Feed inventory adjusted')

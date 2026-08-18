@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog
 
 
 class BatchForm(forms.ModelForm):
@@ -446,3 +446,42 @@ class CategoryUpdateForm(forms.ModelForm):
             }),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class WaterQualityLogForm(forms.ModelForm):
+    class Meta:
+        model = WaterQualityLog
+        fields = ['batch', 'date', 'ph_level', 'temperature_c', 'oxygen_level', 'notes']
+        widgets = {
+            'batch': forms.Select(attrs={'class': 'form-select'}),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'ph_level': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'e.g. 7.2'
+            }),
+            'temperature_c': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'placeholder': 'e.g. 28.5'
+            }),
+            'oxygen_level': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'e.g. 6.5'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Any notes on water quality...'
+            }),
+        }
+
+    def clean_batch(self):
+        batch = self.cleaned_data.get('batch')
+        if batch and batch.status == 'closed':
+            raise forms.ValidationError(_('Cannot log water quality for a closed batch.'))
+        return batch

@@ -68,6 +68,11 @@ urlpatterns = [
 
     path('daily-activities/', views.DailyActivitiesListView.as_view(), name='daily_activities_list'),
 
+    path('water-quality/', views.WaterQualityLogListView.as_view(), name='water_quality_list'),
+    path('batches/<int:batch_pk>/water-quality/add/', views.WaterQualityLogCreateView.as_view(), name='water_quality_add'),
+    path('water-quality/<int:pk>/edit/', views.WaterQualityLogUpdateView.as_view(), name='water_quality_edit'),
+    path('water-quality/<int:pk>/delete/', views.WaterQualityLogDeleteView.as_view(), name='water_quality_delete'),
+
     path('sample-data/load/', views.populate_sample_data, name='populate_sample_data'),
     path('sample-data/clear/', views.delete_sample_data, name='delete_sample_data'),
 ]

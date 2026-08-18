@@ -47,6 +47,35 @@ class NotificationSignalTests(TestCase):
         self.assertIn("Payment of ₦1000.00", notif.message)
         self.assertIn(f"Order #{order.id}", notif.message)
 
+    def test_payment_updated_to_success_creates_notification(self):
+        order = Order.objects.create(user=self.user, total=Decimal("1000.00"))
+        payment = Payment.objects.create(
+            order=order,
+            reference="ref-transition",
+            amount=Decimal("1000.00"),
+            status="pending",
+        )
+        self.assertEqual(Notification.objects.filter(notification_type='payment').count(), 0)
+        payment.status = "success"
+        payment.save(update_fields=["status"])
+        self.assertEqual(Notification.objects.filter(notification_type='payment').count(), 1)
+        notif = Notification.objects.filter(notification_type='payment').first()
+        self.assertIn("Payment of ₦1000.00", notif.message)
+        self.assertIn(f"Order #{order.id}", notif.message)
+
+    def test_payment_resaved_as_success_does_not_create_duplicate(self):
+        order = Order.objects.create(user=self.user, total=Decimal("1000.00"))
+        payment = Payment.objects.create(
+            order=order,
+            reference="ref-dup",
+            amount=Decimal("1000.00"),
+            status="success",
+        )
+        self.assertEqual(Notification.objects.filter(notification_type='payment').count(), 1)
+        payment.amount = Decimal("1000.01")
+        payment.save(update_fields=["amount"])
+        self.assertEqual(Notification.objects.filter(notification_type='payment').count(), 1)
+
     def test_payment_failed_does_not_create_notification(self):
         order = Order.objects.create(user=self.user, total=Decimal("1000.00"))
         Payment.objects.create(

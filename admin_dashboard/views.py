@@ -43,9 +43,9 @@ class OverviewView(AdminDashboardShell):
         context['active_batches_count'] = context['active_batches'].count()
         context['batches_by_species'] = (
             context['active_batches']
-            .values('species')
+            .values('species', 'species__name', 'species__category__name')
             .annotate(count=Count('id'))
-            .order_by('species')
+            .order_by('species__name')
         )
         all_alerts = Notification.objects.filter(
             notification_type='batch_alert',
