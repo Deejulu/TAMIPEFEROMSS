@@ -1,4 +1,4 @@
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.hashers import make_password, check_password
@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 
 from .models import CustomUser, SecurityQuestion
 from .constants import SECURITY_QUESTIONS
-from .utils import generate_unique_username
+from .utils import generate_unique_username_with_id
 
 User = get_user_model()
 
@@ -64,15 +64,30 @@ class CustomAuthenticationForm(AuthenticationForm):
             )
 
 
-class CustomSignupForm(UserCreationForm):
+class CustomSignupForm(forms.ModelForm):
     """
     Custom Signup Form for farm_proc_tamipee.
 
-    Collects first name, last name, password,
-    and three security question/answer pairs. The username and full_name
-    fields are auto-generated and not exposed to the user.
+    Collects first name, last name, password, and three security
+    question/answer pairs. The username and full_name fields are
+    auto-generated and not exposed to the user.
+
+    Uses forms.ModelForm (not UserCreationForm) so the custom user's
+    single `full_name` field and the `email` field are handled cleanly
+    without UserCreationForm's username/email assumptions.
     """
 
+    email = forms.EmailField(
+        label=_("Email"),
+        required=True,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Enter your email address",
+                "autofocus": True,
+            }
+        ),
+    )
     first_name = forms.CharField(
         label=_("First Name"),
         max_length=150,
@@ -80,7 +95,6 @@ class CustomSignupForm(UserCreationForm):
             attrs={
                 "class": "form-control",
                 "placeholder": "Enter your first name",
-                "autofocus": True,
             }
         ),
     )
@@ -92,6 +106,21 @@ class CustomSignupForm(UserCreationForm):
                 "class": "form-control",
                 "placeholder": "Enter your last name",
             }
+        ),
+    )
+
+    password1 = forms.CharField(
+        label=_("Password"),
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "placeholder": "Create a strong password"}
+        ),
+    )
+    password2 = forms.CharField(
+        label=_("Confirm Password"),
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"class": "form-control", "placeholder": "Re-enter your password"}
         ),
     )
 
@@ -148,9 +177,9 @@ class CustomSignupForm(UserCreationForm):
         ),
     )
 
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = CustomUser
-        fields = ()
+        fields = ("email", "first_name", "last_name")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -222,11 +251,32 @@ class CustomSignupForm(UserCreationForm):
             return email.lower()
         return email
 
+    def clean_password2(self):
+        """
+        Ensure the two passwords match and that password1 satisfies the
+        configured password validators.
+        """
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError(
+                _("The two password fields didn't match."),
+                code="password_mismatch",
+            )
+        return password2
+
     def clean(self):
         """
-        Perform cross-field validation including security questions.
+        Perform cross-field validation including security questions and
+        password-strength validation.
         """
         cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        if password1:
+            try:
+                validate_password(password1, self.instance)
+            except forms.ValidationError as exc:
+                self.add_error("password1", exc)
         self.clean_security_questions()
         return cleaned_data
 
@@ -246,11 +296,17 @@ class CustomSignupForm(UserCreationForm):
             # Set fields from cleaned_data
             first_name = self.cleaned_data.get("first_name", "")
             last_name = self.cleaned_data.get("last_name", "")
-            user.username = generate_unique_username(first_name, last_name)
+            user.username, user.account_id = generate_unique_username_with_id(
+                first_name, last_name
+            )
             user.full_name = f"{first_name} {last_name}".strip()
 
             # Assign CUSTOMER role by default
             user.role = CustomUser.Role.CUSTOMER
+
+            # Hash the raw password explicitly (ModelForm does not call
+            # set_password for our custom password1/password2 fields).
+            user.set_password(self.cleaned_data.get("password1", ""))
 
             if commit:
                 user.save()

@@ -9,11 +9,22 @@ from django.test.utils import override_settings
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
+from unittest import mock
+from io import StringIO
+import logging
 import re
 
+from . import utils as accounts_utils
 from .models import CustomUser, SecurityQuestion, SavedCard
 from .forms import CustomSignupForm, SecurityQuestionRecoveryForm, RecoveryPasswordResetForm
-from .utils import generate_unique_username
+from .utils import (
+    ACCOUNT_ID_ALPHABET,
+    ACCOUNT_ID_LENGTH,
+    extract_account_id,
+    generate_account_id,
+    generate_unique_username,
+    generate_unique_username_with_id,
+)
 from .validators import UppercaseValidator, LowercaseValidator, DigitValidator
 from .constants import SECURITY_QUESTIONS
 from notifications.models import Notification
@@ -27,74 +38,356 @@ User = get_user_model()
 # =============================================================================
 
 class UsernameGenerationTests(TestCase):
-    """Tests for the generate_unique_username utility function."""
+    """
+    Tests for the canonical username generator.
+
+    New usernames follow <FullNameNoSpaces><Year>TIF<RandomAccountID>,
+    e.g. DavidOkonkwo2026TIF4K9X. The trailing ID is cryptographically
+    random, NOT sequential.
+    """
+
+    def _pattern(self, base, year=None):
+        year = year or timezone.now().year
+        return re.compile(
+            rf"^{base}{year}TIF[{ACCOUNT_ID_ALPHABET}]{{{ACCOUNT_ID_LENGTH}}}$"
+        )
 
     def test_basic_username_generation(self):
-        """Test that username is generated from first and last name with year and sequence."""
+        """Username is name + year + TIF + random ID."""
         username = generate_unique_username("John", "Doe")
-        self.assertTrue(username.startswith("JohnDoe"))
-        self.assertIn(str(timezone.now().year), username)
+        self.assertRegex(username, self._pattern("JohnDoe"))
+
+    def test_username_contains_tif_marker(self):
+        """The TIF marker must always be present (regression: it was missing)."""
+        username = generate_unique_username("John", "Doe")
+        self.assertIn("TIF", username)
+        self.assertIn(f"{timezone.now().year}TIF", username)
 
     def test_spaces_removed(self):
-        """Test that spaces are removed from username."""
+        """Spaces are stripped from the name portion."""
         username = generate_unique_username("  John  ", "  Doe  ")
-        self.assertEqual(username, "JohnDoe" + str(timezone.now().year) + "001")
+        self.assertRegex(username, self._pattern("JohnDoe"))
 
     def test_special_characters_removed(self):
-        """Test that special characters are removed from username."""
+        """Special characters are stripped from the name portion."""
         username = generate_unique_username("John!", "Doe@")
-        self.assertEqual(username, "JohnDoe" + str(timezone.now().year) + "001")
+        self.assertRegex(username, self._pattern("JohnDoe"))
 
     def test_unicode_normalization(self):
-        """Test that unicode characters are normalized."""
+        """Unicode characters are normalized to ASCII."""
         username = generate_unique_username("José", "García")
-        self.assertEqual(username, "JoseGarcia" + str(timezone.now().year) + "001")
-
-    def test_collision_handling(self):
-        """Test that duplicate base names get sequential numbers."""
-        User.objects.create_user(
-            email="john1@example.com",
-            full_name="John Doe",
-            password="TestPass123",
-            username="JohnDoe" + str(timezone.now().year) + "001",
-        )
-        new_username = generate_unique_username("John", "Doe")
-        self.assertEqual(new_username, "JohnDoe" + str(timezone.now().year) + "002")
-
-    def test_multiple_collisions(self):
-        """Test that multiple collisions all produce unique usernames."""
-        for i in range(5):
-            seq = f"{i+1:03d}"
-            User.objects.create_user(
-                email=f"john{i}@example.com",
-                full_name="John Doe",
-                password="TestPass123",
-                username="JohnDoe" + str(timezone.now().year) + seq,
-            )
-        new_u = generate_unique_username("John", "Doe")
-        self.assertEqual(new_u, "JohnDoe" + str(timezone.now().year) + "006")
+        self.assertRegex(username, self._pattern("JoseGarcia"))
 
     def test_empty_first_name_fallback(self):
-        """Test that empty first name still generates a username."""
+        """Empty first name still generates a valid username."""
         username = generate_unique_username("", "Doe")
-        self.assertEqual(username, "Doe" + str(timezone.now().year) + "001")
+        self.assertRegex(username, self._pattern("Doe"))
 
     def test_empty_last_name_fallback(self):
-        """Test that empty last name still generates a username."""
+        """Empty last name still generates a valid username."""
         username = generate_unique_username("John", "")
-        self.assertEqual(username, "John" + str(timezone.now().year) + "001")
+        self.assertRegex(username, self._pattern("John"))
 
     def test_both_names_empty_fallback(self):
-        """Test that both empty names fall back to 'User'."""
+        """Both names empty falls back to 'User'."""
         username = generate_unique_username("", "")
-        self.assertEqual(username, "User" + str(timezone.now().year) + "001")
+        self.assertRegex(username, self._pattern("User"))
 
-    def test_sequential_per_year(self):
-        """Test that sequence resets per year."""
+    def test_year_is_used_in_prefix(self):
+        """The supplied year appears before the TIF marker."""
         u1 = generate_unique_username("Test", "User", year=2026)
         u2 = generate_unique_username("Test", "User", year=2027)
-        self.assertTrue(u1.startswith("TestUser2026"))
-        self.assertTrue(u2.startswith("TestUser2027"))
+        self.assertTrue(u1.startswith("TestUser2026TIF"))
+        self.assertTrue(u2.startswith("TestUser2027TIF"))
+
+    # ---------------------------------------------------------------
+    # Randomness / non-sequential guarantees
+    # ---------------------------------------------------------------
+
+    def test_id_is_not_sequential(self):
+        """
+        Generated IDs must not be the old sequential 001/002/003 counter.
+        """
+        usernames = [
+            generate_unique_username("John", "Doe", year=2026) for _ in range(10)
+        ]
+        year = 2026
+        for index, username in enumerate(usernames, start=1):
+            self.assertNotEqual(
+                username, f"JohnDoe{year}TIF{index:03d}",
+                "Username still looks sequential",
+            )
+            self.assertNotEqual(
+                username, f"JohnDoe{year}{index:03d}",
+                "Username reverted to the old no-TIF sequential format",
+            )
+
+    def test_ids_are_random_and_varied(self):
+        """
+        Repeated generation for the same name yields differing random IDs.
+
+        With a 31-character alphabet and 4 characters there are ~923k
+        combinations, so 25 draws colliding into fewer than 20 distinct
+        values would indicate the value is not actually random.
+        """
+        ids = {
+            generate_unique_username_with_id("John", "Doe", year=2026)[1]
+            for _ in range(25)
+        }
+        self.assertGreaterEqual(len(ids), 20)
+
+    def test_generated_usernames_are_unique(self):
+        """Generating many usernames for one name produces no duplicates."""
+        usernames = [
+            generate_unique_username("John", "Doe", year=2026) for _ in range(50)
+        ]
+        self.assertEqual(len(usernames), len(set(usernames)))
+
+    def test_account_id_matches_username_suffix(self):
+        """The returned account_id is exactly the username's trailing segment."""
+        username, account_id = generate_unique_username_with_id(
+            "David", "Okonkwo", year=2026
+        )
+        self.assertEqual(username, f"DavidOkonkwo2026TIF{account_id}")
+        self.assertEqual(len(account_id), ACCOUNT_ID_LENGTH)
+        self.assertEqual(extract_account_id(username), account_id)
+
+    def test_collision_is_regenerated_not_crashed(self):
+        """
+        When the first random ID already exists, a different one is issued
+        and no exception is raised.
+        """
+        taken_id = "ABCD"
+        taken_username = f"JohnDoe2026TIF{taken_id}"
+        User.objects.create_user(
+            email="taken@example.com",
+            full_name="John Doe",
+            password="TestPass123",
+            username=taken_username,
+        )
+
+        real_generate_account_id = accounts_utils.generate_account_id
+        calls = {"n": 0}
+
+        def collide_once(length=ACCOUNT_ID_LENGTH):
+            """Return the taken ID first, then defer to the real generator."""
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return taken_id
+            return real_generate_account_id(length)
+
+        with mock.patch.object(
+            accounts_utils, "generate_account_id", side_effect=collide_once
+        ):
+            username, account_id = generate_unique_username_with_id(
+                "John", "Doe", year=2026
+            )
+
+        self.assertGreaterEqual(calls["n"], 2, "Collision was not detected")
+        self.assertNotEqual(username, taken_username)
+        self.assertNotEqual(account_id, taken_id)
+        self.assertFalse(User.objects.filter(username=username).exists())
+
+    def test_exhausted_attempts_widen_id_instead_of_crashing(self):
+        """
+        A pathological run of collisions widens the random segment rather
+        than raising or emitting a predictable value.
+        """
+        with mock.patch.object(
+            accounts_utils,
+            "generate_account_id",
+            side_effect=lambda length=ACCOUNT_ID_LENGTH: "Z" * length,
+        ):
+            User.objects.create_user(
+                email="widen@example.com",
+                full_name="John Doe",
+                password="TestPass123",
+                username="JohnDoe2026TIFZZZZ",
+            )
+            username, account_id = generate_unique_username_with_id(
+                "John", "Doe", year=2026
+            )
+
+        self.assertEqual(username, "JohnDoe2026TIFZZZZZ")
+        self.assertEqual(account_id, "ZZZZZ")
+
+
+class AccountIdFieldTests(TestCase):
+    """The random ID is stored on the user profile as its own field."""
+
+    def test_account_id_stored_on_creation(self):
+        """A new user gets account_id populated automatically."""
+        user = User.objects.create_user(
+            email="stored@example.com",
+            full_name="David Okonkwo",
+            password="TestPass123",
+        )
+        self.assertTrue(user.account_id)
+        self.assertEqual(len(user.account_id), ACCOUNT_ID_LENGTH)
+        self.assertTrue(user.username.endswith(user.account_id))
+        self.assertEqual(user.username, f"DavidOkonkwo{timezone.now().year}TIF{user.account_id}")
+
+    def test_account_id_persisted_to_database(self):
+        """account_id is retrievable separately from the username."""
+        user = User.objects.create_user(
+            email="persist@example.com",
+            full_name="David Okonkwo",
+            password="TestPass123",
+        )
+        reloaded = User.objects.get(pk=user.pk)
+        self.assertEqual(reloaded.account_id, user.account_id)
+
+    def test_explicit_username_without_tif_leaves_account_id_blank(self):
+        """
+        An explicitly-chosen username (e.g. the superuser command) has no
+        random segment, so account_id stays blank rather than being invented.
+        """
+        user = User.objects.create_user(
+            email="explicit@example.com",
+            full_name="Explicit Admin",
+            password="TestPass123",
+            username="admin",
+        )
+        self.assertEqual(user.username, "admin")
+        self.assertEqual(user.account_id, "")
+
+    def test_explicit_canonical_username_backfills_account_id(self):
+        """An explicit username in canonical form has its ID recorded."""
+        user = User.objects.create_user(
+            email="canonical@example.com",
+            full_name="David Okonkwo",
+            password="TestPass123",
+            username="DavidOkonkwo2026TIFQ7WK",
+        )
+        self.assertEqual(user.account_id, "Q7WK")
+
+    def test_existing_username_not_rewritten_on_later_save(self):
+        """
+        Saving an EXISTING user never regenerates their username or
+        account_id - the change is new-accounts-only.
+        """
+        user = User.objects.create_user(
+            email="legacy@example.com",
+            full_name="Legacy User",
+            password="TestPass123",
+            username="LegacyUser2025001",  # old sequential format
+        )
+        original_username = user.username
+        original_password = user.password
+        self.assertEqual(user.account_id, "")
+
+        user.phone_number = "08012345678"
+        user.save()
+        user.refresh_from_db()
+
+        self.assertEqual(user.username, original_username)
+        self.assertEqual(user.account_id, "")
+        self.assertEqual(user.password, original_password)
+
+
+class UsernameGenerationPathConsistencyTests(TestCase):
+    """
+    Every account-creation path must use the ONE canonical generator.
+
+    This is the regression guard for the original bug: some paths produced
+    usernames without the TIF marker.
+    """
+
+    CANONICAL = re.compile(
+        rf"^[A-Za-z0-9]+\d{{4}}TIF[{ACCOUNT_ID_ALPHABET}]{{{ACCOUNT_ID_LENGTH},}}$"
+    )
+
+    def _assert_canonical(self, user, expected_base):
+        self.assertRegex(user.username, self.CANONICAL)
+        self.assertIn("TIF", user.username)
+        self.assertTrue(user.username.startswith(expected_base))
+        self.assertTrue(user.account_id)
+        self.assertTrue(user.username.endswith(user.account_id))
+
+    def test_manager_create_user_path(self):
+        """Path 1: CustomUserManager.create_user()."""
+        user = User.objects.create_user(
+            email="path1@example.com",
+            full_name="Path One",
+            password="TestPass123",
+        )
+        self._assert_canonical(user, "PathOne")
+
+    def test_customer_self_signup_path(self):
+        """Path 2: accounts.CustomSignupForm (customer self-signup)."""
+        form = CustomSignupForm(data={
+            "first_name": "Path",
+            "last_name": "Two",
+            "email": "path2@example.com",
+            "password1": "StrongPass1!",
+            "password2": "StrongPass1!",
+            "security_question_1": "first_pet",
+            "security_answer_1": "Fluffy",
+            "security_question_2": "birth_city",
+            "security_answer_2": "Lagos",
+            "security_question_3": "first_school",
+            "security_answer_3": "Springfield",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self._assert_canonical(user, "PathTwo")
+
+    def test_admin_user_create_path(self):
+        """Path 3: admin_dashboard.UserCreateForm (admin-created any role)."""
+        from admin_dashboard.forms import UserCreateForm
+
+        form = UserCreateForm(data={
+            "full_name": "Path Three",
+            "email": "path3@example.com",
+            "role": User.Role.CUSTOMER,
+            "is_active": True,
+            "password1": "StrongPass1!",
+            "password2": "StrongPass1!",
+            "security_question_1": "first_pet",
+            "security_answer_1": "Fluffy",
+            "security_question_2": "birth_city",
+            "security_answer_2": "Lagos",
+            "security_question_3": "first_school",
+            "security_answer_3": "Springfield",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self._assert_canonical(user, "PathThree")
+
+    def test_admin_staff_create_path(self):
+        """Path 4: admin_dashboard.StaffCreateForm (admin-created staff)."""
+        from admin_dashboard.forms import StaffCreateForm
+
+        form = StaffCreateForm(data={
+            "full_name": "Path Four",
+            "email": "path4@example.com",
+            "role": User.Role.STAFF,
+            "is_active": True,
+            "password1": "StrongPass1!",
+            "password2": "StrongPass1!",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self._assert_canonical(user, "PathFour")
+
+    def test_direct_model_save_path(self):
+        """Path 5: direct model instantiation (shell, scripts, fixtures)."""
+        user = User(email="path5@example.com", full_name="Path Five")
+        user.set_password("TestPass123")
+        user.save()
+        self._assert_canonical(user, "PathFive")
+
+    def test_all_paths_produce_distinct_usernames(self):
+        """No two creation paths can collide on a username."""
+        usernames = set()
+        for i in range(5):
+            user = User.objects.create_user(
+                email=f"same{i}@example.com",
+                full_name="Same Name",
+                password="TestPass123",
+            )
+            usernames.add(user.username)
+        self.assertEqual(len(usernames), 5)
 
 
 # =============================================================================
@@ -420,8 +713,8 @@ class SignupViewTests(TestCase):
     def test_successful_signup(self):
         """Test that a user can successfully sign up with valid data."""
         response = self.client.post(self.signup_url, data=self.valid_signup_data)
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse("accounts:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/signup_credentials.html")
 
         self.assertEqual(User.objects.count(), 1)
         user = User.objects.first()
@@ -430,10 +723,13 @@ class SignupViewTests(TestCase):
         self.assertEqual(user.role, CustomUser.Role.CUSTOMER)
 
     def test_signup_generates_username(self):
-        """Test that signup generates a username automatically."""
+        """Signup generates a canonical username (name+year+TIF+random ID)."""
         self.client.post(self.signup_url, data=self.valid_signup_data)
         user = User.objects.first()
-        self.assertEqual(user.username, "JohnDoe2026001")
+        self.assertRegex(
+            user.username,
+            rf"^JohnDoe\d{{4}}TIF[{ACCOUNT_ID_ALPHABET}]{{{ACCOUNT_ID_LENGTH}}}$",
+        )
 
     def test_signup_creates_security_questions(self):
         """Test that signup creates three security questions."""
@@ -501,8 +797,7 @@ class SignupViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "First Name")
         self.assertContains(response, "Last Name")
-        self.assertContains(response, "Email Address")
-        self.assertContains(response, "Phone Number")
+        self.assertContains(response, "Email")
         self.assertContains(response, "Password")
         self.assertContains(response, "Confirm Password")
         self.assertContains(response, "Security Question 1")
@@ -2248,88 +2543,333 @@ class CustomerPaymentHistoryTests(TestCase):
         self.assertContains(response, reverse("accounts:payment_history"))
 
 
-class SignupDownloadTests(TestCase):
-    """Tests for the signup security questions download step."""
+class SignupCredentialsDownloadTests(TestCase):
+    """
+    Tests for the one-time credentials download offered at signup.
+
+    Covers: the download is offered, it contains the correct username,
+    password and security questions, and the raw password is never
+    persisted to the database, the session, or the logs.
+    """
+
+    RAW_PASSWORD = "StrongPass1!"
 
     def setUp(self):
         self.signup_url = reverse("accounts:signup")
-        self.download_url = reverse("accounts:signup_download")
-        self.file_url = reverse("accounts:download_security_questions")
-
-    def test_signup_stores_questions_in_session(self):
-        """After successful signup, questions should be stored in session."""
-        response = self.client.post(self.signup_url, {
+        self.payload = {
             "first_name": "Test",
             "last_name": "User",
             "email": "testdownload@example.com",
             "phone_number": "1234567890",
-            "password1": "StrongPass1!",
-            "password2": "StrongPass1!",
+            "password1": self.RAW_PASSWORD,
+            "password2": self.RAW_PASSWORD,
             "security_question_1": "first_pet",
             "security_answer_1": "Fluffy",
             "security_question_2": "birth_city",
             "security_answer_2": "Lagos",
             "security_question_3": "first_school",
             "security_answer_3": "Springfield Elementary",
-        })
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse("accounts:dashboard"))
-        self.assertEqual(self.client.session["signup_security_questions"], ["first_pet", "birth_city", "first_school"])
+        }
 
-    def test_download_page_requires_session_questions(self):
-        """Download page should redirect to signup if no questions in session."""
-        response = self.client.get(self.download_url)
-        self.assertRedirects(response, self.signup_url)
+    def _signup(self):
+        return self.client.post(self.signup_url, self.payload)
 
-    def test_download_page_renders_questions(self):
-        """Download page should show the stored questions."""
-        session = self.client.session
-        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
-        session.save()
-        response = self.client.get(self.download_url)
+    # ---------------------------------------------------------------
+    # The download is offered
+    # ---------------------------------------------------------------
+
+    def test_signup_renders_credentials_page_instead_of_redirecting(self):
+        """Signup returns the credentials page in the same response."""
+        response = self._signup()
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "first_pet")
-        self.assertContains(response, "birth_city")
-        self.assertContains(response, "first_school")
+        self.assertTemplateUsed(response, "accounts/signup_credentials.html")
 
-    def test_file_download_requires_session_questions(self):
-        """File download should redirect to signup if no questions in session."""
-        response = self.client.get(self.file_url)
-        self.assertRedirects(response, self.signup_url)
+    def test_download_button_is_offered(self):
+        """The page offers a download control for the credentials file."""
+        response = self._signup()
+        self.assertContains(response, "downloadCredentials")
+        self.assertContains(response, "credentialsFileText")
 
-    def test_file_download_generates_text_file(self):
-        """File download should return a plain text file with questions."""
-        session = self.client.session
-        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
-        session.save()
-        response = self.client.get(self.file_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/plain")
-        self.assertIn('attachment; filename="tamipee-security-questions.txt"', response["Content-Disposition"])
-        content = response.content.decode()
-        self.assertIn("first_pet", content)
-        self.assertIn("birth_city", content)
-        self.assertIn("first_school", content)
-        self.assertNotIn("Fluffy", content)
-        self.assertNotIn("Lagos", content)
+    def test_onscreen_warning_is_shown(self):
+        """The user is warned on-screen, not only inside the file."""
+        response = self._signup()
+        body = response.content.decode()
+        self.assertIn("Download this file now", body)
+        self.assertIn("only time your password can be shown", body)
 
-    def test_download_confirmation_redirects_to_login(self):
-        """Submitting the confirmation form should redirect to login."""
-        session = self.client.session
-        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
-        session.save()
-        response = self.client.post(self.download_url, {"downloaded_confirmed": "on"})
-        self.assertRedirects(response, reverse("accounts:login"))
+    def test_filename_uses_new_username(self):
+        """The offered filename is tied to the generated username."""
+        response = self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+        self.assertContains(response, f"tamipee-credentials-{user.username}.txt")
+
+    # ---------------------------------------------------------------
+    # File contents are correct
+    # ---------------------------------------------------------------
+
+    def test_file_contains_username_password_and_questions(self):
+        """File content includes username, raw password, and question text."""
+        response = self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+        file_text = response.context["credentials_file_text"]
+
+        self.assertIn(f"Username: {user.username}", file_text)
+        self.assertIn(f"Password: {self.RAW_PASSWORD}", file_text)
+        self.assertIn("What was the name of your first pet?", file_text)
+        self.assertIn("In what city were you born?", file_text)
+        self.assertIn("What was the name of your first school?", file_text)
+
+    def test_file_uses_new_random_username_format(self):
+        """The username in the file follows the new TIF + random ID format."""
+        response = self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+        file_text = response.context["credentials_file_text"]
+
+        self.assertRegex(
+            user.username,
+            rf"^TestUser\d{{4}}TIF[{ACCOUNT_ID_ALPHABET}]{{{ACCOUNT_ID_LENGTH}}}$",
+        )
+        self.assertIn(user.username, file_text)
+
+    def test_file_never_contains_security_answers(self):
+        """Answers are hashed and must never appear in the file or page."""
+        response = self._signup()
+        file_text = response.context["credentials_file_text"]
+        body = response.content.decode()
+
+        for answer in ("Fluffy", "Lagos", "Springfield Elementary"):
+            self.assertNotIn(answer, file_text)
+            self.assertNotIn(answer, body)
+
+    def test_questions_shown_are_labels_not_raw_keys(self):
+        """Human-readable question text is used, not the choice keys."""
+        response = self._signup()
+        labels = response.context["question_labels"]
+        self.assertEqual(labels, [
+            "What was the name of your first pet?",
+            "In what city were you born?",
+            "What was the name of your first school?",
+        ])
+
+    # ---------------------------------------------------------------
+    # The raw password is not persisted anywhere
+    # ---------------------------------------------------------------
+
+    def test_raw_password_not_stored_in_database(self):
+        """Password is stored only as a hash; raw value appears nowhere."""
+        self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+
+        self.assertNotEqual(user.password, self.RAW_PASSWORD)
+        self.assertNotIn(self.RAW_PASSWORD, user.password)
+        self.assertTrue(user.password.startswith("pbkdf2_"))
+        self.assertTrue(user.check_password(self.RAW_PASSWORD))
+
+    def test_raw_password_not_in_any_database_column(self):
+        """Sweep every text column of the user row for the raw password."""
+        self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+
+        for field in user._meta.fields:
+            value = getattr(user, field.attname, None)
+            if isinstance(value, str):
+                self.assertNotIn(
+                    self.RAW_PASSWORD, value,
+                    f"Raw password leaked into field '{field.attname}'",
+                )
+
+    def test_raw_password_not_stored_in_security_questions(self):
+        """Security question rows must not contain the raw password."""
+        self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+        for question in user.security_questions.all():
+            self.assertNotIn(self.RAW_PASSWORD, question.hashed_answer)
+            self.assertNotIn(self.RAW_PASSWORD, question.question)
+
+    def test_raw_password_not_stored_in_session(self):
+        """The session must not retain the raw password after signup."""
+        self._signup()
+        session_blob = str(dict(self.client.session))
+        self.assertNotIn(self.RAW_PASSWORD, session_blob)
+
+    def test_security_questions_no_longer_stored_in_session(self):
+        """The old session-based questions handoff is gone."""
+        self._signup()
         self.assertNotIn("signup_security_questions", self.client.session)
 
-    def test_download_page_blocks_without_confirmation(self):
-        """Download page should show error if confirmation checkbox is not checked."""
-        session = self.client.session
-        session["signup_security_questions"] = ["first_pet", "birth_city", "first_school"]
-        session.save()
-        response = self.client.post(self.download_url, {})
+    def test_raw_password_not_written_to_logs(self):
+        """Capture all log output during signup and assert no leak."""
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        root_logger = logging.getLogger()
+        previous_level = root_logger.level
+
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.DEBUG)
+        try:
+            self._signup()
+        finally:
+            handler.flush()
+            root_logger.removeHandler(handler)
+            root_logger.setLevel(previous_level)
+
+        self.assertNotIn(self.RAW_PASSWORD, stream.getvalue())
+
+    def test_response_is_not_cacheable(self):
+        """The credentials response must not be cached or stored."""
+        response = self._signup()
+        self.assertIn("no-store", response["Cache-Control"])
+
+    def test_signup_view_marks_password_params_sensitive(self):
+        """
+        Django's error reporting must redact the raw password for this view,
+        so a traceback can never capture it.
+        """
+        response = self._signup()
+        sensitive = response.wsgi_request.sensitive_post_parameters
+        for field in ("password1", "password2"):
+            self.assertIn(field, sensitive)
+
+    def test_credentials_page_not_reachable_by_get(self):
+        """The credentials page exists only as the signup POST response."""
+        response = self.client.get(self.signup_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please confirm")
+        self.assertTemplateUsed(response, "accounts/signup.html")
+        self.assertNotContains(response, "downloadCredentials")
+
+    def test_user_is_logged_in_after_signup(self):
+        """Auto-login behaviour is preserved."""
+        self._signup()
+        user = User.objects.get(email="testdownload@example.com")
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_continue_link_points_to_dashboard(self):
+        """The page offers a way forward after saving credentials."""
+        response = self._signup()
+        self.assertContains(response, reverse("accounts:dashboard"))
+
+
+class AdminCreatedAccountCredentialsTests(TestCase):
+    """The credentials download is also offered for admin-created accounts."""
+
+    RAW_PASSWORD = "AdminSetPass1!"
+
+    def setUp(self):
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="AdminPass123",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+            is_superuser=True,
+        )
+        self.client.force_login(self.super_admin)
+
+    def test_admin_user_create_offers_credentials(self):
+        """Creating a customer as admin renders the credentials page."""
+        response = self.client.post(reverse("admin_dashboard:user_create"), {
+            "full_name": "Created Customer",
+            "email": "createdcustomer@example.com",
+            "role": User.Role.CUSTOMER,
+            "is_active": "on",
+            "password1": self.RAW_PASSWORD,
+            "password2": self.RAW_PASSWORD,
+            "security_question_1": "first_pet",
+            "security_answer_1": "Rex",
+            "security_question_2": "birth_city",
+            "security_answer_2": "Abuja",
+            "security_question_3": "first_school",
+            "security_answer_3": "Unity",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_dashboard/user_credentials.html")
+
+        created = User.objects.get(email="createdcustomer@example.com")
+        file_text = response.context["credentials_file_text"]
+        self.assertIn(f"Username: {created.username}", file_text)
+        self.assertIn(f"Password: {self.RAW_PASSWORD}", file_text)
+        self.assertIn("TIF", created.username)
+        self.assertTrue(created.account_id)
+
+        # Answers never exposed, raw password never persisted.
+        for answer in ("Rex", "Abuja", "Unity"):
+            self.assertNotIn(answer, file_text)
+        self.assertNotIn(self.RAW_PASSWORD, created.password)
+        self.assertTrue(created.check_password(self.RAW_PASSWORD))
+        self.assertNotIn(self.RAW_PASSWORD, str(dict(self.client.session)))
+
+    def test_admin_staff_create_offers_credentials(self):
+        """Creating a staff member as admin renders the credentials page."""
+        response = self.client.post(reverse("admin_dashboard:staff_create"), {
+            "full_name": "Created Staff",
+            "email": "createdstaff@example.com",
+            "role": User.Role.STAFF,
+            "is_active": "on",
+            "password1": self.RAW_PASSWORD,
+            "password2": self.RAW_PASSWORD,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin_dashboard/user_credentials.html")
+
+        created = User.objects.get(email="createdstaff@example.com")
+        file_text = response.context["credentials_file_text"]
+        self.assertIn(f"Username: {created.username}", file_text)
+        self.assertIn(f"Password: {self.RAW_PASSWORD}", file_text)
+        self.assertIn("TIF", created.username)
+        self.assertTrue(created.account_id)
+        self.assertNotIn(self.RAW_PASSWORD, created.password)
+        self.assertTrue(created.check_password(self.RAW_PASSWORD))
+
+
+class ExistingAccountsUntouchedTests(TestCase):
+    """
+    Guard: this change is new-accounts-only. Existing usernames and
+    passwords must never be rewritten.
+    """
+
+    def test_existing_accounts_survive_new_signups(self):
+        """Creating new accounts leaves older accounts completely unchanged."""
+        legacy_users = []
+        for index in range(3):
+            user = User.objects.create_user(
+                email=f"legacy{index}@example.com",
+                full_name=f"Legacy User{index}",
+                password="LegacyPass123",
+                username=f"LegacyUser{index}2025{index + 1:03d}",
+            )
+            legacy_users.append(
+                (user.pk, user.username, user.password, user.account_id)
+            )
+
+        # Create several new accounts through the canonical path.
+        for index in range(3):
+            User.objects.create_user(
+                email=f"fresh{index}@example.com",
+                full_name="Fresh User",
+                password="FreshPass123",
+            )
+
+        for pk, username, password, account_id in legacy_users:
+            reloaded = User.objects.get(pk=pk)
+            self.assertEqual(reloaded.username, username)
+            self.assertEqual(reloaded.password, password)
+            self.assertEqual(reloaded.account_id, account_id)
+            self.assertTrue(reloaded.check_password("LegacyPass123"))
+
+    def test_legacy_sequential_usernames_still_log_in(self):
+        """Old sequential usernames remain valid login credentials."""
+        User.objects.create_user(
+            email="oldstyle@example.com",
+            full_name="Old Style",
+            password="OldPass123!",
+            username="OldStyle2025001",
+        )
+        logged_in = self.client.login(
+            username="OldStyle2025001", password="OldPass123!"
+        )
+        self.assertTrue(logged_in)
 
 
 class SecurityAnswerExposureTests(TestCase):

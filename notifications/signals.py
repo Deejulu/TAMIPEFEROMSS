@@ -1,5 +1,6 @@
 from django.conf import settings
-from django.db.models.signals import post_save, pre_save
+from django.core.cache import cache
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 
 from accounts.models import CustomUser
@@ -45,7 +46,6 @@ def notify_payment_received(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=CustomUser)
 def notify_new_user(sender, instance, created, **kwargs):
-    # Skip notification creation during tests
     if getattr(settings, 'TESTING', False):
         return
     if created:
@@ -54,3 +54,9 @@ def notify_new_user(sender, instance, created, **kwargs):
             message=f"New user registered: {instance.full_name} ({instance.get_role_display()})",
             related_object_id=instance.id,
         )
+
+
+@receiver(post_save, sender=Notification)
+@receiver(post_delete, sender=Notification)
+def invalidate_notification_count_cache(sender, **kwargs):
+    cache.delete('unread_notification_count')

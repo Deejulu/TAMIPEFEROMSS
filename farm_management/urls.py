@@ -75,4 +75,10 @@ urlpatterns = [
 
     path('sample-data/load/', views.populate_sample_data, name='populate_sample_data'),
     path('sample-data/clear/', views.delete_sample_data, name='delete_sample_data'),
+
+    path('expenses/', views.FarmExpenseListView.as_view(), name='expense_list'),
+    path('expenses/add/', views.FarmExpenseCreateView.as_view(), name='expense_add'),
+    path('expenses/<int:pk>/edit/', views.FarmExpenseUpdateView.as_view(), name='expense_edit'),
+    path('expenses/<int:pk>/delete/', views.FarmExpenseDeleteView.as_view(), name='expense_delete'),
+    path('expenses/summary/', views.FarmExpenseSummaryView.as_view(), name='expense_summary'),
 ]

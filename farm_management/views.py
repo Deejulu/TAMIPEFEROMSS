@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.core.management import call_command
 from django.db import IntegrityError
 from django.db.models import Sum, Count, F
+from decimal import Decimal
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -14,13 +15,14 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, TemplateView, DetailView, UpdateView, DeleteView, CreateView
 from django.db.models.functions import TruncMonth
 import io
+import json
 from contextlib import redirect_stdout
 from collections import defaultdict
 
 from shop.models import Order, OrderItem
 
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog
-from .forms import BatchForm, FeedLogForm, GrowthRecordForm, MortalityLogForm, HarvestRecordForm, FeedInventoryForm, SupplierForm, SupplierUpdateForm, HealthMedicationLogForm, VaccinationRecordForm, DailyActivityLogForm, SpeciesForm, SpeciesUpdateForm, CategoryForm, CategoryUpdateForm, WaterQualityLogForm
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog, FarmExpense
+from .forms import BatchForm, FeedLogForm, GrowthRecordForm, MortalityLogForm, HarvestRecordForm, FeedInventoryForm, SupplierForm, SupplierUpdateForm, HealthMedicationLogForm, VaccinationRecordForm, DailyActivityLogForm, SpeciesForm, SpeciesUpdateForm, CategoryForm, CategoryUpdateForm, WaterQualityLogForm, FarmExpenseForm
 
 from admin_dashboard.mixins import AdminRequiredMixin
 from admin_dashboard.views import log_audit
@@ -196,6 +198,7 @@ class FeedLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView):
                     })
                 return self.form_invalid(form)
 
+        form.instance.recorded_by = self.request.user
         response = super().form_valid(form)
 
         if feed_inventory and quantity_kg:
@@ -317,6 +320,10 @@ class GrowthRecordCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView)
             initial['batch'] = batch_pk
         return initial
 
+    def form_valid(self, form):
+        form.instance.recorded_by = self.request.user
+        return super().form_valid(form)
+
     def get_success_url(self):
         messages.success(self.request, 'Growth record added successfully.')
         log_audit(self.request, 'create', 'GrowthRecord', self.object.pk, f'Created growth record for {self.object.batch.name}: {self.object.average_weight_kg}kg')
@@ -378,6 +385,7 @@ class MortalityLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView)
     def form_valid(self, form):
         batch = form.cleaned_data.get('batch')
         old_stock = batch.current_stock if batch else None
+        form.instance.recorded_by = self.request.user
         response = super().form_valid(form)
         if batch and old_stock is not None:
             batch.refresh_from_db()
@@ -552,6 +560,10 @@ class HealthMedicationLogCreateView(AdminRequiredMixin, LoginRequiredMixin, Crea
             initial['batch'] = batch_pk
         return initial
 
+    def form_valid(self, form):
+        form.instance.recorded_by = self.request.user
+        return super().form_valid(form)
+
     def get_success_url(self):
         messages.success(self.request, 'Health/medication log added successfully.')
         log_audit(self.request, 'create', 'HealthMedicationLog', self.object.pk, f'Created health log for {self.object.batch.name}: {self.object.medicine_name}')
@@ -614,6 +626,10 @@ class VaccinationRecordCreateView(AdminRequiredMixin, LoginRequiredMixin, Create
             initial['batch'] = batch_pk
         return initial
 
+    def form_valid(self, form):
+        form.instance.recorded_by = self.request.user
+        return super().form_valid(form)
+
     def get_success_url(self):
         messages.success(self.request, 'Vaccination record added successfully.')
         log_audit(self.request, 'create', 'VaccinationRecord', self.object.pk, f'Created vaccination record for {self.object.batch.name}: {self.object.vaccine_name}')
@@ -674,9 +690,11 @@ class DailyActivityLogCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateV
         batch_pk = self.kwargs.get('batch_pk')
         if batch_pk:
             initial['batch'] = batch_pk
-        if self.request.user.is_authenticated:
-            initial['created_by'] = self.request.user.pk
         return initial
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
 
     def get_success_url(self):
         messages.success(self.request, 'Daily activity log added successfully.')
@@ -948,24 +966,36 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Batch Analytics'
 
-        batches = Batch.objects.annotate(
-            annotated_total_feed_cost=Sum('feed_logs__cost'),
-            annotated_total_feed_qty=Sum('feed_logs__quantity_kg'),
-            annotated_total_mortality=Sum('mortality_logs__count'),
-        ).select_related('harvest').prefetch_related(
+        cache_key = 'batch_analytics_context'
+        cached_context = cache.get(cache_key)
+        if cached_context is not None:
+            context.update(cached_context)
+            return context
+        else:
+            import logging
+            logging.getLogger('analytics').info('Analytics cache miss')
+
+        batches = Batch.objects.select_related(
+            'harvest', 'species', 'species__category'
+        ).prefetch_related(
             'feed_logs',
             'growth_records',
             'mortality_logs',
             'vaccination_records',
             'health_logs',
+        ).only(
+            'id', 'name', 'status', 'current_stock', 'initial_count',
+            'species_id',
+            'harvest__total_revenue',
+            'species__name', 'species__category__name',
         )
 
         analytics = []
         analytics_json = []
         for batch in batches:
-            # Compute FCR from prefetched data to avoid extra DB queries
             feed_logs = batch.feed_logs.all()
             total_feed_qty = sum(fl.quantity_kg for fl in feed_logs) if feed_logs else 0
+            total_feed_cost = sum(fl.cost for fl in feed_logs) if feed_logs else 0
             
             growth_records = list(batch.growth_records.all())
             growth_records.sort(key=lambda r: r.date)
@@ -978,16 +1008,14 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
                 weight_gain = (latest.average_weight_kg - earliest.average_weight_kg) * batch.current_stock
                 growth_rate = round(float(weight_gain / days), 4) if days > 0 and weight_gain > 0 else None
 
-            # Use select_related harvest data directly
             profit = None
             if hasattr(batch, 'harvest'):
-                total_feed_cost = sum(fl.cost for fl in feed_logs) if feed_logs else 0
                 profit = batch.harvest.total_revenue - total_feed_cost
 
             item = {
                 'batch': batch,
-                'total_feed_cost': batch.annotated_total_feed_cost or 0,
-                'total_feed_qty': batch.annotated_total_feed_qty or 0,
+                'total_feed_cost': total_feed_cost,
+                'total_feed_qty': total_feed_qty,
                 'fcr': round(total_feed_qty / weight_gain, 2) if weight_gain and total_feed_qty > 0 else None,
                 'mortality_rate': batch.mortality_rate,
                 'growth_rate': growth_rate,
@@ -1002,7 +1030,7 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
                 },
                 'total_feed_cost': float(item['total_feed_cost']) if item['total_feed_cost'] else 0,
                 'total_feed_qty': float(item['total_feed_qty']) if item['total_feed_qty'] else 0,
-                'fcr': float(item['fcr']) if item['fcr'] else None,
+                'fcr': float(item['fcr']) if item['fcr'] is not None else None,
                 'mortality_rate': float(batch.mortality_rate) if batch.mortality_rate else 0,
                 'growth_rate': float(growth_rate) if growth_rate is not None else None,
                 'profit': float(profit) if profit is not None else None,
@@ -1011,7 +1039,6 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         context['analytics'] = analytics
         context['analytics_json'] = json.dumps(analytics_json)
 
-        # Pie chart data: feed cost distribution
         feed_cost_pie = []
         for item in analytics:
             feed_cost_pie.append({
@@ -1020,7 +1047,6 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
             })
         context['feed_cost_pie_json'] = json.dumps(feed_cost_pie)
 
-        # Pie chart data: stock distribution
         stock_pie = []
         for item in analytics:
             stock_pie.append({
@@ -1029,9 +1055,8 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
             })
         context['stock_pie_json'] = json.dumps(stock_pie)
 
-        # Cache monthly feed trend for 15 minutes
-        cache_key = 'analytics_monthly_feed_trend'
-        cached_trend = cache.get(cache_key)
+        cache_key_trend = 'analytics_monthly_feed_trend'
+        cached_trend = cache.get(cache_key_trend)
         if cached_trend is None:
             monthly_feed = FeedLog.objects.annotate(
                 month=TruncMonth('date')
@@ -1050,12 +1075,11 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
                 'labels': trend_labels,
                 'values': trend_values,
             }
-            cache.set(cache_key, cached_trend, 900)  # 15 minutes
+            cache.set(cache_key_trend, cached_trend, 900)
         
         context['trend_labels_json'] = json.dumps(cached_trend['labels'])
         context['trend_values_json'] = json.dumps(cached_trend['values'])
 
-        # Vaccination Coverage data
         vaccination_coverage = []
         vaccination_coverage_json = []
         for batch in batches:
@@ -1079,7 +1103,6 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         context['vaccination_coverage'] = vaccination_coverage
         context['vaccination_coverage_json'] = json.dumps(vaccination_coverage_json)
 
-        # Health/Medication Log Frequency data
         health_log_frequency = []
         health_log_frequency_json = []
         health_reasons_data = {}
@@ -1104,18 +1127,18 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
         context['health_log_frequency'] = health_log_frequency
         context['health_log_frequency_json'] = json.dumps(health_log_frequency_json)
 
-        # Top health reasons (pie chart)
         sorted_reasons = sorted(health_reasons_data.items(), key=lambda x: x[1], reverse=True)[:8]
         context['health_reasons_json'] = json.dumps([{'reason': r[0], 'count': r[1]} for r in sorted_reasons])
 
-        # Top medications used (pie chart)
         sorted_medicines = sorted(health_medicines_data.items(), key=lambda x: x[1], reverse=True)[:8]
         context['health_medicines_json'] = json.dumps([{'medicine': m[0], 'count': m[1]} for m in sorted_medicines])
 
-        # Sales Analytics: best/worst sellers by units and revenue
         sales_items = OrderItem.objects.select_related('order', 'product').filter(
             order__status__in=['pending', 'confirmed', 'processing', 'awaiting_delivery', 'shipped', 'delivered']
-        ).exclude(product__isnull=True)
+        ).exclude(product__isnull=True).only(
+            'id', 'quantity', 'price', 'product_id', 'product_name',
+            'order__status', 'product__name',
+        )
 
         product_sales = defaultdict(lambda: {'quantity': 0, 'revenue': 0, 'name': ''})
         for item in sales_items:
@@ -1158,6 +1181,30 @@ class BatchAnalyticsView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
                 [a for a in analytics if a['profit'] is not None],
                 key=lambda x: x['profit'],
             ) if any(a['profit'] is not None for a in analytics) else None
+
+        # Cache the non-request-specific context for 5 minutes
+        cacheable_context = {
+            'analytics': analytics,
+            'analytics_json': context['analytics_json'],
+            'feed_cost_pie_json': context['feed_cost_pie_json'],
+            'stock_pie_json': context['stock_pie_json'],
+            'trend_labels_json': context['trend_labels_json'],
+            'trend_values_json': context['trend_values_json'],
+            'vaccination_coverage': vaccination_coverage,
+            'vaccination_coverage_json': context['vaccination_coverage_json'],
+            'health_log_frequency': health_log_frequency,
+            'health_log_frequency_json': context['health_log_frequency_json'],
+            'health_reasons_json': context['health_reasons_json'],
+            'health_medicines_json': context['health_medicines_json'],
+            'sales_analytics': context['sales_analytics'],
+            'sales_analytics_json': context['sales_analytics_json'],
+            'highest_feed': context.get('highest_feed'),
+            'best_fcr': context.get('best_fcr'),
+            'fastest_growth': context.get('fastest_growth'),
+            'highest_mortality': context.get('highest_mortality'),
+            'most_profitable': context.get('most_profitable'),
+        }
+        cache.set(cache_key, cacheable_context, 300)
 
         return context
 
@@ -1475,16 +1522,19 @@ def populate_sample_data(request):
         call_command('populate_sample')
 
     output_text = output.getvalue()
-    categories_count = output_text.count('Created category:')
+    categories_count = output_text.count('Created shop category:')
     species_count = output_text.count('Created species:')
     suppliers_count = output_text.count('Created supplier:')
     feed_count = output_text.count('Created feed inventory:')
     batches_count = output_text.count('Created batch:')
+    expenses_count = output_text.count('sample farm expenses.')
+    linked_count = output_text.count('Linked product')
 
     msg = (
-        f'Sample data populated: {categories_count} categories, '
+        f'Sample data populated: {categories_count} shop categories, '
         f'{species_count} species, {suppliers_count} suppliers, '
-        f'{feed_count} feed inventory items, {batches_count} batches.'
+        f'{feed_count} feed inventory items, {batches_count} batches, '
+        f'{expenses_count} expense groups, {linked_count} product-batch links.'
     )
     messages.success(request, msg)
 
@@ -1496,6 +1546,8 @@ def populate_sample_data(request):
             'suppliers_created': suppliers_count,
             'feed_inventory_created': feed_count,
             'batches_created': batches_count,
+            'expenses_created': expenses_count,
+            'linked_products_created': linked_count,
             'message': msg,
         })
 
@@ -1527,3 +1579,196 @@ def delete_sample_data(request):
             'message': f'Sample data deleted. {output_text.strip()}',
         })
     return redirect('farm_management:dashboard')
+
+
+# =============================================================================
+# Feature 3: Farm Expenses / Cost Tracking
+# =============================================================================
+
+class FarmExpenseListView(AdminRequiredMixin, LoginRequiredMixin, ListView):
+    template_name = 'farm_management/expense_list.html'
+    model = FarmExpense
+    context_object_name = 'expenses'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = FarmExpense.objects.select_related('batch', 'recorded_by').all()
+        expense_type = self.request.GET.get('type', '')
+        date_from = self.request.GET.get('date_from', '')
+        date_to = self.request.GET.get('date_to', '')
+        if expense_type:
+            qs = qs.filter(expense_type=expense_type)
+        if date_from:
+            qs = qs.filter(date_incurred__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_incurred__lte=date_to)
+        return qs.order_by('-date_incurred', '-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Farm Expenses'
+        context['expense_type_choices'] = FarmExpense.EXPENSE_TYPE_CHOICES
+        context['selected_type'] = self.request.GET.get('type', '')
+        context['date_from'] = self.request.GET.get('date_from', '')
+        context['date_to'] = self.request.GET.get('date_to', '')
+        context['total_expenses'] = FarmExpense.objects.count()
+        return context
+
+
+class FarmExpenseCreateView(AdminRequiredMixin, LoginRequiredMixin, CreateView):
+    template_name = 'farm_management/expense_form.html'
+    model = FarmExpense
+    form_class = FarmExpenseForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.request.user.is_authenticated:
+            initial['recorded_by'] = self.request.user.pk
+        return initial
+
+    def form_valid(self, form):
+        form.instance.recorded_by = self.request.user
+        response = super().form_valid(form)
+
+        if self.object.expense_type == 'feed_purchase':
+            feed_inventory = self.object.feed_inventory
+            qty = self.object.quantity_purchased_kg
+            if feed_inventory and qty:
+                feed_inventory.quantity_on_hand_kg = F('quantity_on_hand_kg') + qty
+                feed_inventory.save(update_fields=['quantity_on_hand_kg'])
+                log_audit(self.request, 'update', 'FeedInventory', feed_inventory.pk, f'Feed inventory restocked for "{feed_inventory.feed_type}": +{qty}kg (new stock: {feed_inventory.quantity_on_hand_kg}kg)')
+
+        return response
+
+    def get_success_url(self):
+        messages.success(self.request, 'Expense recorded successfully.')
+        log_audit(self.request, 'create', 'FarmExpense', self.object.pk, f'Recorded {self.object.get_expense_type_display()} expense: ₦{self.object.amount}')
+        return reverse('farm_management:expense_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Add Expense'
+        return context
+
+
+class FarmExpenseSummaryView(AdminRequiredMixin, LoginRequiredMixin, TemplateView):
+    template_name = 'farm_management/expense_summary.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Cost Estimate'
+
+        date_from = self.request.GET.get('date_from', '')
+        date_to = self.request.GET.get('date_to', '')
+
+        cache_key = f'expense_summary_context:{date_from}:{date_to}:{cache.get("expense_summary_generation", 0)}'
+        cached_context = cache.get(cache_key)
+        if cached_context is not None:
+            context.update(cached_context)
+            return context
+
+        qs = FarmExpense.objects.all()
+        if date_from:
+            qs = qs.filter(date_incurred__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_incurred__lte=date_to)
+
+        summary = {}
+        total = Decimal('0.00')
+
+        expense_type_choices = dict(FarmExpense.EXPENSE_TYPE_CHOICES)
+        aggregated = qs.values('expense_type').annotate(
+            amount=Sum('amount'),
+            count=Count('pk'),
+        )
+        aggregated_map = {row['expense_type']: row for row in aggregated}
+
+        for code, label in FarmExpense.EXPENSE_TYPE_CHOICES:
+            row = aggregated_map.get(code, {'amount': Decimal('0.00'), 'count': 0})
+            amount = row['amount'] or Decimal('0.00')
+            summary[code] = {
+                'label': label,
+                'amount': amount,
+                'count': row['count'],
+            }
+            total += amount
+
+        feed_log_qs = FeedLog.objects.all()
+        if date_from:
+            feed_log_qs = feed_log_qs.filter(date__gte=date_from)
+        if date_to:
+            feed_log_qs = feed_log_qs.filter(date__lte=date_to)
+
+        feed_usage_amount = feed_log_qs.aggregate(total=Sum('cost'))['total'] or Decimal('0.00')
+        feed_usage_count = feed_log_qs.count()
+        summary['feed_usage'] = {
+            'label': 'Feed Used (Farm-wide)',
+            'amount': feed_usage_amount,
+            'count': feed_usage_count,
+        }
+        total += feed_usage_amount
+
+        context['summary'] = summary
+        context['total_cost'] = total
+        context['date_from'] = date_from
+        context['date_to'] = date_to
+        context['expense_type_choices'] = FarmExpense.EXPENSE_TYPE_CHOICES
+        context['total_expenses'] = qs.count()
+
+        chart_data = []
+        chart_labels = []
+        for code, data in summary.items():
+            if data['amount'] > 0:
+                chart_labels.append(data['label'])
+                chart_data.append(float(data['amount']))
+
+        context['chart_labels'] = json.dumps(chart_labels)
+        context['chart_data'] = json.dumps(chart_data)
+
+        cacheable_context = {
+            'summary': summary,
+            'total_cost': total,
+            'date_from': date_from,
+            'date_to': date_to,
+            'expense_type_choices': FarmExpense.EXPENSE_TYPE_CHOICES,
+            'total_expenses': qs.count(),
+            'chart_labels': context['chart_labels'],
+            'chart_data': context['chart_data'],
+        }
+        cache.set(cache_key, cacheable_context, 300)
+
+        return context
+
+
+class FarmExpenseUpdateView(AdminRequiredMixin, LoginRequiredMixin, UpdateView):
+    template_name = 'farm_management/expense_form.html'
+    model = FarmExpense
+    form_class = FarmExpenseForm
+
+    def get_success_url(self):
+        messages.success(self.request, 'Expense updated successfully.')
+        log_audit(self.request, 'update', 'FarmExpense', self.object.pk, f'Updated {self.object.get_expense_type_display()} expense: ₦{self.object.amount}')
+        return reverse('farm_management:expense_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f'Edit Expense: {self.object.get_expense_type_display()}'
+        return context
+
+
+class FarmExpenseDeleteView(AdminRequiredMixin, LoginRequiredMixin, DeleteView):
+    template_name = 'farm_management/expense_confirm_delete.html'
+    model = FarmExpense
+    context_object_name = 'expense'
+    success_url = reverse_lazy('farm_management:expense_list')
+
+    def delete(self, request, *args, **kwargs):
+        expense = self.get_object()
+        log_audit(self.request, 'delete', 'FarmExpense', expense.pk, f'Deleted {expense.get_expense_type_display()} expense: ₦{expense.amount}')
+        messages.success(request, f'Expense "{expense.get_expense_type_display()}" deleted.')
+        return super().delete(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f'Delete Expense: {self.object.get_expense_type_display()}'
+        return context

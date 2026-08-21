@@ -264,7 +264,7 @@ def checkout(request):
     enabled_payment_methods = [
         {"code": code, "label": label}
         for code, label in PaymentMethodSetting.PAYMENT_METHOD_CHOICES
-        if PaymentMethodSetting.is_enabled(code)
+        if PaymentMethodSetting.is_enabled(code) and code != "bank_transfer"
     ]
     if not enabled_payment_methods:
         messages.error(request, _("No payment methods are currently available."))
@@ -300,7 +300,7 @@ def place_order(request):
     payment_method = request.POST.get("payment_method")
     if payment_method not in {
         code for code, _ in PaymentMethodSetting.PAYMENT_METHOD_CHOICES
-        if PaymentMethodSetting.is_enabled(code)
+        if PaymentMethodSetting.is_enabled(code) and code != "bank_transfer"
     }:
         messages.error(request, _("Please select an available payment method."))
         return redirect("shop:checkout")
@@ -365,6 +365,15 @@ def place_order(request):
     reference = f"{payment_method}-{uuid.uuid4().hex[:24]}"
     Payment.objects.create(order=order, reference=reference, amount=order.total)
     if payment_method == "cash_on_delivery":
+        for item in order.items.select_related("product").all():
+            product = item.product
+            if product:
+                old_stock = product.stock_quantity
+                product.decrement_stock(item.quantity)
+                new_stock = product.stock_quantity
+                if old_stock > settings.LOW_STOCK_THRESHOLD and new_stock <= settings.LOW_STOCK_THRESHOLD:
+                    from notifications.utils import maybe_notify_low_stock
+                    maybe_notify_low_stock(product, old_stock, new_stock)
         order.status = Order.Status.PROCESSING
         order.save(update_fields=["status"])
     return redirect("shop:payment_success", pk=order.pk)

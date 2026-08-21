@@ -10,9 +10,10 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 
 from shop.models import Category, Product
+from farm_management.models import Batch
 from accounts.models import SecurityQuestion
 from accounts.constants import SECURITY_QUESTIONS
-from accounts.utils import generate_unique_username
+from accounts.utils import generate_unique_username_with_id, split_full_name
 from .models import SiteContent, BusinessHours
 
 User = get_user_model()
@@ -254,6 +255,7 @@ class UserCreateForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
         # Make email not required by default - will be enforced in clean()
         self.fields['email'].required = False
@@ -276,20 +278,57 @@ class UserCreateForm(forms.ModelForm):
     
     def clean(self):
         """
-        Validate that security questions are provided for Customer role,
-        and that email is provided for non-Customer roles.
+        Validate role restrictions, security questions, and passwords.
+
+        - Super Staff may only create STAFF accounts (never SUPER_STAFF or
+          SUPER_ADMIN). Super Admin may create any role.
+        - Email is required for non-Customer roles.
+        - Security questions are required for Customer role.
+        - A password is required for Staff/Super Staff roles (and must be
+          strong and match). Customer accounts without a password get a
+          placeholder instead.
         """
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
         email = cleaned_data.get('email')
-        
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        request_user = getattr(self, 'request_user', None)
+        if (
+            request_user
+            and request_user.role == User.Role.SUPER_STAFF
+            and role in (User.Role.SUPER_STAFF, User.Role.SUPER_ADMIN)
+        ):
+            raise forms.ValidationError(
+                _("Super Staff can only create Staff accounts."),
+                code="super_staff_role_restricted",
+            )
+
         # Email is required for non-Customer roles
         if role and role != User.Role.CUSTOMER and not email:
             raise forms.ValidationError(
                 _("Email address is required for admin and staff accounts."),
                 code="email_required_for_admin",
             )
-        
+
+        # Staff / Super Staff roles require a password
+        if role and role != User.Role.CUSTOMER:
+            if not password1:
+                raise forms.ValidationError(
+                    _("Password is required for staff accounts."),
+                    code="password_required",
+                )
+            if password1 != password2:
+                raise forms.ValidationError(
+                    _("The two password fields didn't match."),
+                    code="password_mismatch",
+                )
+            try:
+                validate_password(password1)
+            except forms.ValidationError as exc:
+                self.add_error('password1', exc)
+
         # Security questions are required for Customer role
         if role == User.Role.CUSTOMER:
             q1 = cleaned_data.get('security_question_1')
@@ -298,25 +337,25 @@ class UserCreateForm(forms.ModelForm):
             a1 = cleaned_data.get('security_answer_1')
             a2 = cleaned_data.get('security_answer_2')
             a3 = cleaned_data.get('security_answer_3')
-            
+
             if not q1 or not q2 or not q3:
                 raise forms.ValidationError(
                     _("Please select all three security questions for Customer accounts."),
                     code="missing_security_questions",
                 )
-            
+
             if len({q1, q2, q3}) != 3:
                 raise forms.ValidationError(
                     _("Please select three different security questions."),
                     code="duplicate_security_questions",
                 )
-            
+
             if not a1 or not a2 or not a3:
                 raise forms.ValidationError(
                     _("Please provide answers for all three security questions."),
                     code="missing_security_answers",
                 )
-        
+
         return cleaned_data
     
     def clean_password2(self):
@@ -348,7 +387,6 @@ class UserCreateForm(forms.ModelForm):
         For Customer role without email, generate a placeholder email.
         """
         from django.db import transaction
-        from accounts.utils import generate_unique_username
         
         with transaction.atomic():
             user = super().save(commit=False)
@@ -357,10 +395,10 @@ class UserCreateForm(forms.ModelForm):
             # Auto-generate username from full_name if not provided
             full_name = self.cleaned_data.get('full_name', '')
             if full_name and not user.username:
-                name_parts = full_name.strip().split()
-                first_name = name_parts[0] if name_parts else ""
-                last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-                user.username = generate_unique_username(first_name, last_name)
+                first_name, last_name = split_full_name(full_name)
+                user.username, user.account_id = generate_unique_username_with_id(
+                    first_name, last_name
+                )
             
             # For Customer role without email, generate placeholder
             if user.role == User.Role.CUSTOMER and not user.email:
@@ -496,14 +534,13 @@ class StaffCreateForm(forms.ModelForm):
 
     def save(self, commit=True):
         from django.db import transaction
-        from accounts.utils import generate_unique_username
         
         with transaction.atomic():
             user = super().save(commit=False)
             user.set_password(self.cleaned_data['password1'])
-            user.username = generate_unique_username(
-                self.cleaned_data.get('full_name', '').split()[0] if self.cleaned_data.get('full_name') else '',
-                ' '.join(self.cleaned_data.get('full_name', '').split()[1:]) if self.cleaned_data.get('full_name') and len(self.cleaned_data.get('full_name').split()) > 1 else ''
+            first_name, last_name = split_full_name(self.cleaned_data.get('full_name', ''))
+            user.username, user.account_id = generate_unique_username_with_id(
+                first_name, last_name
             )
             if commit:
                 user.save()
@@ -662,7 +699,7 @@ class CategoryForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'category', 'price', 'stock_quantity', 'image', 'description', 'is_active']
+        fields = ['name', 'category', 'price', 'stock_quantity', 'image', 'description', 'is_active', 'linked_batch']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -680,6 +717,9 @@ class ProductForm(forms.ModelForm):
                 'class': 'form-control',
                 'min': '0'
             }),
+            'linked_batch': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'image': forms.ClearableFileInput(attrs={
                 'class': 'form-control'
             }),
@@ -692,11 +732,22 @@ class ProductForm(forms.ModelForm):
             }),
         }
 
-    def clean_category(self):
-        category = self.cleaned_data.get('category')
-        if not category:
-            raise ValidationError(_("Please select a category."))
-        return category
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['linked_batch'].queryset = Batch.objects.all().order_by('-start_date')
+        self.fields['linked_batch'].empty_label = 'No linked batch'
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        image = self.cleaned_data.get('image')
+        if image and hasattr(image, 'name'):
+            from accounts.utils import optimize_image
+            optimized = optimize_image(image, max_size=(1200, 1200), quality=85)
+            instance.image = optimized
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class SiteContentForm(forms.ModelForm):

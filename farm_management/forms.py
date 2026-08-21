@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, WaterQualityLog, FarmExpense
 
 
 class BatchForm(forms.ModelForm):
@@ -325,6 +325,17 @@ class HealthMedicationLogForm(forms.ModelForm):
             raise forms.ValidationError(_('Cannot log health/medication for a closed batch.'))
         return batch
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'name'):
+            from accounts.utils import optimize_image
+            optimized = optimize_image(photo, max_size=(1200, 1200), quality=85)
+            instance.photo = optimized
+        if commit:
+            instance.save()
+        return instance
+
 
 class VaccinationRecordForm(forms.ModelForm):
     class Meta:
@@ -384,6 +395,17 @@ class DailyActivityLogForm(forms.ModelForm):
         if batch and batch.status == 'closed':
             raise forms.ValidationError(_('Cannot log activity for a closed batch.'))
         return batch
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        photo = self.cleaned_data.get('photo')
+        if photo and hasattr(photo, 'name'):
+            from accounts.utils import optimize_image
+            optimized = optimize_image(photo, max_size=(1200, 1200), quality=85)
+            instance.photo = optimized
+        if commit:
+            instance.save()
+        return instance
 
 
 class SpeciesForm(forms.ModelForm):
@@ -485,3 +507,61 @@ class WaterQualityLogForm(forms.ModelForm):
         if batch and batch.status == 'closed':
             raise forms.ValidationError(_('Cannot log water quality for a closed batch.'))
         return batch
+
+
+class FarmExpenseForm(forms.ModelForm):
+    class Meta:
+        model = FarmExpense
+        fields = ['expense_type', 'amount', 'date_incurred', 'description', 'custom_label', 'batch', 'supplier', 'feed_inventory', 'quantity_purchased_kg']
+        widgets = {
+            'expense_type': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+            }),
+            'date_incurred': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional description e.g. June electricity bill',
+            }),
+            'custom_label': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Vet call-out fee, Fence repair',
+            }),
+            'batch': forms.Select(attrs={'class': 'form-select'}),
+            'supplier': forms.Select(attrs={'class': 'form-select'}),
+            'feed_inventory': forms.Select(attrs={'class': 'form-select'}),
+            'quantity_purchased_kg': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'e.g. 100',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['batch'].required = False
+        self.fields['batch'].queryset = Batch.objects.filter(status='active').order_by('-start_date')
+        self.fields['batch'].empty_label = 'Farm-wide (no specific batch)'
+        self.fields['supplier'].required = False
+        self.fields['supplier'].queryset = Supplier.objects.all().order_by('name')
+        self.fields['supplier'].empty_label = 'No specific supplier'
+        self.fields['feed_inventory'].required = False
+        self.fields['feed_inventory'].queryset = FeedInventory.objects.all().order_by('feed_type')
+        self.fields['feed_inventory'].empty_label = 'No specific feed item'
+        self.fields['quantity_purchased_kg'].required = False
+        self.fields['custom_label'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        expense_type = cleaned_data.get('expense_type')
+        custom_label = cleaned_data.get('custom_label')
+        if expense_type == 'other' and not custom_label:
+            self.add_error('custom_label', 'Please enter a description for this "Other" expense.')
+        return cleaned_data

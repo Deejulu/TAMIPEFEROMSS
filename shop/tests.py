@@ -1,6 +1,7 @@
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from decimal import Decimal
 import hashlib
 import hmac
@@ -8,7 +9,7 @@ import json
 from unittest import mock
 
 from shop.models import Product, Cart, CartItem, Order, OrderItem, Category, Payment
-from admin_dashboard.models import DeliveryOption
+from admin_dashboard.models import DeliveryOption, PaymentMethodSetting
 
 User = get_user_model()
 
@@ -301,6 +302,41 @@ class ShopViewTests(TestCase):
         self.assertEqual(order.status, Order.Status.PROCESSING)
         self.assertEqual(order.total, Decimal("2000.00"))
         self.assertEqual(order.items.count(), 1)
+
+    def test_cod_order_decrements_product_stock(self):
+        initial_stock = self.product.stock_quantity
+        self.client.login(username=self.user.username, password="testpass123")
+        self.client.post(reverse("shop:add_to_cart", args=[self.product.pk]))
+        response = self.client.post(
+            reverse("shop:place_order"),
+            {
+                "delivery_address": "123 Test Street",
+                "delivery_option": DeliveryOption.objects.first().pk,
+                "payment_method": "cash_on_delivery",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_quantity, initial_stock - 1)
+
+    def test_checkout_excludes_bank_transfer_option(self):
+        self.client.login(username=self.user.username, password="testpass123")
+        self.client.post(reverse("shop:add_to_cart", args=[self.product.pk]))
+        response = self.client.get(reverse("shop:checkout"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Bank Transfer")
+        self.assertNotIn('bank_transfer', response.context.get('enabled_payment_methods', []))
+
+    def test_old_bank_transfer_order_still_displays(self):
+        order = Order.objects.create(
+            user=self.user,
+            total=Decimal("1500.00"),
+            payment_method="bank_transfer",
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("accounts:order_detail", args=[order.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "bank_transfer")
 
     def test_checkout_prefills_default_delivery_address(self):
         self.user.default_delivery_address = "12 Market Road\nLagos"

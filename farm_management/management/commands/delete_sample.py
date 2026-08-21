@@ -21,8 +21,9 @@ from farm_management.models import (
     HealthMedicationLog,
     DailyActivityLog,
     HarvestRecord,
+    FarmExpense,
 )
-from shop.models import Category as ShopCategory, Product, Order, OrderItem, Cart, CartItem
+from shop.models import Category as ShopCategory, Product, Order, OrderItem, Cart, CartItem, Payment
 from notifications.models import Notification
 from accounts.models import CustomUser
 
@@ -34,20 +35,9 @@ class Command(BaseCommand):
         total = 0
 
         # ------------------------------------------------------------------
-        # Shop orders and cart items for known sample/test users
+        # Shop sample orders and cart items
         # ------------------------------------------------------------------
-        sample_usernames = [
-            "DavidTamipee2026TIF002",
-            "DavidTamipee2026TIF003",
-            "admin",
-            "testcustomer",
-            "TestCustomerCRUD2026001",
-            "TestCustomerCRUD2026002",
-            "TestCustomerCRUD2026003",
-        ]
-        sample_users = CustomUser.objects.filter(username__in=sample_usernames)
-
-        sample_orders = Order.objects.filter(user__in=sample_users)
+        sample_orders = Order.objects.filter(is_sample_data=True)
         order_ids = list(sample_orders.values_list("pk", flat=True))
         count, _ = OrderItem.objects.filter(order_id__in=order_ids).delete()
         total += count
@@ -59,10 +49,21 @@ class Command(BaseCommand):
         if count:
             self.stdout.write(f"Deleted {count} sample orders.")
 
+        count, _ = Payment.objects.filter(is_sample_data=True).delete()
+        total += count
+        if count:
+            self.stdout.write(f"Deleted {count} sample payments.")
+
+        sample_users = CustomUser.objects.filter(is_sample_data=True)
         count, _ = CartItem.objects.filter(cart__user__in=sample_users).delete()
         total += count
         if count:
             self.stdout.write(f"Deleted {count} sample cart items.")
+
+        count, _ = CustomUser.objects.filter(is_sample_data=True).delete()
+        total += count
+        if count:
+            self.stdout.write(f"Deleted {count} sample users.")
 
         # ------------------------------------------------------------------
         # Shop products and categories
@@ -123,6 +124,7 @@ class Command(BaseCommand):
             HealthMedicationLog,
             DailyActivityLog,
             HarvestRecord,
+            FarmExpense,
         ]
         for model in child_models:
             count, _ = model.objects.filter(is_sample=True).delete()

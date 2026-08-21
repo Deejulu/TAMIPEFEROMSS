@@ -1,0 +1,343 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+<style>
+.expense-intro {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px rgba(27, 94, 32, 0.18);
+}
+.expense-intro h3 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.expense-intro p {
+    margin-bottom: 0;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+.expense-card-explanation {
+    font-size: 0.8125rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+}
+.total-cost-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(27, 94, 32, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+.total-cost-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1B5E20, #D4AF37, #43A047);
+}
+.total-cost-card .card-body {
+    padding: 1.5rem;
+}
+.total-cost-card h6 {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+.total-cost-card h2 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1B5E20;
+    margin-bottom: 0.25rem;
+}
+.total-cost-card small {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.chart-wrapper {
+    position: relative;
+    height: 350px;
+}
+@media (max-width: 992px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+    .chart-wrapper {
+        height: 300px;
+    }
+}
+@media (max-width: 768px) {
+    .total-cost-card h2 {
+        font-size: 1.75rem;
+    }
+    .chart-wrapper {
+        height: 280px;
+    }
+}
+@media (max-width: 576px) {
+    .total-cost-card h2 {
+        font-size: 1.5rem;
+    }
+    .chart-wrapper {
+        height: 240px;
+    }
+    .expense-intro {
+        padding: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="farm-management-page expense-summary-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-bar-chart-line"></i> Cost Estimate</h2>
+        </div>
+        <a href="{% url 'farm_management:expense_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Expenses
+        </a>
+    </div>
+
+    <div class="expense-intro">
+        <h3>Farm Cost Overview</h3>
+        <p>This page shows everything it costs to run the farm, including electricity, labor, bedding, animal purchases, purchased feed, and feed actually used. Use the date filters below to see costs for a specific period.</p>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="card farm-search-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label for="id_date_from" class="form-label">From</label>
+                    <input type="date" name="date_from" id="id_date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label for="id_date_to" class="form-label">To</label>
+                    <input type="date" name="date_to" id="id_date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Apply Filter
+                    </button>
+                </div>
+                <div class="col-12 col-md-3">
+                    <a href="{% url 'farm_management:expense_summary' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        {% for code, data in summary.items %}
+        <div class="col-md-6 col-12">
+            <div class="card farm-stats-card">
+                <div class="card-body">
+                    <h6>{{ data.label }}</h6>
+                    <h3 class="text-success">₦{{ data.amount|floatformat:2 }}</h3>
+                    <small>{{ data.count }} record{{ data.count|pluralize }}</small>
+                    {% if code == 'electricity' %}
+                    <p class="expense-card-explanation">Power and utility bills for the farm.</p>
+                    {% elif code == 'labor' %}
+                    <p class="expense-card-explanation">Wages and payments for farm workers.</p>
+                    {% elif code == 'sawdust' %}
+                    <p class="expense-card-explanation">Bedding material for poultry and livestock pens.</p>
+                    {% elif code == 'supplier_purchase' %}
+                    <p class="expense-card-explanation">Cost of buying day-old chicks, fish stock, or other animals.</p>
+                    {% elif code == 'feed_purchase' %}
+                    <p class="expense-card-explanation">Cost of buying feed bags or feed inventory from suppliers.</p>
+                    {% elif code == 'feed_usage' %}
+                    <p class="expense-card-explanation">Cost of feed actually consumed by the animals (quantity × price per kg).</p>
+                    {% elif code == 'other' %}
+                    <p class="expense-card-explanation">Other miscellaneous farm costs not covered by the standard categories.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Total Farm Cost -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card total-cost-card">
+                <div class="card-body">
+                    <h6>Total Farm Cost</h6>
+                    <h2>₦{{ total_cost|floatformat:2 }}</h2>
+                    <small>Combined total for selected period</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    {% if chart_data %}
+    <div class="charts-row">
+        <div class="card farm-table-card mb-4">
+            <div class="card-header">
+                <strong>Cost Breakdown (Pie Chart)</strong>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrapper">
+                    <canvas id="costBreakdownPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card farm-table-card mb-4">
+            <div class="card-header">
+                <strong>Cost Comparison (Bar Chart)</strong>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrapper">
+                    <canvas id="costBreakdownBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-3">
+        <a href="{% url 'farm_management:expense_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Expense
+        </a>
+        <a href="{% url 'farm_management:expense_list' %}" class="btn btn-outline-secondary ms-2">
+            View All Expenses
+        </a>
+    </div>
+</div>
+
+{% if chart_data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pieCtx = document.getElementById('costBreakdownPieChart');
+    const barCtx = document.getElementById('costBreakdownBarChart');
+    if (pieCtx && barCtx) {
+        const labels = {{ chart_labels|safe }};
+        const data = {{ chart_data|safe }};
+        const colors = [
+            '#1B5E20',
+            '#D4AF37',
+            '#1565C0',
+            '#C62828',
+            '#6A1B9A',
+            '#00897B',
+        ];
+
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.parsed || 0;
+                                let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                let percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return label + ': ₦' + value.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cost (₦)',
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '₦' + context.parsed.y.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₦' + value.toLocaleString('en-NG');
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

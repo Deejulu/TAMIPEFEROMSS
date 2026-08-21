@@ -58,3 +58,15 @@ ngrok/
 cookies.txt
 default_*.sqlite3
 db.sqlite3
+
+# Debug / verification scripts
+dbcheck.py
+verify.py
+
+# Sensitive reports
+username_migration_report.csv
+
+# Screenshots / error images
+login_error.png
+screenshot_*
+save_screenshot*

@@ -12,6 +12,9 @@ from django.views.generic import CreateView, TemplateView, RedirectView, UpdateV
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model, login as auth_login
 from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
 from django.core.signing import SignatureExpired, BadSignature
 from django.contrib.auth.views import PasswordChangeView, LoginView
 from django.core.management import call_command
@@ -23,6 +26,7 @@ from shop.models import Order, Payment
 from .forms import CustomSignupForm, ProfileEditForm, ChangeSecurityQuestionsForm, SecurityQuestionRecoveryForm, RecoveryPasswordResetForm
 from .tokens import verify_token, build_verification_url
 from .models import SavedCard, Transaction
+from .constants import SECURITY_QUESTIONS
 
 User = get_user_model()
 
@@ -87,35 +91,44 @@ class SignUpView(CreateView):
     """
     User registration view.
 
-    Uses the CustomUserCreationForm to handle new user signups.
+    Uses the CustomSignupForm to handle new user signups.
     All new users are automatically assigned the CUSTOMER role.
-    On successful registration, a verification email is sent and
-    the user is automatically logged in and redirected to the dashboard.
+    On successful registration the user is automatically logged in and shown
+    the one-time credentials page (see `render_signup_credentials`), which
+    lets them download their username, password and security questions.
+
+    `sensitive_post_parameters` is applied so that if this view ever raises,
+    Django's error reporting redacts the raw password and security answers
+    instead of including them in a traceback, email, or log record.
     """
     form_class = CustomSignupForm
     template_name = "accounts/signup.html"
     success_url = reverse_lazy("accounts:dashboard")
 
+    @method_decorator(sensitive_post_parameters(
+        "password1",
+        "password2",
+        "security_answer_1",
+        "security_answer_2",
+        "security_answer_3",
+    ))
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         """
         Called when the form is submitted with valid data.
-        Saves the user, logs them in, stores security questions in session,
-        and redirects to the dashboard.
-        """
-        response = super().form_valid(form)
 
+        Saves the user, logs them in, and returns the one-time credentials
+        page instead of redirecting, so the raw password (available only in
+        this request) can be offered as a download exactly once.
+        """
+        self.object = form.save()
         user = self.object
 
         # Auto-login the user after successful signup
         auth_login(self.request, user)
-
-        # Store the selected security questions in session for later access
-        questions = [
-            form.cleaned_data.get("security_question_1", ""),
-            form.cleaned_data.get("security_question_2", ""),
-            form.cleaned_data.get("security_question_3", ""),
-        ]
-        self.request.session["signup_security_questions"] = questions
 
         # Send verification email only if user provided an email
         if user.email:
@@ -135,69 +148,134 @@ class SignUpView(CreateView):
             except Exception:
                 pass  # Email sending failure should not block registration
 
-        messages.success(
+        # Render the one-time credentials page. The raw password is read
+        # straight from the submitted form and is never persisted.
+        return render_signup_credentials(
             self.request,
-            _(f"Account created successfully! Your username is: {user.username}. "
-              f"Please save your security questions for account recovery."),
+            user=user,
+            raw_password=form.cleaned_data.get("password1", ""),
+            question_keys=[
+                form.cleaned_data.get("security_question_1", ""),
+                form.cleaned_data.get("security_question_2", ""),
+                form.cleaned_data.get("security_question_3", ""),
+            ],
+            form=form,
+            next_url=str(self.success_url),
+            continue_label=_("Continue to My Dashboard"),
         )
-        return response
 
 
-class SignupDownloadView(TemplateView):
+def build_credentials_file_text(username, raw_password, question_labels):
     """
-    Intermediate page shown after signup, requiring the user to download
-    their security questions before proceeding to login.
+    Build the plain-text credentials file offered once at signup.
+
+    Contains the username, the raw password, and the security QUESTIONS only.
+    Security answers are hashed on save and are deliberately never included.
     """
-    template_name = "accounts/signup_download.html"
+    lines = [
+        "TAMIPEE - YOUR ACCOUNT CREDENTIALS",
+        "=" * 52,
+        "",
+        "KEEP THIS FILE SAFE. Your password is shown here in plain text",
+        "and CANNOT be retrieved again after you leave this page.",
+        "",
+        "-" * 52,
+        "LOGIN DETAILS",
+        "-" * 52,
+        f"Username: {username}",
+        f"Password: {raw_password}",
+        "",
+        "-" * 52,
+        "YOUR SECURITY QUESTIONS (for account recovery)",
+        "-" * 52,
+    ]
+    for index, label in enumerate(question_labels, start=1):
+        lines.append(f"{index}. {label}")
 
-    def dispatch(self, request, *args, **kwargs):
-        questions = request.session.get("signup_security_questions")
-        if not questions:
-            messages.error(request, _("Please complete the signup form first."))
-            return redirect("accounts:signup")
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        questions = self.request.session.get("signup_security_questions", [])
-        context["questions"] = questions
-        return context
-
-    def post(self, request, *args, **kwargs):
-        if request.POST.get("downloaded_confirmed"):
-            request.session.pop("signup_security_questions", None)
-            messages.success(request, _("You can now log in to your account."))
-            return redirect("accounts:login")
-        messages.error(request, _("Please confirm that you have downloaded your security questions."))
-        return self.get(request, *args, **kwargs)
+    lines += [
+        "",
+        "Your ANSWERS are not stored in this file. They are saved securely",
+        "hashed and cannot be displayed by anyone, including support staff.",
+        "",
+        "-" * 52,
+        "IMPORTANT",
+        "-" * 52,
+        "- Store this file somewhere private and secure.",
+        "- Do not share your password or answers with anyone.",
+        "- TAMIPEE will never ask you to reveal your password or answers.",
+        "- Change your password if you think it has been exposed.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
-def download_security_questions_file(request):
+def render_signup_credentials(
+    request,
+    user,
+    raw_password,
+    question_keys,
+    form=None,
+    next_url=None,
+    template_name="accounts/signup_credentials.html",
+    is_admin_created=False,
+    continue_label=None,
+):
     """
-    Generate and download a plain text file containing the user's
-    security questions (questions only, never answers).
+    Render the one-time credentials page for a newly created account.
+
+    The raw password is embedded in this single HTML response only, so the
+    browser can build the .txt download client-side (JS Blob). It is never
+    written to the database, the session, a cookie, or a log file, and the
+    response is marked no-store so it is not cached anywhere.
+
+    After the response body is rendered, the raw password is scrubbed from
+    the form's cleaned_data so it does not linger in memory for the rest of
+    the request (e.g. if a later error report walks local variables).
     """
-    questions = request.session.get("signup_security_questions", [])
-    if not questions:
-        messages.error(request, _("No security questions found. Please sign up first."))
-        return redirect("accounts:signup")
+    question_lookup = dict(SECURITY_QUESTIONS)
+    question_labels = [
+        question_lookup.get(key, key) for key in question_keys if key
+    ]
 
-    content = "TAMIPEE - Your Security Questions\n"
-    content += "=" * 50 + "\n\n"
-    content += "Please keep this file in a safe place. These questions will be used\n"
-    content += "to verify your identity if you forget your password.\n\n"
+    file_text = build_credentials_file_text(
+        user.username, raw_password, question_labels
+    )
+    filename = f"tamipee-credentials-{user.username}.txt"
 
-    for i, question in enumerate(questions, 1):
-        content += f"{i}. {question}\n"
+    # render() renders the template to bytes immediately, so the raw password
+    # is fully consumed by the time this call returns.
+    response = render(
+        request,
+        template_name,
+        {
+            "new_username": user.username,
+            "new_full_name": user.full_name,
+            "account_id": user.account_id,
+            "raw_password": raw_password,
+            "question_labels": question_labels,
+            "credentials_file_text": file_text,
+            "credentials_filename": filename,
+            "next_url": next_url or reverse("accounts:dashboard"),
+            "is_admin_created": is_admin_created,
+            "continue_label": continue_label,
+        },
+    )
 
-    content += "\n" + "-" * 50 + "\n"
-    content += "IMPORTANT:\n"
-    content += "- Do not share these questions with anyone.\n"
-    content += "- If you forget your answers, contact support to have your account reset.\n"
-    content += "- TAMIPEE will never ask you to reveal your answers.\n"
+    # Never cache or store this response anywhere.
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    response["Referrer-Policy"] = "no-referrer"
 
-    response = HttpResponse(content, content_type="text/plain")
-    response["Content-Disposition"] = 'attachment; filename="tamipee-security-questions.txt"'
+    # Discard the raw password from the form so it is not retained after this
+    # point. The only remaining copy is the response body already on its way
+    # to the user who just typed it.
+    if form is not None:
+        for field in ("password1", "password2"):
+            if field in getattr(form, "cleaned_data", {}):
+                form.cleaned_data[field] = ""
+    raw_password = ""
+
     return response
 
 

@@ -2893,7 +2893,9 @@ class SuperStaffRoleTests(TestCase):
             'is_active': True,
             'must_change_password': False,
         })
+        # UserCreateView is Super-Admin only; Super Staff is redirected.
         self.assertEqual(response.status_code, 302)
+        self.assertIn('dashboard', response.url)
         self.assertFalse(User.objects.filter(email='newsuperadmin@example.com').exists())
 
     def test_super_staff_cannot_create_another_super_staff(self):
@@ -2907,6 +2909,7 @@ class SuperStaffRoleTests(TestCase):
             'must_change_password': False,
         })
         self.assertEqual(response.status_code, 302)
+        self.assertIn('dashboard', response.url)
         self.assertFalse(User.objects.filter(email='newsuperstaff@example.com').exists())
 
     def test_super_staff_cannot_access_user_edit_page(self):
@@ -3087,7 +3090,7 @@ class StaffManagementTests(TestCase):
             'password1': 'NewPass123!',
             'password2': 'NewPass123!',
         })
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(User.objects.filter(email='newstaff@example.com', role=User.Role.STAFF).exists())
 
     def test_super_admin_can_create_super_staff(self):
@@ -3102,7 +3105,7 @@ class StaffManagementTests(TestCase):
             'password1': 'NewPass123!',
             'password2': 'NewPass123!',
         })
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(User.objects.filter(email='newsuperstaff@example.com', role=User.Role.SUPER_STAFF).exists())
 
     def test_super_staff_cannot_create_super_staff(self):

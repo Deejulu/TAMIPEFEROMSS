@@ -74,6 +74,7 @@
                             <th>Date</th>
                             <th>Details</th>
                             <th>Administered By</th>
+                            <th>Logged By</th>
                             <th>Photo</th>
                         </tr>
                     </thead>
@@ -98,6 +99,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ record.administered_by|default:"—" }}</td>
+                            <td>{% if record.recorded_by %}{{ record.recorded_by.get_full_name|default:record.recorded_by.username }}{% else %}—{% endif %}</td>
                             <td>
                                 {% if record.record_type == 'health' and record.photo %}
                                 <a href="{{ record.photo.url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-image"></i></a>
@@ -153,6 +155,12 @@
                         <div class="farm-mobile-row">
                             <span class="farm-mobile-label">Administered By</span>
                             <span class="farm-mobile-value">{{ record.administered_by }}</span>
+                        </div>
+                        {% endif %}
+                        {% if record.recorded_by %}
+                        <div class="farm-mobile-row">
+                            <span class="farm-mobile-label">Logged By</span>
+                            <span class="farm-mobile-value">{{ record.recorded_by.get_full_name|default:record.recorded_by.username }}</span>
                         </div>
                         {% endif %}
                     </div>

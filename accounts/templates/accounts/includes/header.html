@@ -146,7 +146,7 @@
 
             <!-- Avatar -->
             {% if user.profile_picture %}
-              <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="user-avatar" style="object-fit: cover;">
+              <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" class="user-avatar user-avatar-img">
             {% else %}
               <div class="user-avatar">
                 {{ user.full_name|slice:":1"|upper }}

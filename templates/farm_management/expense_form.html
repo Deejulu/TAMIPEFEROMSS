@@ -1,0 +1,158 @@
+{% extends "admin_dashboard/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'farm_management/css/farm_management.css' %}">
+{% endblock %}
+
+{% block admin_content %}
+<div class="farm-management-page expense-form-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2>{{ page_title }}</h2>
+        </div>
+        <a href="{% url 'farm_management:expense_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Expenses
+        </a>
+    </div>
+
+    <div class="card farm-form-card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.expense_type.id_for_label }}" class="form-label">Expense Type</label>
+                        {{ form.expense_type }}
+                        {% if form.expense_type.errors %}
+                        <div class="text-danger small">{{ form.expense_type.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.amount.id_for_label }}" class="form-label">Amount (₦)</label>
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                        <div class="text-danger small">{{ form.amount.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.date_incurred.id_for_label }}" class="form-label">Date Incurred</label>
+                        {{ form.date_incurred }}
+                        {% if form.date_incurred.errors %}
+                        <div class="text-danger small">{{ form.date_incurred.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.batch.id_for_label }}" class="form-label">Batch (Optional)</label>
+                        {{ form.batch }}
+                        {% if form.batch.errors %}
+                        <div class="text-danger small">{{ form.batch.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6" id="supplier-field-group">
+                        <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier (Optional)</label>
+                        {{ form.supplier }}
+                        {% if form.supplier.errors %}
+                        <div class="text-danger small">{{ form.supplier.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Most relevant for Animal/Stock Purchase expenses.</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3" id="feed-purchase-fields" style="display: none;">
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.feed_inventory.id_for_label }}" class="form-label">Feed Inventory Item (Optional)</label>
+                        {{ form.feed_inventory }}
+                        {% if form.feed_inventory.errors %}
+                        <div class="text-danger small">{{ form.feed_inventory.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Select the feed item being restocked.</small>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.quantity_purchased_kg.id_for_label }}" class="form-label">Quantity Purchased (kg)</label>
+                        {{ form.quantity_purchased_kg }}
+                        {% if form.quantity_purchased_kg.errors %}
+                        <div class="text-danger small">{{ form.quantity_purchased_kg.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">This amount will be added to the feed inventory stock.</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3" id="other-fields" style="display: none;">
+                    <div class="col-12 col-md-6">
+                        <label for="{{ form.custom_label.id_for_label }}" class="form-label">What is this expense for? <span class="text-danger">*</span></label>
+                        {{ form.custom_label }}
+                        {% if form.custom_label.errors %}
+                        <div class="text-danger small">{{ form.custom_label.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">e.g. Vet call-out fee, Fence repair, Generator servicing</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div class="text-danger small">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Expense
+                    </button>
+                    <a href="{% url 'farm_management:expense_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const expenseTypeSelect = document.getElementById('{{ form.expense_type.id_for_label }}');
+    const supplierGroup = document.getElementById('supplier-field-group');
+    const feedPurchaseFields = document.getElementById('feed-purchase-fields');
+    const otherFields = document.getElementById('other-fields');
+    if (expenseTypeSelect && supplierGroup && feedPurchaseFields && otherFields) {
+        function toggleFields() {
+            const val = expenseTypeSelect.value;
+            if (val === 'supplier_purchase') {
+                supplierGroup.style.display = '';
+            } else {
+                supplierGroup.style.display = 'none';
+            }
+            if (val === 'feed_purchase') {
+                feedPurchaseFields.style.display = '';
+            } else {
+                feedPurchaseFields.style.display = 'none';
+            }
+            if (val === 'other') {
+                otherFields.style.display = '';
+            } else {
+                otherFields.style.display = 'none';
+            }
+        }
+        toggleFields();
+        expenseTypeSelect.addEventListener('change', toggleFields);
+    }
+});
+</script>
+{% endblock %}

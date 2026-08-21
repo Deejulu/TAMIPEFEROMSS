@@ -3,13 +3,13 @@
 
 {% block admin_content %}
 <div class="staff-management-header">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h2><i class="bi bi-person-badge"></i> Staff Management</h2>
             <p class="text-muted mb-0">Manage staff and super-staff accounts</p>
         </div>
         {% if is_super_admin or request.user.role == 'SUPER_STAFF' %}
-        <div class="d-flex gap-3 align-items-center">
+        <div class="d-flex gap-3 align-items-center flex-wrap">
             <a href="{% url 'admin_dashboard:staff_create' %}" class="btn btn-success">
                 <i class="bi bi-person-plus"></i> Add Staff Member
             </a>
@@ -447,6 +447,12 @@
     .staff-table thead th:nth-child(5),
     .staff-table tbody td:nth-child(5) {
         display: none;
+    }
+
+    .staff-management-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
     }
 }
 

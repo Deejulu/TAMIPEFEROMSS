@@ -107,6 +107,7 @@ class FeedLog(models.Model):
     quantity_kg = models.DecimalField(_("quantity (kg)"), max_digits=8, decimal_places=2)
     cost = models.DecimalField(_("cost"), max_digits=10, decimal_places=2)
     notes = models.TextField(_("notes"), blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("recorded by"), null=True, blank=True, related_name='feed_logs')
     is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
@@ -132,6 +133,7 @@ class GrowthRecord(models.Model):
     date = models.DateField(_("date"))
     average_weight_kg = models.DecimalField(_("average weight (kg)"), max_digits=6, decimal_places=3)
     sample_size = models.PositiveIntegerField(_("sample size"), help_text=_("Number of animals sampled for this average"))
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("recorded by"), null=True, blank=True, related_name='growth_records')
     is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
@@ -152,6 +154,7 @@ class MortalityLog(models.Model):
     count = models.PositiveIntegerField(_("count"))
     cause = models.CharField(_("cause"), max_length=200, blank=True)
     notes = models.TextField(_("notes"), blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("recorded by"), null=True, blank=True, related_name='mortality_logs')
     is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
@@ -203,6 +206,7 @@ class VaccinationRecord(models.Model):
     vaccine_name = models.CharField(_("vaccine name"), max_length=150)
     dosage = models.CharField(_("dosage"), max_length=100)
     administered_by = models.CharField(_("administered by"), max_length=150, blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("recorded by"), null=True, blank=True, related_name='vaccination_records')
     is_sample = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
@@ -224,6 +228,7 @@ class HealthMedicationLog(models.Model):
     dosage = models.CharField(_("dosage"), max_length=100)
     reason = models.CharField(_("reason"), max_length=200)
     administered_by = models.CharField(_("administered by"), max_length=150, blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("recorded by"), null=True, blank=True, related_name='health_logs')
     photo = models.ImageField(_("photo"), upload_to='health_logs/', null=True, blank=True)
     is_sample = models.BooleanField(_("sample data"), default=False)
 
@@ -344,3 +349,69 @@ class HarvestRecord(models.Model):
 
     def __str__(self):
         return f"{self.batch} — {self.harvest_date}"
+
+
+class FarmExpense(models.Model):
+    EXPENSE_TYPE_CHOICES = [
+        ('electricity', 'Electricity'),
+        ('labor', 'Labor'),
+        ('sawdust', 'Sawdust'),
+        ('supplier_purchase', 'Animal/Stock Purchase'),
+        ('feed_purchase', 'Feed Purchase'),
+        ('other', 'Other'),
+    ]
+
+    expense_type = models.CharField(_("expense type"), max_length=20, choices=EXPENSE_TYPE_CHOICES)
+    amount = models.DecimalField(_("amount"), max_digits=12, decimal_places=2)
+    date_incurred = models.DateField(_("date incurred"))
+    description = models.TextField(_("description"), blank=True)
+    custom_label = models.CharField(_("custom label"), max_length=100, blank=True, null=True)
+    batch = models.ForeignKey(
+        Batch,
+        on_delete=models.SET_NULL,
+        verbose_name=_("batch"),
+        null=True,
+        blank=True,
+        related_name='expenses',
+    )
+    supplier = models.ForeignKey(
+        Supplier,
+        on_delete=models.SET_NULL,
+        verbose_name=_("supplier"),
+        null=True,
+        blank=True,
+        related_name='expenses',
+    )
+    feed_inventory = models.ForeignKey(
+        'FeedInventory',
+        on_delete=models.SET_NULL,
+        verbose_name=_("feed inventory"),
+        null=True,
+        blank=True,
+        related_name='expenses',
+    )
+    quantity_purchased_kg = models.DecimalField(_("quantity purchased (kg)"), max_digits=8, decimal_places=2, null=True, blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name=_("recorded by"),
+        null=True,
+        blank=True,
+        related_name='recorded_expenses',
+    )
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    is_sample = models.BooleanField(_("sample data"), default=False)
+
+    class Meta:
+        verbose_name = _("farm expense")
+        verbose_name_plural = _("farm expenses")
+        ordering = ['-date_incurred', '-created_at']
+        indexes = [
+            models.Index(fields=['expense_type', 'date_incurred'], name='farmexpense_type_date_idx'),
+        ]
+
+    def __str__(self):
+        batch_str = f" — {self.batch.name}" if self.batch else ""
+        if self.expense_type == 'other' and self.custom_label:
+            return f"Other: {self.custom_label} — ₦{self.amount} ({self.date_incurred}){batch_str}"
+        return f"{self.get_expense_type_display()}: ₦{self.amount} ({self.date_incurred}){batch_str}"

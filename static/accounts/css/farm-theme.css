@@ -2348,6 +2348,15 @@ textarea.form-control {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
+  flex-shrink: 0;
+}
+
+.user-avatar-img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .dropdown-menu {

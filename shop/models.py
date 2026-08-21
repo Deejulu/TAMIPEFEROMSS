@@ -53,6 +53,15 @@ class Product(models.Model):
     is_sample_data = models.BooleanField(_("sample data"), default=False)
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+    linked_batch = models.ForeignKey(
+        'farm_management.Batch',
+        on_delete=models.SET_NULL,
+        verbose_name=_("linked batch"),
+        null=True,
+        blank=True,
+        related_name='linked_products',
+        help_text=_("Optional: link this product to a farm batch for automatic stock tracking"),
+    )
 
     class Meta:
         verbose_name = _("product")
@@ -253,6 +262,7 @@ class Order(models.Model):
     )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
     updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+    is_sample_data = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("order")
@@ -366,6 +376,7 @@ class OrderItem(models.Model):
         decimal_places=2,
         help_text=_("Price per unit at time of purchase"),
     )
+    is_sample_data = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("order item")
@@ -426,6 +437,7 @@ class Payment(models.Model):
         help_text=_("Raw response data from Paystack"),
     )
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    is_sample_data = models.BooleanField(_("sample data"), default=False)
 
     class Meta:
         verbose_name = _("payment")

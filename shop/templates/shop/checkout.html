@@ -123,8 +123,6 @@
                   <span class="payment-label-content">
                     {% if method.code == 'paystack' %}
                       <i class="bi bi-credit-card"></i>
-                    {% elif method.code == 'bank_transfer' %}
-                      <i class="bi bi-bank"></i>
                     {% elif method.code == 'cash_on_delivery' %}
                       <i class="bi bi-cash-coin"></i>
                     {% endif %}
@@ -136,7 +134,7 @@
               {% endfor %}
             </div>
 
-            <p class="payment-instruction text-muted small">Bank transfer customers receive account details and verification instructions after placing the order. Cash on Delivery is collected when your order arrives.</p>
+            <p class="payment-instruction text-muted small">Cash on Delivery is collected when your order arrives. Paystack includes bank transfer, card, and other payment options.</p>
             <button type="submit" class="btn btn-accent btn-lg btn-block w-100"><i class="bi bi-lock"></i> Continue to payment</button>
             </form>
           </div>

@@ -9,8 +9,6 @@ app_name = "accounts"
 urlpatterns = [
     # User registration
     path("signup/", views.SignUpView.as_view(), name="signup"),
-    path("signup/download/", views.SignupDownloadView.as_view(), name="signup_download"),
-    path("signup/download/file/", views.download_security_questions_file, name="download_security_questions"),
 
     # Authentication views (using custom login view for role-based redirect)
     path(

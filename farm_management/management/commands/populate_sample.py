@@ -13,7 +13,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 
-from admin_dashboard.models import SiteContent
+from admin_dashboard.models import SiteContent, DeliveryOption
 from farm_management.models import (
     Category as FarmCategory,
     Species,
@@ -27,8 +27,10 @@ from farm_management.models import (
     HealthMedicationLog,
     DailyActivityLog,
     HarvestRecord,
+    FarmExpense,
 )
-from shop.models import Category as ShopCategory, Product
+from shop.models import Category as ShopCategory, Product, Order, OrderItem, Payment
+from accounts.models import CustomUser
 
 User = get_user_model()
 
@@ -272,6 +274,77 @@ SAMPLE_BATCHES = [
     {"name": "Sokoto Gudali - Mar 2026", "species": "Sokoto Gudali", "initial_count": 30, "days_ago": 140, "season": "dry"},
 ]
 
+SAMPLE_CUSTOMERS = [
+    {"full_name": "Adebayo Oluwaseun", "email": "adebayo.customer@example.com", "phone": "0803-111-2222", "default_delivery_address": "15 Adeniran Ogunsanya St, Surulere, Lagos"},
+    {"full_name": "Chiamaka Nwosu", "email": "chiamaka.customer@example.com", "phone": "0806-333-4444", "default_delivery_address": "8 Awolowo Road, Ikeja, Lagos"},
+    {"full_name": "Ibrahim Musa", "email": "ibrahim.customer@example.com", "phone": "0809-555-6666", "default_delivery_address": "22 Abeokuta Road, Ibadan, Oyo State"},
+    {"full_name": "Funke Adeyemi", "email": "funke.customer@example.com", "phone": "0802-777-8888", "default_delivery_address": "5 Ring Road, Ibadan, Oyo State"},
+]
+
+SAMPLE_STAFF = [
+    {"full_name": "Dr. Okafor", "email": "okafor.staff@example.com", "role": CustomUser.Role.STAFF},
+    {"full_name": "Farm Manager", "email": "farmmgr.staff@example.com", "role": CustomUser.Role.FARM_MANAGER},
+    {"full_name": "Vet Nurse", "email": "vetnurse.staff@example.com", "role": CustomUser.Role.STAFF},
+]
+
+SAMPLE_ORDERS = [
+    {
+        "customer_idx": 0,
+        "days_ago": 5,
+        "items": [
+            {"product_name": "Live Catfish (per kg)", "qty": 2},
+            {"product_name": "Fresh Tomatoes (per kg)", "qty": 3},
+        ],
+        "status": Order.Status.CONFIRMED,
+        "payment_status": "success",
+        "payment_ref": "SAMPLE-PAY-001",
+    },
+    {
+        "customer_idx": 1,
+        "days_ago": 12,
+        "items": [
+            {"product_name": "Live Broiler Chicken (per bird)", "qty": 4},
+            {"product_name": "Fresh Eggs (30 pcs)", "qty": 1},
+        ],
+        "status": Order.Status.CONFIRMED,
+        "payment_status": "success",
+        "payment_ref": "SAMPLE-PAY-002",
+    },
+    {
+        "customer_idx": 2,
+        "days_ago": 18,
+        "items": [
+            {"product_name": "Live Tilapia (per kg)", "qty": 3},
+        ],
+        "status": Order.Status.CONFIRMED,
+        "payment_status": "success",
+        "payment_ref": "SAMPLE-PAY-003",
+    },
+    {
+        "customer_idx": 3,
+        "days_ago": 25,
+        "items": [
+            {"product_name": "Calf (per head)", "qty": 1},
+            {"product_name": "Onions (per kg)", "qty": 5},
+        ],
+        "status": Order.Status.CONFIRMED,
+        "payment_status": "success",
+        "payment_ref": "SAMPLE-PAY-004",
+    },
+    {
+        "customer_idx": 0,
+        "days_ago": 30,
+        "items": [
+            {"product_name": "Ram (per head)", "qty": 1},
+            {"product_name": "Fresh Pepper (per kg)", "qty": 2},
+            {"product_name": "NPK Fertilizer (50kg)", "qty": 1},
+        ],
+        "status": Order.Status.CONFIRMED,
+        "payment_status": "success",
+        "payment_ref": "SAMPLE-PAY-005",
+    },
+]
+
 
 def _growth_weights_for(category_name, species_name, initial_count):
     """Return a list of increasing average weights (kg) for the given species."""
@@ -305,7 +378,8 @@ class Command(BaseCommand):
         sample_exists = (
             SiteContent.objects.filter(is_sample=True).exists() or
             Batch.objects.filter(is_sample=True).exists() or
-            Product.objects.filter(is_sample_data=True).exists()
+            Product.objects.filter(is_sample_data=True).exists() or
+            CustomUser.objects.filter(is_sample_data=True).exists()
         )
         if sample_exists:
             self.stdout.write(
@@ -319,11 +393,14 @@ class Command(BaseCommand):
         # 1. Site content sections — update with realistic demo content
         # ------------------------------------------------------------------
         for section_data in SITE_CONTENT_SECTIONS:
-            section_code = section_data.pop("section")
-            section_data.setdefault("is_sample", True)
+            section_code = section_data.get("section")
+            if not section_code:
+                continue
+            defaults = dict(section_data)
+            defaults.setdefault("is_sample", True)
             obj, _ = SiteContent.objects.update_or_create(
                 section=section_code,
-                defaults=section_data,
+                defaults=defaults,
             )
             self.stdout.write(f"Updated site content: {section_code}")
 
@@ -358,7 +435,40 @@ class Command(BaseCommand):
             self.stdout.write(f"Created {products_created} shop products.")
 
         # ------------------------------------------------------------------
-        # 3. Farm management data
+        # 3. Sample Customer and Staff/Farm Manager accounts
+        # ------------------------------------------------------------------
+        customer_map = {}
+        for c_data in SAMPLE_CUSTOMERS:
+            user, created = CustomUser.objects.get_or_create(
+                email=c_data["email"],
+                defaults={
+                    "full_name": c_data["full_name"],
+                    "phone_number": c_data["phone"],
+                    "default_delivery_address": c_data["default_delivery_address"],
+                    "role": CustomUser.Role.CUSTOMER,
+                    "is_sample_data": True,
+                },
+            )
+            customer_map[c_data["email"]] = user
+            if created:
+                self.stdout.write(f"Created sample customer: {user.full_name}")
+
+        staff_map = {}
+        for s_data in SAMPLE_STAFF:
+            user, created = CustomUser.objects.get_or_create(
+                email=s_data["email"],
+                defaults={
+                    "full_name": s_data["full_name"],
+                    "role": s_data["role"],
+                    "is_sample_data": True,
+                },
+            )
+            staff_map[s_data["email"]] = user
+            if created:
+                self.stdout.write(f"Created sample staff: {user.full_name} ({user.get_role_display()})")
+
+        # ------------------------------------------------------------------
+        # 4. Farm management data
         # ------------------------------------------------------------------
         farm_category_map = {}
         for cat_data in SAMPLE_CATEGORIES:
@@ -443,7 +553,8 @@ class Command(BaseCommand):
                 qty = Decimal("50.0") if feed_inv else Decimal("0.00")
                 FeedLog.objects.create(
                     batch=batch, date=log_date, feed_inventory=feed_inv,
-                    quantity_kg=qty, is_sample=True,
+                    quantity_kg=qty, recorded_by=staff_map.get("okafor.staff@example.com"),
+                    is_sample=True,
                 )
 
             growth_weights = _growth_weights_for(cat_name, b_data["species"], batch.initial_count)
@@ -452,7 +563,8 @@ class Command(BaseCommand):
                 sample_n = max(1, batch.initial_count // 10)
                 GrowthRecord.objects.create(
                     batch=batch, date=gdate, average_weight_kg=growth_weights[i],
-                    sample_size=sample_n, is_sample=True,
+                    sample_size=sample_n, recorded_by=staff_map.get("farmmgr.staff@example.com"),
+                    is_sample=True,
                 )
 
             mort_count = max(1, batch.initial_count // 50)
@@ -461,22 +573,25 @@ class Command(BaseCommand):
                 mortality_dates.append(start + timedelta(days=25))
             for mdate in mortality_dates:
                 MortalityLog.objects.create(
-                    batch=batch, date=mdate, count=mort_count,
-                    cause="Natural mortality" if cat_name == "Cattle" else "Disease outbreak",
-                    notes="Adjusted feed and medication response.",
-                    is_sample=True,
-                )
+                        batch=batch, date=mdate, count=mort_count,
+                        cause="Natural mortality" if cat_name == "Cattle" else "Disease outbreak",
+                        notes="Adjusted feed and medication response.",
+                        recorded_by=staff_map.get("vetnurse.staff@example.com"),
+                        is_sample=True,
+                    )
 
             if not batch.is_fish:
                 vaccine_dates = [start, start + timedelta(days=21)]
                 vaccine_name = "NDV + IB Vaccine" if cat_name == "Poultry" else "Blackleg Vaccine"
                 for vdate in vaccine_dates:
-                    if vdate <= today:
-                        VaccinationRecord.objects.create(
-                            batch=batch, date=vdate, vaccine_name=vaccine_name,
-                            dosage="0.5ml per bird" if cat_name == "Poultry" else "1ml per head",
-                            administered_by="Dr. Okafor", is_sample=True,
-                        )
+                            if vdate <= today:
+                                VaccinationRecord.objects.create(
+                                    batch=batch, date=vdate, vaccine_name=vaccine_name,
+                                    dosage="0.5ml per bird" if cat_name == "Poultry" else "1ml per head",
+                                    administered_by=staff_map.get("okafor.staff@example.com").full_name if staff_map.get("okafor.staff@example.com") else "Dr. Okafor",
+                                    recorded_by=staff_map.get("okafor.staff@example.com"),
+                                    is_sample=True,
+                                )
 
             health_scenarios = [
                 {"medicine": "Oxytetracycline", "dosage": "20mg/kg", "reason": "Respiratory infection treatment", "admin": "Dr. Okafor", "days_after": 5},
@@ -489,10 +604,13 @@ class Command(BaseCommand):
             for h_scenario in health_scenarios:
                 hdate = start + timedelta(days=h_scenario["days_after"])
                 if hdate <= today:
+                    staff_user = staff_map.get("okafor.staff@example.com") if "Dr. Okafor" in h_scenario["admin"] else staff_map.get("vetnurse.staff@example.com") if "Vet Nurse" in h_scenario["admin"] else staff_map.get("farmmgr.staff@example.com")
                     HealthMedicationLog.objects.create(
                         batch=batch, date=hdate, medicine_name=h_scenario["medicine"],
                         dosage=h_scenario["dosage"], reason=h_scenario["reason"],
-                        administered_by=h_scenario["admin"], is_sample=True,
+                        administered_by=staff_user.full_name if staff_user else h_scenario["admin"],
+                        recorded_by=staff_user,
+                        is_sample=True,
                     )
 
             activity_notes = [
@@ -509,8 +627,207 @@ class Command(BaseCommand):
                 if adate <= today:
                     DailyActivityLog.objects.create(
                         batch=batch, date=adate, note=note,
-                        created_by=None, is_sample=True,
+                        created_by=staff_map.get("farmmgr.staff@example.com"),
+                        is_sample=True,
                     )
+
+        # ------------------------------------------------------------------
+        # 4. Link sample shop products to matching batches
+        # ------------------------------------------------------------------
+        batch_map = {b.name: b for b in Batch.objects.filter(is_sample=True)}
+        product_links = [
+            ("Live Catfish (per kg)", "Catfish Batch - July 2026"),
+            ("Live Tilapia (per kg)", "Tilapia Batch - June 2026"),
+            ("Live Broiler Chicken (per bird)", "Broiler Batch - July 2026"),
+            ("Live Layer Chicken (per bird)", "Layer Batch - June 2026"),
+            ("Calf (per head)", "White Fulani Cattle - Aug 2025"),
+            ("Ram (per head)", "Sokoto Gudali - Mar 2026"),
+        ]
+        for prod_name, batch_name in product_links:
+            product = Product.objects.filter(name=prod_name, is_sample_data=True).first()
+            batch = batch_map.get(batch_name)
+            if product and batch:
+                product.linked_batch = batch
+                product.save(update_fields=['linked_batch'])
+                self.stdout.write(f"Linked product '{prod_name}' to batch '{batch_name}'")
+
+        # ------------------------------------------------------------------
+        # 5. Sample farm expenses (all 4 types)
+        # ------------------------------------------------------------------
+        expense_entries = [
+            {
+                "expense_type": "electricity",
+                "amount": Decimal("85000.00"),
+                "date_incurred": today - timedelta(days=5),
+                "description": "Monthly electricity bill — pumps, lighting, and fans",
+                "batch": batch_map.get("Broiler Batch - July 2026"),
+            },
+            {
+                "expense_type": "labor",
+                "amount": Decimal("120000.00"),
+                "date_incurred": today - timedelta(days=12),
+                "description": "Casual workers — cleaning and feeding (2 weeks)",
+                "batch": batch_map.get("Catfish Batch - July 2026"),
+            },
+            {
+                "expense_type": "sawdust",
+                "amount": Decimal("45000.00"),
+                "date_incurred": today - timedelta(days=20),
+                "description": "Bedding material for poultry pens",
+                "batch": batch_map.get("Layer Batch - June 2026"),
+            },
+            {
+                "expense_type": "supplier_purchase",
+                "amount": Decimal("320000.00"),
+                "date_incurred": today - timedelta(days=45),
+                "description": "500 day-old broiler chicks from PoultryMax Supplies",
+                "batch": batch_map.get("Broiler Batch - July 2026"),
+                "supplier_name": "PoultryMax Supplies",
+            },
+            {
+                "expense_type": "supplier_purchase",
+                "amount": Decimal("180000.00"),
+                "date_incurred": today - timedelta(days=60),
+                "description": "200 fingerlings from AquaTech Fisheries",
+                "batch": batch_map.get("Catfish Batch - July 2026"),
+                "supplier_name": "AquaTech Fisheries",
+            },
+            {
+                "expense_type": "electricity",
+                "amount": Decimal("75000.00"),
+                "date_incurred": today - timedelta(days=35),
+                "description": "Electricity for aerators and water pumps",
+                "batch": batch_map.get("Tilapia Batch - June 2026"),
+            },
+            {
+                "expense_type": "labor",
+                "amount": Decimal("95000.00"),
+                "date_incurred": today - timedelta(days=50),
+                "description": "Farm attendants salary — July",
+                "batch": None,
+            },
+            {
+                "expense_type": "sawdust",
+                "amount": Decimal("28000.00"),
+                "date_incurred": today - timedelta(days=18),
+                "description": "Bedding refresh for cattle barn",
+                "batch": batch_map.get("White Fulani Cattle - Aug 2025"),
+            },
+            {
+                "expense_type": "other",
+                "amount": Decimal("25000.00"),
+                "date_incurred": today - timedelta(days=10),
+                "description": "Miscellaneous vet supplies and medications",
+                "custom_label": "Vet supplies",
+            },
+            {
+                "expense_type": "feed_purchase",
+                "amount": Decimal("150000.00"),
+                "date_incurred": today - timedelta(days=25),
+                "description": "Bulk fish feed purchase from AquaTech Fisheries",
+                "batch": batch_map.get("Catfish Batch - July 2026"),
+                "supplier_name": "AquaTech Fisheries",
+            },
+        ]
+
+        for exp_data in expense_entries:
+            supplier = None
+            sup_name = exp_data.pop("supplier_name", None)
+            if sup_name:
+                supplier = Supplier.objects.filter(name=sup_name, is_sample=True).first()
+            FarmExpense.objects.create(
+                **exp_data,
+                supplier=supplier,
+                recorded_by=staff_map.get("farmmgr.staff@example.com"),
+                is_sample=True,
+            )
+        self.stdout.write(f"Created {len(expense_entries)} sample farm expenses.")
+
+        # ------------------------------------------------------------------
+        # 7. Sample confirmed Orders, OrderItems, and Payments
+        # ------------------------------------------------------------------
+        product_map = {p.name: p for p in Product.objects.filter(is_sample_data=True)}
+        for order_data in SAMPLE_ORDERS:
+            customer = list(customer_map.values())[order_data["customer_idx"]]
+            if not customer:
+                continue
+
+            order_date = today - timedelta(days=order_data["days_ago"])
+
+            order_items = []
+            subtotal = Decimal("0.00")
+            for item_data in order_data["items"]:
+                product = product_map.get(item_data["product_name"])
+                if not product:
+                    continue
+                qty = item_data["qty"]
+                if product.stock_quantity < qty:
+                    continue
+                item_subtotal = product.price * qty
+                subtotal += item_subtotal
+                order_items.append((product, qty, product.price, item_subtotal))
+
+            if not order_items:
+                continue
+
+            delivery_fee = Decimal("2500.00")
+            total = subtotal + delivery_fee
+
+            order = Order.objects.create(
+                user=customer,
+                status=order_data["status"],
+                subtotal=subtotal,
+                delivery_fee=delivery_fee,
+                total=total,
+                payment_method="paystack",
+                delivery_address=customer.default_delivery_address or "Lagos, Nigeria",
+                is_sample_data=True,
+            )
+            order.created_at = order_date
+            order.save(update_fields=["created_at"])
+
+            for product, qty, price, item_subtotal in order_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    product_name=product.name,
+                    quantity=qty,
+                    price=price,
+                    is_sample_data=True,
+                )
+                product.decrement_stock(qty)
+
+            Payment.objects.create(
+                order=order,
+                reference=order_data["payment_ref"],
+                amount=total,
+                status=order_data["payment_status"],
+                is_sample_data=True,
+            )
+
+            self.stdout.write(f"Created sample order #{order.pk} for {customer.full_name} — total={total}")
+
+        # ------------------------------------------------------------------
+        # 8. Extra mortality events for batches with linked shop products
+        # ------------------------------------------------------------------
+        extra_mortality = [
+            {"batch_name": "Broiler Batch - July 2026", "days_after_start": 15, "count": 12},
+            {"batch_name": "Catfish Batch - July 2026", "days_after_start": 20, "count": 25},
+            {"batch_name": "Layer Batch - June 2026", "days_after_start": 12, "count": 8},
+        ]
+        for mort_data in extra_mortality:
+            batch = batch_map.get(mort_data["batch_name"])
+            if batch:
+                mdate = batch.start_date + timedelta(days=mort_data["days_after_start"])
+                if mdate <= today:
+                    MortalityLog.objects.create(
+                        batch=batch, date=mdate, count=mort_data["count"],
+                        cause="Disease outbreak" if batch.is_poultry else "Water quality issue",
+                        notes="Adjusted feed and medication response.",
+                        recorded_by=staff_map.get("vetnurse.staff@example.com"),
+                        is_sample=True,
+                    )
+        self.stdout.write("Created extra mortality events for linked batches.")
 
         self.stdout.write(
             self.style.SUCCESS(

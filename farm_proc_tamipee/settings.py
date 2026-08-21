@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'admin_dashboard',
-    'farm_management',
+    'farm_management.apps.FarmManagementConfig',
     'notifications',
     'shop',
     'shared_tools',
@@ -210,3 +210,22 @@ PROFILE_PHOTO_BUCKET_NAME = os.environ.get("PROFILE_PHOTO_BUCKET_NAME", "profile
 # Test mode detection - disables notification signals and other unnecessary operations during testing
 import sys
 TESTING = 'test' in sys.argv
+
+# Caching configuration
+if TESTING:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'farm-proc-tamipee-cache',
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            }
+        }
+    }

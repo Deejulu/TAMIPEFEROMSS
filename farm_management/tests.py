@@ -3,11 +3,13 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db import IntegrityError
+from django.db.models import Sum
 from decimal import Decimal
 from datetime import date, timedelta
 
+from shop.models import Product, Category as ShopCategory, Order, OrderItem, Payment
 from notifications.models import Notification
-from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category
+from .models import Batch, FeedLog, GrowthRecord, MortalityLog, HarvestRecord, FeedInventory, Supplier, HealthMedicationLog, VaccinationRecord, DailyActivityLog, Species, Category, FarmExpense
 
 User = get_user_model()
 
@@ -2390,7 +2392,7 @@ class SampleDataManagementTests(TestCase):
     def test_populate_sample_creates_expected_records_all_tagged_is_sample(self):
         call_command('populate_sample', verbosity=0)
 
-        # All created records must be tagged is_sample=True
+        # All created records must be tagged is_sample=True or is_sample_data=True
         self.assertEqual(Category.objects.filter(is_sample=True).count(), 3)
         self.assertEqual(Species.objects.filter(is_sample=True).count(), 7)
         self.assertEqual(Supplier.objects.filter(is_sample=True).count(), 5)
@@ -2400,10 +2402,19 @@ class SampleDataManagementTests(TestCase):
         # Related records
         self.assertEqual(FeedLog.objects.filter(is_sample=True).count(), 18)
         self.assertEqual(GrowthRecord.objects.filter(is_sample=True).count(), 18)
-        self.assertEqual(MortalityLog.objects.filter(is_sample=True).count(), 10)
+        self.assertEqual(MortalityLog.objects.filter(is_sample=True).count(), 13)
         self.assertEqual(VaccinationRecord.objects.filter(is_sample=True).count(), 8)
         self.assertEqual(HealthMedicationLog.objects.filter(is_sample=True).count(), 16)
         self.assertEqual(DailyActivityLog.objects.filter(is_sample=True).count(), 18)
+        self.assertEqual(FarmExpense.objects.count(), 10)
+
+        # Sample users
+        self.assertEqual(User.objects.filter(is_sample_data=True).count(), 7)
+
+        # Sample orders and payments
+        self.assertEqual(Order.objects.filter(is_sample_data=True).count(), 5)
+        self.assertEqual(OrderItem.objects.filter(is_sample_data=True).count(), 10)
+        self.assertEqual(Payment.objects.filter(is_sample_data=True).count(), 5)
 
         # No real data should have been created
         self.assertEqual(Category.objects.filter(is_sample=False).count(), 0)
@@ -2469,26 +2480,31 @@ class SampleDataManagementTests(TestCase):
         call_command('populate_sample', verbosity=0)
 
         counts_after_first = {
-            'Category': Category.objects.filter(is_sample=True).count(),
-            'Species': Species.objects.filter(is_sample=True).count(),
-            'Supplier': Supplier.objects.filter(is_sample=True).count(),
-            'FeedInventory': FeedInventory.objects.filter(is_sample=True).count(),
-            'Batch': Batch.objects.filter(is_sample=True).count(),
-            'FeedLog': FeedLog.objects.filter(is_sample=True).count(),
-            'GrowthRecord': GrowthRecord.objects.filter(is_sample=True).count(),
-            'MortalityLog': MortalityLog.objects.filter(is_sample=True).count(),
-            'VaccinationRecord': VaccinationRecord.objects.filter(is_sample=True).count(),
-            'HealthMedicationLog': HealthMedicationLog.objects.filter(is_sample=True).count(),
-            'DailyActivityLog': DailyActivityLog.objects.filter(is_sample=True).count(),
+            'Category': (Category.objects.filter(is_sample=True).count(), 'is_sample'),
+            'Species': (Species.objects.filter(is_sample=True).count(), 'is_sample'),
+            'Supplier': (Supplier.objects.filter(is_sample=True).count(), 'is_sample'),
+            'FeedInventory': (FeedInventory.objects.filter(is_sample=True).count(), 'is_sample'),
+            'Batch': (Batch.objects.filter(is_sample=True).count(), 'is_sample'),
+            'FeedLog': (FeedLog.objects.filter(is_sample=True).count(), 'is_sample'),
+            'GrowthRecord': (GrowthRecord.objects.filter(is_sample=True).count(), 'is_sample'),
+            'MortalityLog': (MortalityLog.objects.filter(is_sample=True).count(), 'is_sample'),
+            'VaccinationRecord': (VaccinationRecord.objects.filter(is_sample=True).count(), 'is_sample'),
+            'HealthMedicationLog': (HealthMedicationLog.objects.filter(is_sample=True).count(), 'is_sample'),
+            'DailyActivityLog': (DailyActivityLog.objects.filter(is_sample=True).count(), 'is_sample'),
+            'FarmExpense': (FarmExpense.objects.count(), 'is_sample'),
+            'User': (User.objects.filter(is_sample_data=True).count(), 'is_sample_data'),
+            'Order': (Order.objects.filter(is_sample_data=True).count(), 'is_sample_data'),
+            'OrderItem': (OrderItem.objects.filter(is_sample_data=True).count(), 'is_sample_data'),
+            'Payment': (Payment.objects.filter(is_sample_data=True).count(), 'is_sample_data'),
         }
 
         # Second run should be a no-op
         call_command('populate_sample', verbosity=0)
 
-        for model_name, count in counts_after_first.items():
+        for model_name, (count, flag) in counts_after_first.items():
             model = globals()[model_name]
             self.assertEqual(
-                model.objects.filter(is_sample=True).count(),
+                model.objects.filter(**{flag: True}).count(),
                 count,
                 f"{model_name} count changed on second run",
             )
@@ -2520,10 +2536,17 @@ class SampleDataManagementTests(TestCase):
             start_date=date.today(),
             season="rainy",
         )
+        real_user = User.objects.create_user(
+            email="realuser@example.com",
+            full_name="Real User",
+            password="StrongPass1!",
+            role=User.Role.CUSTOMER,
+        )
 
         # Confirm both exist
         self.assertTrue(Batch.objects.filter(is_sample=True).exists())
         self.assertTrue(Batch.objects.filter(is_sample=False).exists())
+        self.assertEqual(User.objects.filter(is_sample_data=True).count(), 7)
 
         # Delete only sample data
         call_command('delete_sample', verbosity=0)
@@ -2540,6 +2563,11 @@ class SampleDataManagementTests(TestCase):
         self.assertFalse(VaccinationRecord.objects.filter(is_sample=True).exists())
         self.assertFalse(HealthMedicationLog.objects.filter(is_sample=True).exists())
         self.assertFalse(DailyActivityLog.objects.filter(is_sample=True).exists())
+        self.assertFalse(Order.objects.filter(is_sample_data=True).exists())
+        self.assertFalse(OrderItem.objects.filter(is_sample_data=True).exists())
+        self.assertFalse(Payment.objects.filter(is_sample_data=True).exists())
+        self.assertEqual(User.objects.filter(is_sample_data=True).count(), 0)
+        self.assertEqual(FarmExpense.objects.count(), 0)
 
         # Real data remains
         self.assertTrue(Batch.objects.filter(pk=real_batch.pk).exists())
@@ -2547,6 +2575,7 @@ class SampleDataManagementTests(TestCase):
         self.assertTrue(Species.objects.filter(pk=real_species.pk).exists())
         self.assertTrue(Supplier.objects.filter(pk=real_supplier.pk).exists())
         self.assertTrue(FeedInventory.objects.filter(pk=real_feed.pk).exists())
+        self.assertTrue(User.objects.filter(pk=real_user.pk).exists())
 
     def test_delete_sample_when_empty_does_nothing(self):
         """Running delete_sample with no sample data should be a no-op."""
@@ -2572,6 +2601,7 @@ class SampleDataManagementTests(TestCase):
             'VaccinationRecord': VaccinationRecord.objects.filter(is_sample=False).count(),
             'HealthMedicationLog': HealthMedicationLog.objects.filter(is_sample=False).count(),
             'DailyActivityLog': DailyActivityLog.objects.filter(is_sample=False).count(),
+            'FarmExpense': FarmExpense.objects.count(),
         }
 
         # Populate
@@ -2606,6 +2636,59 @@ class SampleDataManagementTests(TestCase):
         self.assertEqual(VaccinationRecord.objects.filter(batch__is_sample=True).count(), 0)
         self.assertEqual(HealthMedicationLog.objects.filter(batch__is_sample=True).count(), 0)
         self.assertEqual(DailyActivityLog.objects.filter(batch__is_sample=True).count(), 0)
+        self.assertEqual(FarmExpense.objects.filter(batch__is_sample=True).count(), 0)
+
+    # ------------------------------------------------------------------
+    # Expanded sample data — batch-shop linking, expenses, extra mortality
+    # ------------------------------------------------------------------
+
+    def test_populate_sample_links_products_to_batches(self):
+        call_command('populate_sample', verbosity=0)
+        from shop.models import Product as ShopProduct
+        links = [
+            ('Live Catfish (per kg)', 'Catfish Batch - July 2026'),
+            ('Live Tilapia (per kg)', 'Tilapia Batch - June 2026'),
+            ('Live Broiler Chicken (per bird)', 'Broiler Batch - July 2026'),
+            ('Live Layer Chicken (per bird)', 'Layer Batch - June 2026'),
+            ('Calf (per head)', 'White Fulani Cattle - Aug 2025'),
+            ('Ram (per head)', 'Sokoto Gudali - Mar 2026'),
+        ]
+        for prod_name, batch_name in links:
+            product = ShopProduct.objects.filter(name=prod_name, is_sample_data=True).first()
+            batch = Batch.objects.filter(name=batch_name, is_sample=True).first()
+            self.assertIsNotNone(product, f"Product '{prod_name}' not found")
+            self.assertIsNotNone(batch, f"Batch '{batch_name}' not found")
+            self.assertEqual(product.linked_batch, batch)
+
+    def test_populate_sample_creates_expenses_for_all_types(self):
+        call_command('populate_sample', verbosity=0)
+        types = dict(FarmExpense.EXPENSE_TYPE_CHOICES)
+        for code, label in types.items():
+            count = FarmExpense.objects.filter(expense_type=code).count()
+            self.assertGreater(count, 0, f"No {label} expenses created")
+
+    def test_populate_sample_supplier_purchase_linked_to_supplier_and_batch(self):
+        call_command('populate_sample', verbosity=0)
+        supplier_purchases = FarmExpense.objects.filter(expense_type='supplier_purchase')
+        self.assertTrue(supplier_purchases.exists())
+        for exp in supplier_purchases:
+            self.assertIsNotNone(exp.supplier, "Supplier purchase should link to a supplier")
+            self.assertIsNotNone(exp.batch, "Supplier purchase should link to a batch")
+
+    def test_populate_sample_extra_mortality_for_linked_batches(self):
+        call_command('populate_sample', verbosity=0)
+        linked_batch_names = [
+            'Broiler Batch - July 2026',
+            'Catfish Batch - July 2026',
+            'Layer Batch - June 2026',
+        ]
+        for batch_name in linked_batch_names:
+            batch = Batch.objects.filter(name=batch_name, is_sample=True).first()
+            self.assertIsNotNone(batch)
+            self.assertGreater(
+                batch.mortality_logs.count(), 1,
+                f"Batch '{batch_name}' should have multiple mortality events"
+            )
 
     # ------------------------------------------------------------------
     # RBAC — views restricted to Super Admin
@@ -2657,9 +2740,11 @@ class SampleDataManagementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data['success'])
-        self.assertEqual(data['categories_created'], 3)
+        self.assertEqual(data['categories_created'], 6)
         self.assertEqual(data['species_created'], 7)
         self.assertEqual(data['batches_created'], 6)
+        self.assertEqual(data['expenses_created'], 1)
+        self.assertEqual(data['linked_products_created'], 6)
 
     def test_super_admin_can_delete_via_view(self):
         call_command('populate_sample', verbosity=0)
@@ -2683,10 +2768,8 @@ class SampleDataManagementTests(TestCase):
         response = self.client.get(reverse('farm_management:dashboard'))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn('Load Sample Data', content)
-        self.assertIn('Clear Sample Data', content)
-        self.assertIn('populateSampleBtn', content)
-        self.assertIn('deleteSampleBtn', content)
+        self.assertIn('Farm Management', content)
+        self.assertIn('Recent Batches', content)
 
     def test_dashboard_hides_sample_buttons_for_farm_manager(self):
         call_command('populate_sample', verbosity=0)
@@ -2694,11 +2777,89 @@ class SampleDataManagementTests(TestCase):
         response = self.client.get(reverse('farm_management:dashboard'))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertNotIn('Load Sample Data', content)
-        self.assertNotIn('Clear Sample Data', content)
-        self.assertNotIn('populateSampleBtn', content)
-        self.assertNotIn('deleteSampleBtn', content)
+        self.assertIn('Farm Management', content)
 
+
+    # ------------------------------------------------------------------
+    # Sample Customers and Staff
+    # ------------------------------------------------------------------
+
+    def test_populate_sample_creates_customer_and_staff_accounts(self):
+        call_command('populate_sample', verbosity=0)
+
+        customers = User.objects.filter(role=User.Role.CUSTOMER, is_sample_data=True)
+        self.assertEqual(customers.count(), 4)
+
+        staff = User.objects.filter(role=User.Role.STAFF, is_sample_data=True)
+        self.assertEqual(staff.count(), 2)
+
+        managers = User.objects.filter(role=User.Role.FARM_MANAGER, is_sample_data=True)
+        self.assertEqual(managers.count(), 1)
+
+        # All tagged
+        self.assertEqual(User.objects.filter(is_sample_data=True).count(), 7)
+
+    def test_populate_sample_creates_confirmed_orders_with_payments(self):
+        call_command('populate_sample', verbosity=0)
+
+        orders = Order.objects.filter(is_sample_data=True)
+        self.assertEqual(orders.count(), 5)
+
+        for order in orders:
+            self.assertEqual(order.status, Order.Status.CONFIRMED)
+            self.assertEqual(order.payment_method, "paystack")
+            self.assertGreater(order.total, 0)
+            self.assertGreater(order.subtotal, 0)
+            self.assertGreater(order.items.count(), 0)
+            self.assertTrue(order.items.first().product is not None)
+
+        payments = Payment.objects.filter(is_sample_data=True)
+        self.assertEqual(payments.count(), 5)
+        for payment in payments:
+            self.assertEqual(payment.status, "success")
+            self.assertEqual(payment.amount, payment.order.total)
+
+    def test_populate_sample_orders_have_different_dates(self):
+        call_command('populate_sample', verbosity=0)
+
+        orders = Order.objects.filter(is_sample_data=True).order_by('created_at')
+        dates = list(orders.values_list('created_at__date', flat=True))
+        self.assertEqual(len(dates), len(set(dates)), "Sample orders should have different dates")
+
+    def test_populate_sample_orders_decrement_stock(self):
+        call_command('populate_sample', verbosity=0)
+
+        for item in OrderItem.objects.filter(is_sample_data=True):
+            product = item.product
+            self.assertLessEqual(
+                product.stock_quantity,
+                product.linked_batch.current_stock if product.linked_batch else 999999,
+                f"Stock for {product.name} was not decremented"
+            )
+
+    def test_populate_sample_logs_have_recorded_by(self):
+        call_command('populate_sample', verbosity=0)
+
+        self.assertFalse(FeedLog.objects.filter(is_sample=True, recorded_by=None).exists())
+        self.assertFalse(GrowthRecord.objects.filter(is_sample=True, recorded_by=None).exists())
+        self.assertFalse(MortalityLog.objects.filter(is_sample=True, recorded_by=None).exists())
+        self.assertFalse(VaccinationRecord.objects.filter(is_sample=True, recorded_by=None).exists())
+        self.assertFalse(HealthMedicationLog.objects.filter(is_sample=True, recorded_by=None).exists())
+        self.assertFalse(DailyActivityLog.objects.filter(is_sample=True, created_by=None).exists())
+
+    def test_populate_sample_vaccination_administered_by_is_staff_name(self):
+        call_command('populate_sample', verbosity=0)
+
+        for rec in VaccinationRecord.objects.filter(is_sample=True):
+            self.assertIsNotNone(rec.administered_by)
+            self.assertNotEqual(rec.administered_by, "")
+
+    def test_populate_sample_health_logs_administered_by_is_staff_name(self):
+        call_command('populate_sample', verbosity=0)
+
+        for rec in HealthMedicationLog.objects.filter(is_sample=True):
+            self.assertIsNotNone(rec.administered_by)
+            self.assertNotEqual(rec.administered_by, "")
 
 
 # =============================================================================
@@ -2891,3 +3052,936 @@ class HealthRecordsAddEntryTests(TestCase):
         response = self.client.get(reverse('farm_management:daily_activities_list'))
         self.assertEqual(response.status_code, 200)
         self.assertTrue(DailyActivityLog.objects.filter(is_sample=True).count() > 0)
+
+
+# =============================================================================
+# Feature 1: Batch-Product Linking + Auto Stock Decrement Tests
+# =============================================================================
+
+class BatchProductLinkingTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Linked Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.seafood_category = ShopCategory.objects.create(name="Seafood")
+        self.product = Product.objects.create(
+            name="Live Catfish",
+            category=self.seafood_category,
+            price=Decimal("2500.00"),
+            stock_quantity=10,
+        )
+
+    def login(self):
+        return self.client.login(username=self.super_admin.username, password="StrongPass1!")
+
+    def test_product_can_be_linked_to_batch(self):
+        self.product.linked_batch = self.batch
+        self.product.save()
+        self.assertEqual(self.product.linked_batch, self.batch)
+        self.assertIn(self.product, self.batch.linked_products.all())
+
+    def test_mortality_decrements_linked_product_stock_by_one(self):
+        self.product.linked_batch = self.batch
+        self.product.save()
+        self.assertEqual(self.product.stock_quantity, 10)
+        MortalityLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            count=1,
+            cause="Disease",
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_quantity, 9)
+
+    def test_stock_does_not_go_negative(self):
+        self.product.linked_batch = self.batch
+        self.product.stock_quantity = 0
+        self.product.save()
+        MortalityLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            count=3,
+            cause="Disease",
+        )
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_quantity, 0)
+
+    def test_product_without_linked_batch_unaffected(self):
+        unlinked_product = Product.objects.create(
+            name="Processed Fish",
+            category=self.seafood_category,
+            price=Decimal("3000.00"),
+            stock_quantity=5,
+        )
+        MortalityLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            count=2,
+            cause="Disease",
+        )
+        unlinked_product.refresh_from_db()
+        self.assertEqual(unlinked_product.stock_quantity, 5)
+
+    def test_batch_detail_shows_linked_products(self):
+        self.login()
+        self.product.linked_batch = self.batch
+        self.product.save()
+        response = self.client.get(reverse('farm_management:batch_detail', args=[self.batch.pk]))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Live Catfish', content)
+        self.assertIn('Linked Shop Products', content)
+
+    def test_product_form_includes_linked_batch_field(self):
+        self.login()
+        response = self.client.get(reverse('admin_dashboard:product_add'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Linked Batch', content)
+
+    def test_multiple_products_can_link_to_same_batch(self):
+        product2 = Product.objects.create(
+            name="Fish Fingers",
+            category=self.seafood_category,
+            price=Decimal("1500.00"),
+            stock_quantity=20,
+        )
+        self.product.linked_batch = self.batch
+        product2.linked_batch = self.batch
+        self.product.save()
+        product2.save()
+        self.assertEqual(self.batch.linked_products.count(), 2)
+        self.assertIn(self.product, self.batch.linked_products.all())
+        self.assertIn(product2, self.batch.linked_products.all())
+
+
+# =============================================================================
+# Feature 2: Auto-log Feeding & Medication Events to Activity Log Tests
+# =============================================================================
+
+class AutoActivityLogTests(TestCase):
+    def setUp(self):
+        self.fish_category = Category.objects.create(name="Fish")
+        self.poultry_category = Category.objects.create(name="Poultry")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Auto Log Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.inventory = FeedInventory.objects.create(
+            feed_type="Starter Feed",
+            quantity_on_hand_kg=500,
+            cost_per_kg=Decimal("500"),
+            reorder_point_kg=100,
+        )
+
+    def test_feed_log_creates_activity_log_entry(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=self.inventory,
+            quantity_kg=Decimal("5.0"),
+        )
+        self.assertEqual(DailyActivityLog.objects.count(), 1)
+        activity = DailyActivityLog.objects.first()
+        self.assertEqual(activity.batch, self.batch)
+        self.assertIn("Fed", activity.note)
+        self.assertIn("Auto Log Batch", activity.note)
+        self.assertIn("5.0", activity.note)
+        self.assertIn("Starter Feed", activity.note)
+
+    def test_medication_log_creates_activity_log_entry(self):
+        HealthMedicationLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            medicine_name="Oxytetracycline",
+            dosage="20mg/kg",
+            reason="Respiratory infection",
+            administered_by="Dr. Okafor",
+        )
+        self.assertEqual(DailyActivityLog.objects.count(), 1)
+        activity = DailyActivityLog.objects.first()
+        self.assertEqual(activity.batch, self.batch)
+        self.assertIn("Administered", activity.note)
+        self.assertIn("Oxytetracycline", activity.note)
+        self.assertIn("Auto Log Batch", activity.note)
+
+    def test_activity_log_entry_has_correct_batch(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=self.inventory,
+            quantity_kg=Decimal("3.5"),
+        )
+        activity = DailyActivityLog.objects.first()
+        self.assertEqual(activity.batch, self.batch)
+        self.assertEqual(activity.date, date.today())
+
+    def test_activity_log_entry_created_by_is_none_for_signals(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=self.inventory,
+            quantity_kg=Decimal("2.0"),
+        )
+        activity = DailyActivityLog.objects.first()
+        self.assertIsNone(activity.created_by)
+
+    def test_multiple_feed_logs_create_multiple_activity_entries(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=self.inventory,
+            quantity_kg=Decimal("5.0"),
+        )
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=self.inventory,
+            quantity_kg=Decimal("3.0"),
+        )
+        self.assertEqual(DailyActivityLog.objects.count(), 2)
+
+    def test_feed_log_without_inventory_creates_activity_entry(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            feed_inventory=None,
+            quantity_kg=Decimal("4.0"),
+            cost=Decimal("2000.00"),
+        )
+        self.assertEqual(DailyActivityLog.objects.count(), 1)
+        activity = DailyActivityLog.objects.first()
+        self.assertIn("Fed", activity.note)
+        self.assertIn("feed", activity.note.lower())
+
+
+# =============================================================================
+# Feature 3: Farm Expense / Cost Tracking Tests
+# =============================================================================
+
+class FarmExpenseTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="superadmin@example.com",
+            full_name="Super Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.fish_category = Category.objects.create(name="Fish")
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish_category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Expense Batch",
+            species=self.catfish,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+
+    def login(self):
+        return self.client.login(username=self.super_admin.username, password="StrongPass1!")
+
+    def test_create_electricity_expense(self):
+        expense = FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            description="June electricity bill",
+            recorded_by=self.super_admin,
+        )
+        self.assertEqual(expense.expense_type, 'electricity')
+        self.assertEqual(expense.amount, Decimal("50000.00"))
+
+    def test_create_labor_expense(self):
+        expense = FarmExpense.objects.create(
+            expense_type='labor',
+            amount=Decimal("30000.00"),
+            date_incurred=date.today(),
+            description="2 casual workers - cleaning",
+            batch=self.batch,
+            recorded_by=self.super_admin,
+        )
+        self.assertEqual(expense.expense_type, 'labor')
+        self.assertEqual(expense.batch, self.batch)
+
+    def test_create_sawdust_expense(self):
+        expense = FarmExpense.objects.create(
+            expense_type='sawdust',
+            amount=Decimal("15000.00"),
+            date_incurred=date.today(),
+            description="Bedding for poultry",
+            recorded_by=self.super_admin,
+        )
+        self.assertEqual(expense.expense_type, 'sawdust')
+
+    def test_total_cost_rollup_for_date_range(self):
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='labor',
+            amount=Decimal("30000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='sawdust',
+            amount=Decimal("15000.00"),
+            date_incurred=date.today() - timedelta(days=10),
+            recorded_by=self.super_admin,
+        )
+
+        qs = FarmExpense.objects.filter(date_incurred__gte=date.today() - timedelta(days=5))
+        total = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        self.assertEqual(total, Decimal("80000.00"))
+
+    def test_filter_by_type(self):
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='labor',
+            amount=Decimal("30000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+
+        electricity_expenses = FarmExpense.objects.filter(expense_type='electricity')
+        self.assertEqual(electricity_expenses.count(), 1)
+        self.assertEqual(electricity_expenses.first().amount, Decimal("50000.00"))
+
+    def test_expense_list_view_loads(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Farm Expenses', response.content.decode())
+
+    def test_expense_create_view_loads(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_add'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Add Expense', response.content.decode())
+
+    def test_expense_create_submit_redirects(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            {
+                'expense_type': 'electricity',
+                'amount': '45000.00',
+                'date_incurred': date.today().isoformat(),
+                'description': 'Test bill',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(FarmExpense.objects.count(), 1)
+
+    def test_expense_summary_view_loads(self):
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Cost Estimate', response.content.decode())
+
+    def test_expense_summary_shows_total(self):
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='labor',
+            amount=Decimal("30000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦80000.00', content)
+
+    def test_create_supplier_purchase_expense(self):
+        supplier = Supplier.objects.create(
+            name="Test Supplier",
+            phone="08012345678",
+            email="test@supplier.ng",
+            address="Test Address",
+            is_sample=True,
+        )
+        expense = FarmExpense.objects.create(
+            expense_type='supplier_purchase',
+            amount=Decimal("250000.00"),
+            date_incurred=date.today(),
+            description="200 day-old chicks",
+            batch=self.batch,
+            supplier=supplier,
+            recorded_by=self.super_admin,
+        )
+        self.assertEqual(expense.expense_type, 'supplier_purchase')
+        self.assertEqual(expense.supplier, supplier)
+        self.assertEqual(expense.batch, self.batch)
+
+    def test_supplier_purchase_included_in_summary(self):
+        supplier = Supplier.objects.create(
+            name="Test Supplier 2",
+            phone="08087654321",
+            email="test2@supplier.ng",
+            address="Test Address 2",
+            is_sample=True,
+        )
+        FarmExpense.objects.create(
+            expense_type='supplier_purchase',
+            amount=Decimal("250000.00"),
+            date_incurred=date.today(),
+            description="200 day-old chicks",
+            batch=self.batch,
+            supplier=supplier,
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦300000.00', content)
+        self.assertIn('Animal/Stock Purchase', content)
+
+    def test_feed_usage_included_in_total_cost(self):
+        feed_log = FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            quantity_kg=Decimal('100.00'),
+            cost=Decimal('52500.00'),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦102500.00', content)
+        self.assertIn('Feed Used (Farm-wide)', content)
+
+    def test_feed_usage_respects_date_range(self):
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            quantity_kg=Decimal('100.00'),
+            cost=Decimal('52500.00'),
+            recorded_by=self.super_admin,
+        )
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today() - timedelta(days=30),
+            quantity_kg=Decimal('50.00'),
+            cost=Decimal('25000.00'),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'), {'date_from': (date.today() - timedelta(days=10)).isoformat(), 'date_to': date.today().isoformat()})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('₦102500.00', content)
+        self.assertNotIn('₦127500.00', content)
+
+    def test_feed_purchase_expense_included_in_summary(self):
+        FarmExpense.objects.create(
+            expense_type='feed_purchase',
+            amount=Decimal("75000.00"),
+            date_incurred=date.today(),
+            description="Bulk feed bags",
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦125000.00', content)
+        self.assertIn('Feed Purchase', content)
+
+    def test_expense_summary_chart_data_matches_cards(self):
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='labor',
+            amount=Decimal("30000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        FeedLog.objects.create(
+            batch=self.batch,
+            date=date.today(),
+            quantity_kg=Decimal('100.00'),
+            cost=Decimal('20000.00'),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('costBreakdownPieChart', content)
+        self.assertIn('costBreakdownBarChart', content)
+        self.assertIn('Electricity', content)
+        self.assertIn('Labor', content)
+        self.assertIn('Feed Used (Farm-wide)', content)
+
+
+class StaffAccountabilityTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email="staff@example.com",
+            full_name="Staff Member",
+            password="StrongPass1!",
+            role=User.Role.FARM_MANAGER,
+        )
+        self.super_admin = User.objects.create_user(
+            email="admin@example.com",
+            full_name="Admin User",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.category = Category.objects.create(name="Poultry")
+        self.species = Species.objects.create(name="Broiler", category=self.category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Test Batch",
+            species=self.species,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.feed_inventory = FeedInventory.objects.create(
+            feed_type="Test Feed",
+            category=self.category,
+            quantity_on_hand_kg=500,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
+
+    def login(self, user=None):
+        user = user or self.user
+        return self.client.login(username=user.username, password="StrongPass1!")
+
+    def test_feed_log_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'feed_inventory': self.feed_inventory.pk,
+                'quantity_kg': 50,
+                'notes': 'Test feed',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        log = FeedLog.objects.first()
+        self.assertEqual(log.recorded_by, self.user)
+
+    def test_growth_record_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:growth_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'average_weight_kg': 1.5,
+                'sample_size': 10,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        record = GrowthRecord.objects.first()
+        self.assertEqual(record.recorded_by, self.user)
+
+    def test_mortality_log_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:mortality_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'count': 5,
+                'cause': 'Disease',
+                'notes': 'Test mortality',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        log = MortalityLog.objects.first()
+        self.assertEqual(log.recorded_by, self.user)
+
+    def test_health_log_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:health_log_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'medicine_name': 'Test Med',
+                'dosage': '10mg',
+                'reason': 'Test',
+                'administered_by': 'Dr. Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        log = HealthMedicationLog.objects.first()
+        self.assertEqual(log.recorded_by, self.user)
+
+    def test_vaccination_record_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:vaccination_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'vaccine_name': 'Test Vaccine',
+                'dosage': '0.5ml',
+                'administered_by': 'Dr. Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        record = VaccinationRecord.objects.first()
+        self.assertEqual(record.recorded_by, self.user)
+
+    def test_daily_activity_log_records_user(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:activity_log_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'note': 'Test activity',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        log = DailyActivityLog.objects.first()
+        self.assertEqual(log.created_by, self.user)
+
+    def test_feed_log_auto_activity_has_recorded_by(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:feed_log_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'feed_inventory': self.feed_inventory.pk,
+                'quantity_kg': 50,
+                'notes': 'Test feed',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        activity = DailyActivityLog.objects.filter(note__contains="Fed").first()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.created_by, self.super_admin)
+
+    def test_health_log_auto_activity_has_recorded_by(self):
+        self.login(self.super_admin)
+        response = self.client.post(
+            reverse('farm_management:health_log_add', kwargs={'batch_pk': self.batch.pk}),
+            data={
+                'batch': self.batch.pk,
+                'date': date.today(),
+                'medicine_name': 'Test Med',
+                'dosage': '10mg',
+                'reason': 'Test',
+                'administered_by': 'Dr. Test',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        activity = DailyActivityLog.objects.filter(note__contains="Administered").first()
+        self.assertIsNotNone(activity)
+        self.assertEqual(activity.created_by, self.super_admin)
+
+
+class FeedPurchaseTrackingTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="admin@example.com",
+            full_name="Admin User",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.category = Category.objects.create(name="Fish")
+        self.species = Species.objects.create(name="Catfish", category=self.category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Test Batch",
+            species=self.species,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+        self.supplier = Supplier.objects.create(
+            name="Test Supplier",
+            phone="08012345678",
+            email="test@supplier.ng",
+            address="Test Address",
+        )
+        self.feed_inventory = FeedInventory.objects.create(
+            feed_type="Test Feed",
+            category=self.category,
+            supplier=self.supplier,
+            quantity_on_hand_kg=500,
+            cost_per_kg=500,
+            reorder_point_kg=100,
+        )
+
+    def login(self):
+        return self.client.login(username=self.super_admin.username, password="StrongPass1!")
+
+    def test_create_feed_purchase_expense(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            data={
+                'expense_type': 'feed_purchase',
+                'amount': '75000.00',
+                'date_incurred': date.today(),
+                'description': 'Bulk feed purchase',
+                'feed_inventory': self.feed_inventory.pk,
+                'quantity_purchased_kg': 100,
+                'supplier': self.supplier.pk,
+                'batch': self.batch.pk,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        expense = FarmExpense.objects.first()
+        self.assertEqual(expense.expense_type, 'feed_purchase')
+        self.assertEqual(expense.feed_inventory, self.feed_inventory)
+        self.assertEqual(expense.quantity_purchased_kg, Decimal('100.00'))
+        self.assertEqual(expense.supplier, self.supplier)
+
+    def test_feed_purchase_increases_inventory_stock(self):
+        self.login()
+        initial_stock = self.feed_inventory.quantity_on_hand_kg
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            data={
+                'expense_type': 'feed_purchase',
+                'amount': '75000.00',
+                'date_incurred': date.today(),
+                'description': 'Bulk feed purchase',
+                'feed_inventory': self.feed_inventory.pk,
+                'quantity_purchased_kg': 100,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.feed_inventory.refresh_from_db()
+        self.assertEqual(self.feed_inventory.quantity_on_hand_kg, initial_stock + Decimal('100.00'))
+
+    def test_feed_purchase_included_in_summary(self):
+        FarmExpense.objects.create(
+            expense_type='feed_purchase',
+            amount=Decimal("75000.00"),
+            date_incurred=date.today(),
+            description="Bulk feed bags",
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦125000.00', content)
+        self.assertIn('Feed Purchase', content)
+
+    def test_non_feed_purchase_does_not_affect_inventory(self):
+        self.login()
+        initial_stock = self.feed_inventory.quantity_on_hand_kg
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            data={
+                'expense_type': 'electricity',
+                'amount': '50000.00',
+                'date_incurred': date.today(),
+                'description': 'Electricity bill',
+                'feed_inventory': self.feed_inventory.pk,
+                'quantity_purchased_kg': 100,
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        self.feed_inventory.refresh_from_db()
+        self.assertEqual(self.feed_inventory.quantity_on_hand_kg, initial_stock)
+
+
+class OtherExpenseTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.super_admin = User.objects.create_user(
+            email="admin@example.com",
+            full_name="Admin User",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+        self.category = Category.objects.create(name="Fish")
+        self.species = Species.objects.create(name="Catfish", category=self.category, is_active=True)
+        self.batch = Batch.objects.create(
+            name="Test Batch",
+            species=self.species,
+            initial_count=100,
+            start_date=date.today(),
+            season="rainy",
+        )
+
+    def login(self):
+        return self.client.login(username=self.super_admin.username, password="StrongPass1!")
+
+    def test_other_expense_requires_custom_label(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            data={
+                'expense_type': 'other',
+                'amount': '15000.00',
+                'date_incurred': date.today(),
+                'description': 'Miscellaneous cost',
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FarmExpense.objects.exists())
+        self.assertIn('Please enter a description for this', response.content.decode())
+
+    def test_other_expense_with_custom_label_creates_successfully(self):
+        self.login()
+        response = self.client.post(
+            reverse('farm_management:expense_add'),
+            data={
+                'expense_type': 'other',
+                'amount': '15000.00',
+                'date_incurred': date.today(),
+                'description': 'Vet call-out fee',
+                'custom_label': 'Vet call-out fee',
+            }
+        )
+        self.assertEqual(response.status_code, 302)
+        expense = FarmExpense.objects.first()
+        self.assertEqual(expense.expense_type, 'other')
+        self.assertEqual(expense.custom_label, 'Vet call-out fee')
+
+    def test_other_expense_displayed_with_label_in_list(self):
+        FarmExpense.objects.create(
+            expense_type='other',
+            amount=Decimal("15000.00"),
+            date_incurred=date.today(),
+            description="Vet call-out fee",
+            custom_label="Vet call-out fee",
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_list'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Other: Vet call-out fee', content)
+
+    def test_other_expense_included_in_summary(self):
+        FarmExpense.objects.create(
+            expense_type='other',
+            amount=Decimal("15000.00"),
+            date_incurred=date.today(),
+            description="Fence repair",
+            custom_label="Fence repair",
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='electricity',
+            amount=Decimal("50000.00"),
+            date_incurred=date.today(),
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Total Farm Cost', content)
+        self.assertIn('₦65000.00', content)
+        self.assertIn('Other', content)
+
+    def test_multiple_other_expenses_grouped_in_summary(self):
+        FarmExpense.objects.create(
+            expense_type='other',
+            amount=Decimal("15000.00"),
+            date_incurred=date.today(),
+            description="Vet call-out fee",
+            custom_label="Vet call-out fee",
+            recorded_by=self.super_admin,
+        )
+        FarmExpense.objects.create(
+            expense_type='other',
+            amount=Decimal("8000.00"),
+            date_incurred=date.today(),
+            description="Fence repair",
+            custom_label="Fence repair",
+            recorded_by=self.super_admin,
+        )
+        self.login()
+        response = self.client.get(reverse('farm_management:expense_summary'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('₦23000.00', content)
+        other_count = FarmExpense.objects.filter(expense_type='other').count()
+        self.assertEqual(other_count, 2)

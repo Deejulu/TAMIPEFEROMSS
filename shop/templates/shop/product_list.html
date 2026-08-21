@@ -94,7 +94,7 @@
       <div class="product-card category-{{ product.category.slug|default:'uncategorized' }} {% if not product.in_stock %}out-of-stock{% endif %} animate-fade-in-up" style="animation-delay: {{ forloop.counter0|divisibleby:4 }}0ms; animation-duration: 0.6s;">
         <div class="product-image-wrapper">
           {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
           {% else %}
             <div class="product-image-placeholder">
               <i class="bi bi-box-seam"></i>

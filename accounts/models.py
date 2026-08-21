@@ -33,8 +33,9 @@ class CustomUserManager(BaseUserManager):
         """
         Create and save a regular user with the given email, full_name, and password.
 
-        If no username is provided, one will be generated automatically from
-        the full_name. This ensures the username field is never null.
+        If no username is provided, one is generated with the single canonical
+        generator (also populating `account_id`). If a username IS provided it
+        is kept as-is.
         """
         if not email:
             raise ValueError(_("The Email field must be set"))
@@ -45,11 +46,11 @@ class CustomUserManager(BaseUserManager):
 
         # Generate username if not provided
         if not username:
-            from .utils import generate_unique_username
-            name_parts = full_name.strip().split()
-            first_name = name_parts[0] if name_parts else ""
-            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-            username = generate_unique_username(first_name, last_name)
+            from .utils import split_full_name, generate_unique_username_with_id
+            first_name, last_name = split_full_name(full_name)
+            username, _account_id = generate_unique_username_with_id(
+                first_name, last_name
+            )
 
         user = self.model(
             email=email,
@@ -104,6 +105,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         error_messages={
             "unique": _("A user with that username already exists."),
         },
+    )
+    account_id = models.CharField(
+        _("account ID"),
+        max_length=16,
+        blank=True,
+        default="",
+        help_text=_(
+            "The random alphanumeric segment of the auto-generated username "
+            "(the part after 'TIF'). Blank for accounts created before random "
+            "account IDs were introduced, and for usernames set explicitly by "
+            "an administrator."
+        ),
     )
     email = models.EmailField(
         _("email address"),
@@ -166,6 +179,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text=_("Requires the user to change their password on next login."),
     )
+    is_sample_data = models.BooleanField(_("sample data"), default=False)
 
     objects = CustomUserManager()
 
@@ -179,6 +193,38 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.full_name} ({self.email})"
+
+    def save(self, *args, **kwargs):
+        """
+        Populate the auto-generated username and `account_id` on creation.
+
+        This is the single safety net that guarantees every NEW account gets
+        the canonical <FullName><Year>TIF<RandomID> username and a stored
+        `account_id`, no matter which code path created it (self-signup,
+        admin forms, management commands, shell, tests).
+
+        It only ever acts while the row is being inserted (`_state.adding`),
+        so EXISTING accounts' usernames are never rewritten on later saves.
+        """
+        if self._state.adding:
+            from .utils import (
+                extract_account_id,
+                generate_unique_username_with_id,
+                split_full_name,
+            )
+
+            if self.username == "":
+                first_name, last_name = split_full_name(self.full_name)
+                self.username, self.account_id = generate_unique_username_with_id(
+                    first_name, last_name
+                )
+            elif not self.account_id:
+                # Username was supplied explicitly (e.g. the superuser
+                # management command). Record its random segment if it has
+                # one; otherwise leave blank rather than inventing a value.
+                self.account_id = extract_account_id(self.username)
+
+        super().save(*args, **kwargs)
 
     def get_full_name(self):
         """Return the full name of the user."""

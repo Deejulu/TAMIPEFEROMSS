@@ -298,6 +298,18 @@
                 </div>
 
                 <div class="design-form-group">
+                    <label for="{{ form.linked_batch.id_for_label }}" class="design-form-label">Linked Batch</label>
+                    {{ form.linked_batch }}
+                    {% if form.linked_batch.errors %}
+                    <div class="design-errorlist">
+                        {% for error in form.linked_batch.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="design-form-group">
                     <label for="{{ form.image.id_for_label }}" class="design-form-label">Product Image</label>
                     {{ form.image }}
                     {% if form.image.errors %}

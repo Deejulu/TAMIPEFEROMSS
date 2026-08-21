@@ -11,6 +11,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, TemplateView, DetailView, UpdateView, DeleteView, CreateView
 from datetime import timedelta, datetime
@@ -283,6 +285,25 @@ class NotificationsView(AdminRequiredMixin, LoginRequiredMixin, ListView):
     context_object_name = 'notifications'
     paginate_by = 20
 
+    def paginate_queryset(self, queryset, page_size):
+        """
+        Clamp out-of-range page numbers to the last available page instead of
+        raising a 404 (e.g. ?page=2 when only one page of results exists).
+        """
+        paginator = self.get_paginator(
+            queryset, page_size, orphans=self.get_paginate_orphans(),
+            allow_empty_first_page=self.get_allow_empty(),
+        )
+        page = self.request.GET.get(self.page_kwarg) or 1
+        try:
+            page_number = int(page)
+        except (TypeError, ValueError):
+            page_number = 1
+        if page_number < 1 or page_number > paginator.num_pages:
+            page_number = paginator.num_pages or 1
+        page_obj = paginator.page(page_number)
+        return paginator, page_obj, page_obj.object_list, page_obj.has_other_pages()
+
     def get_queryset(self):
         qs = Notification.objects.all()
         filter_type = self.request.GET.get('type')
@@ -440,13 +461,23 @@ class OrderListView(AdminRequiredMixin, LoginRequiredMixin, ListView):
         context['page_title'] = 'Orders & Delivery'
         context['status_filter'] = self.request.GET.get('status', '')
         context['status_choices'] = Order.Status.choices
-        context['total_orders'] = Order.objects.count()
-        context['pending_count'] = Order.objects.filter(status=Order.Status.PENDING).count()
-        context['confirmed_count'] = Order.objects.filter(status=Order.Status.CONFIRMED).count()
-        context['processing_count'] = Order.objects.filter(status=Order.Status.PROCESSING).count()
-        context['shipped_count'] = Order.objects.filter(status=Order.Status.SHIPPED).count()
-        context['delivered_count'] = Order.objects.filter(status=Order.Status.DELIVERED).count()
-        context['cancelled_count'] = Order.objects.filter(status=Order.Status.CANCELLED).count()
+        
+        status_counts = Order.objects.aggregate(
+            total_orders=Count('pk'),
+            pending_count=Count('pk', filter=Q(status=Order.Status.PENDING)),
+            confirmed_count=Count('pk', filter=Q(status=Order.Status.CONFIRMED)),
+            processing_count=Count('pk', filter=Q(status=Order.Status.PROCESSING)),
+            shipped_count=Count('pk', filter=Q(status=Order.Status.SHIPPED)),
+            delivered_count=Count('pk', filter=Q(status=Order.Status.DELIVERED)),
+            cancelled_count=Count('pk', filter=Q(status=Order.Status.CANCELLED)),
+        )
+        context['total_orders'] = status_counts['total_orders']
+        context['pending_count'] = status_counts['pending_count']
+        context['confirmed_count'] = status_counts['confirmed_count']
+        context['processing_count'] = status_counts['processing_count']
+        context['shipped_count'] = status_counts['shipped_count']
+        context['delivered_count'] = status_counts['delivered_count']
+        context['cancelled_count'] = status_counts['cancelled_count']
         return context
 
 
@@ -667,6 +698,11 @@ class UserDetailView(SuperAdminRequiredMixin, LoginRequiredMixin, DetailView):
 class UserCreateView(SuperAdminRequiredMixin, LoginRequiredMixin, CreateView):
     """
     Create a new user.
+
+    On success the admin is shown the one-time credentials page so they can
+    download the new account's username, password and security questions and
+    hand them over securely. `sensitive_post_parameters` keeps the raw
+    password out of Django's error reports for this view.
     """
     template_name = 'admin_dashboard/user_create.html'
     context_object_name = 'form'
@@ -675,7 +711,20 @@ class UserCreateView(SuperAdminRequiredMixin, LoginRequiredMixin, CreateView):
     def get_form_class(self):
         from .forms import UserCreateForm
         return UserCreateForm
-    
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request_user"] = self.request.user
+        return kwargs
+
+    @method_decorator(sensitive_post_parameters(
+        'password1', 'password2',
+        'security_answer_1', 'security_answer_2', 'security_answer_3',
+    ))
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         # Process profile photo if uploaded
         profile_picture = form.cleaned_data.get('profile_picture')
@@ -687,7 +736,24 @@ class UserCreateView(SuperAdminRequiredMixin, LoginRequiredMixin, CreateView):
         self.object = form.save()
         messages.success(self.request, f'User {self.object.full_name} ({self.object.email}) created successfully.')
         log_audit(self.request, 'create', 'User', self.object.pk, f'Created user {self.object.full_name} ({self.object.email})')
-        return HttpResponseRedirect(self.get_success_url())
+
+        # Offer the one-time credentials download instead of redirecting away.
+        from accounts.views import render_signup_credentials
+        return render_signup_credentials(
+            self.request,
+            user=self.object,
+            raw_password=form.cleaned_data.get('password1', ''),
+            question_keys=[
+                form.cleaned_data.get('security_question_1', ''),
+                form.cleaned_data.get('security_question_2', ''),
+                form.cleaned_data.get('security_question_3', ''),
+            ],
+            form=form,
+            next_url=str(self.success_url),
+            template_name='admin_dashboard/user_credentials.html',
+            is_admin_created=True,
+            continue_label='Continue to User Management',
+        )
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -917,6 +983,12 @@ class StaffCreateView(StaffManagementMixin, LoginRequiredMixin, CreateView):
     Create a new Staff or Super Staff account.
     Super Admin can create both STAFF and SUPER_STAFF.
     Super Staff can only create STAFF accounts.
+
+    On success the admin is shown the one-time credentials page so they can
+    download the new account's username and password and hand them over
+    securely. Staff accounts have no security questions, so only the login
+    details appear. `sensitive_post_parameters` keeps the raw password out of
+    Django's error reports for this view.
     """
     template_name = 'admin_dashboard/staff_form.html'
     form_class = StaffCreateForm
@@ -927,12 +999,30 @@ class StaffCreateView(StaffManagementMixin, LoginRequiredMixin, CreateView):
         kwargs['request_user'] = self.request.user
         return kwargs
 
+    @method_decorator(sensitive_post_parameters('password1', 'password2'))
+    @method_decorator(never_cache)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         self.object = form.save()
         log_audit(self.request, 'create', 'User', self.object.pk, 
                   f'Created staff account: {self.object.full_name} ({self.object.email}) with role {self.object.get_role_display()}')
         messages.success(self.request, f'Staff account created: {self.object.full_name} ({self.object.email})')
-        return HttpResponseRedirect(self.get_success_url())
+
+        # Offer the one-time credentials download instead of redirecting away.
+        from accounts.views import render_signup_credentials
+        return render_signup_credentials(
+            self.request,
+            user=self.object,
+            raw_password=form.cleaned_data.get('password1', ''),
+            question_keys=[],
+            form=form,
+            next_url=str(self.success_url),
+            template_name='admin_dashboard/user_credentials.html',
+            is_admin_created=True,
+            continue_label='Continue to Staff Management',
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
