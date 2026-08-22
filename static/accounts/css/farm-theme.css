@@ -553,6 +553,44 @@ textarea.form-control {
   color: var(--farm-danger);
 }
 
+.messages-toast-container {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1055;
+    width: calc(100% - 2rem);
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    pointer-events: none;
+    animation: farmFadeIn 0.3s ease-out;
+}
+
+.messages-toast-container .alert {
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.admin-page .messages-toast-container {
+    top: calc(64px + 1.25rem);
+    max-width: calc(100% - 2rem);
+}
+
+@media (max-width: 768px) {
+    body.admin-page .messages-toast-container {
+        top: calc(56px + 1rem);
+    }
+}
+
+@media (max-width: 480px) {
+    body.admin-page .messages-toast-container {
+        top: calc(52px + 0.75rem);
+    }
+}
+
 .alert {
   padding: 14px 18px;
   border-radius: var(--radius-md);

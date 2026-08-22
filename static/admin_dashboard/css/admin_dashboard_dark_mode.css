@@ -1065,8 +1065,36 @@ body.dark-mode .farm-mobile-card-title {
     color: var(--text-heading);
 }
 
+body.dark-mode .farm-mobile-card-title-link {
+    color: var(--text-heading);
+}
+
+body.dark-mode .farm-mobile-card-title-link:hover {
+    color: var(--light-green);
+}
+
+body.dark-mode .farm-mobile-card-title-row {
+    gap: 0.75rem;
+}
+
+body.dark-mode .farm-mobile-status-badge {
+    opacity: 0.9;
+}
+
 body.dark-mode .farm-mobile-card-subtitle {
     color: var(--text-muted);
+}
+
+body.dark-mode .farm-mobile-card-meta {
+    color: var(--text-muted);
+}
+
+body.dark-mode .farm-mobile-meta-item i {
+    color: var(--light-green);
+}
+
+body.dark-mode .farm-mobile-meta-sep {
+    color: var(--border-color);
 }
 
 body.dark-mode .farm-mobile-card-body .farm-mobile-row {
@@ -1084,6 +1112,48 @@ body.dark-mode .farm-mobile-card-body .farm-mobile-value {
 body.dark-mode .farm-mobile-card-actions {
     background: var(--bg-mobile-card-actions);
     border-top: 1px solid var(--border-color);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-icon-only {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-icon-only:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    border-color: var(--green);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-primary {
+    color: var(--light-green);
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-primary:hover {
+    background: rgba(76, 175, 80, 0.15);
+    color: var(--light-green);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-secondary {
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-danger {
+    color: #FCA5A5;
+    border-color: rgba(220, 53, 69, 0.4);
+}
+
+body.dark-mode .farm-mobile-card-actions .btn-outline-danger:hover {
+    background: rgba(220, 53, 69, 0.15);
+    color: #FCA5A5;
 }
 
 /* ==========================================   NAV CARDS   ========================================== */
@@ -1976,11 +2046,15 @@ body.dark-mode .farm-mobile-card-header {
     border-bottom: 1px solid var(--border-color) !important;
 }
 
-body.dark-mode .farm-mobile-card-title {
+body.dark-mode .farm-mobile-card-title-link {
     color: var(--text-heading) !important;
 }
 
-body.dark-mode .farm-mobile-card-subtitle {
+body.dark-mode .farm-mobile-card-title-link:hover {
+    color: var(--light-green) !important;
+}
+
+body.dark-mode .farm-mobile-card-meta {
     color: var(--text-muted) !important;
 }
 

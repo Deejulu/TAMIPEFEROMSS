@@ -281,6 +281,15 @@ body.dark-mode .alert-info {
     color: #93C5FD !important;
 }
 
+body.dark-mode .messages-toast-container {
+    z-index: 1055;
+}
+
+body.dark-mode .messages-toast-container .alert {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
+    border-color: var(--farm-border) !important;
+}
+
 body.dark-mode .badge {
     background-color: var(--farm-white) !important;
     color: var(--farm-text) !important;
