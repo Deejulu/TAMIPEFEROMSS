@@ -220,6 +220,43 @@
     color: #374151;
 }
 
+/* Feed Inventory has a very wide table (9 columns). Force the desktop table to
+   respect its container width (no horizontal page scroll) and switch to the
+   mobile-card layout earlier so tablets/phones never show an overflowing table. */
+.feed-inventory-page .farm-table-card .table {
+    table-layout: fixed;
+}
+
+.feed-inventory-page .farm-table-card .table th,
+.feed-inventory-page .farm-table-card .table td {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.feed-inventory-page .farm-table-card .table th:nth-child(1) { width: 14%; } /* Feed Type */
+.feed-inventory-page .farm-table-card .table th:nth-child(2) { width: 10%; } /* Category */
+.feed-inventory-page .farm-table-card .table th:nth-child(3) { width: 14%; } /* Supplier */
+.feed-inventory-page .farm-table-card .table th:nth-child(4) { width: 9%; }  /* Qty on Hand */
+.feed-inventory-page .farm-table-card .table th:nth-child(5) { width: 9%; }  /* Cost/kg */
+.feed-inventory-page .farm-table-card .table th:nth-child(6) { width: 9%; }  /* Reorder Point */
+.feed-inventory-page .farm-table-card .table th:nth-child(7) { width: 9%; }  /* Status */
+.feed-inventory-page .farm-table-card .table th:nth-child(8) { width: 16%; } /* Compatible Batches */
+.feed-inventory-page .farm-table-card .table th:nth-child(9) { width: 10%; } /* Actions */
+
+.feed-inventory-page .farm-mobile-card {
+    overflow: hidden;
+}
+
+@media (max-width: 992px) {
+    .feed-inventory-page .farm-desktop-table {
+        display: none !important;
+    }
+
+    .feed-inventory-page .farm-mobile-cards {
+        display: block !important;
+    }
+}
+
 /* ==========================================   BADGES   ========================================== */
 .farm-badge {
     padding: 0.4rem 0.75rem;
@@ -343,7 +380,7 @@
     background: #fff;
     border-radius: var(--farm-radius-md);
     box-shadow: 0 2px 8px rgba(27, 94, 32, 0.08), 0 4px 16px rgba(27, 94, 32, 0.06);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     overflow: hidden;
     transition: var(--farm-transition);
     border: 1px solid rgba(229, 231, 235, 0.8);
@@ -351,39 +388,87 @@
 
 .farm-mobile-card:hover {
     box-shadow: 0 6px 20px rgba(27, 94, 32, 0.14);
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: rgba(46, 125, 50, 0.3);
 }
 
 .farm-mobile-card-header {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     background: linear-gradient(135deg, rgba(248, 253, 248, 0.6), rgba(255, 255, 255, 0.9));
     border-bottom: 1px solid #e5e7eb;
 }
 
-.farm-mobile-card-title {
-    font-size: 1rem;
+.farm-mobile-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.farm-mobile-card-title-link {
+    font-size: 0.9375rem;
     font-weight: 700;
-    color: #1f2937;
-    margin: 0 0 0.25rem 0;
+    color: #1B5E20;
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     letter-spacing: -0.01em;
 }
 
-.farm-mobile-card-subtitle {
-    font-size: 0.875rem;
+.farm-mobile-card-title-link:hover {
+    color: var(--farm-green);
+}
+
+.farm-mobile-status-badge {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    padding: 0.3rem 0.65rem;
+    letter-spacing: 0.03em;
+}
+
+.farm-mobile-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
     color: #6b7280;
-    margin: 0;
+}
+
+.farm-mobile-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.farm-mobile-meta-item i {
+    font-size: 0.85rem;
+    color: var(--farm-green);
+}
+
+.farm-mobile-meta-sep {
+    color: #d1d5db;
+    font-size: 0.75rem;
+}
+
+.farm-mobile-stock .farm-badge {
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.6rem;
 }
 
 .farm-mobile-card-body {
-    padding: 1rem;
+    padding: 0;
 }
 
 .farm-mobile-card-body .farm-mobile-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid #f3f4f6;
 }
 
@@ -392,7 +477,7 @@
 }
 
 .farm-mobile-card-body .farm-mobile-label {
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #6b7280;
     text-transform: uppercase;
@@ -400,7 +485,7 @@
 }
 
 .farm-mobile-card-body .farm-mobile-value {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 600;
     color: #1f2937;
     text-align: right;
@@ -408,16 +493,27 @@
 
 .farm-mobile-card-actions {
     display: flex;
-    gap: 0.5rem;
-    padding: 1rem;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
     background: #f9fafb;
     border-top: 1px solid #e5e7eb;
 }
 
-.farm-mobile-card-actions .btn {
-    font-size: 0.8125rem;
-    padding: 0.5rem 1rem;
-    white-space: nowrap;
+.farm-mobile-card-actions .btn-icon-only {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--farm-transition);
+}
+
+.farm-mobile-card-actions .btn-icon-only:hover {
+    transform: translateY(-2px);
 }
 
 /* ==========================================   NAV CARDS   ========================================== */
@@ -875,11 +971,13 @@
     }
 
     .farm-mobile-card-actions {
-        flex-direction: column;
+        justify-content: center;
     }
 
-    .farm-mobile-card-actions .btn {
-        width: 100%;
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 44px;
+        height: 44px;
+        font-size: 1.05rem;
     }
 
     .farm-stats-card .card-body {
@@ -923,15 +1021,26 @@
     }
 
     .farm-mobile-card-header {
-        padding: 0.75rem;
+        padding: 0.7rem 0.85rem;
     }
 
-    .farm-mobile-card-body {
-        padding: 0.75rem;
+    .farm-mobile-card-title-link {
+        font-size: 0.875rem;
+    }
+
+    .farm-mobile-card-meta {
+        font-size: 0.75rem;
     }
 
     .farm-mobile-card-actions {
-        padding: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        gap: 0.5rem;
+    }
+
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
     }
 
     .farm-empty-state {
@@ -960,7 +1069,6 @@
     .farm-table-card thead th {
         font-size: 0.65rem;
         padding: 0.5rem 0.3rem;
-        letter-spacing: 0.3px;
     }
 
     .farm-table-card tbody td {
@@ -976,6 +1084,34 @@
         padding: 0.875rem;
     }
 
+    .farm-mobile-card-header {
+        padding: 0.75rem;
+    }
+
+    .farm-mobile-card-title-row {
+        gap: 0.5rem;
+    }
+
+    .farm-mobile-card-title-link {
+        font-size: 0.875rem;
+    }
+
+    .farm-mobile-card-meta {
+        font-size: 0.75rem;
+        gap: 0.4rem;
+    }
+
+    .farm-mobile-card-actions {
+        padding: 0.7rem;
+        gap: 0.6rem;
+    }
+
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 38px;
+        height: 38px;
+        font-size: 0.95rem;
+    }
+
     .farm-nav-card {
         padding: 1rem;
     }
@@ -986,20 +1122,6 @@
 
     .farm-nav-card h4 {
         font-size: 1rem;
-    }
-
-    .farm-mobile-card-actions .btn {
-        font-size: 0.75rem;
-        padding: 0.4rem 0.75rem;
-    }
-
-    .farm-action-group {
-        gap: 0.25rem;
-    }
-
-    .farm-action-group .btn {
-        padding: 0.35rem 0.5rem;
-        font-size: 0.75rem;
     }
 }
 
@@ -1031,15 +1153,26 @@
     }
 
     .farm-mobile-card-header {
-        padding: 0.6rem;
+        padding: 0.6rem 0.75rem;
     }
 
-    .farm-mobile-card-body {
-        padding: 0.6rem;
+    .farm-mobile-card-title-link {
+        font-size: 0.85rem;
+    }
+
+    .farm-mobile-card-meta {
+        font-size: 0.7rem;
     }
 
     .farm-mobile-card-actions {
-        padding: 0.6rem;
+        padding: 0.55rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
     }
 
     .farm-nav-card {
@@ -1092,15 +1225,27 @@
     }
 
     .farm-mobile-card-header {
-        padding: 0.5rem;
+        padding: 0.5rem 0.65rem;
     }
 
-    .farm-mobile-card-body {
-        padding: 0.5rem;
+    .farm-mobile-card-title-link {
+        font-size: 0.8rem;
+    }
+
+    .farm-mobile-card-meta {
+        font-size: 0.7rem;
+        gap: 0.35rem;
     }
 
     .farm-mobile-card-actions {
-        padding: 0.5rem;
+        padding: 0.5rem 0.65rem;
+        gap: 0.4rem;
+    }
+
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 34px;
+        height: 34px;
+        font-size: 0.85rem;
     }
 
     .farm-nav-card {
@@ -1117,17 +1262,6 @@
 
     .farm-nav-card p {
         font-size: 0.8rem;
-    }
-
-    .farm-action-group {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .farm-action-group .btn {
-        width: 100%;
-        font-size: 0.7rem;
-        padding: 0.3rem 0.4rem;
     }
 }
 
@@ -1163,15 +1297,27 @@
     }
 
     .farm-mobile-card-header {
-        padding: 0.4rem;
+        padding: 0.4rem 0.55rem;
     }
 
-    .farm-mobile-card-body {
-        padding: 0.4rem;
+    .farm-mobile-card-title-link {
+        font-size: 0.75rem;
+    }
+
+    .farm-mobile-card-meta {
+        font-size: 0.65rem;
+        gap: 0.3rem;
     }
 
     .farm-mobile-card-actions {
-        padding: 0.4rem;
+        padding: 0.4rem 0.55rem;
+        gap: 0.35rem;
+    }
+
+    .farm-mobile-card-actions .btn-icon-only {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
     }
 
     .farm-nav-card {
@@ -1188,23 +1334,6 @@
 
     .farm-nav-card p {
         font-size: 0.75rem;
-    }
-
-    .farm-mobile-card-actions {
-        flex-direction: column;
-    }
-
-    .farm-mobile-card-actions .btn {
-        width: 100%;
-        font-size: 0.7rem;
-    }
-
-    .farm-empty-state {
-        padding: 1.5rem 0.75rem;
-    }
-
-    .farm-empty-state i {
-        font-size: 2rem;
     }
 }
 

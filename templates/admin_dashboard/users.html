@@ -408,6 +408,28 @@ body {
     font-size: 0.9375rem;
 }
 
+/* Force the desktop table to respect its container width so the page never
+   scrolls horizontally, regardless of how many columns are shown. */
+.user-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.user-table th,
+.user-table td {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.user-table th:nth-child(1) { width: 16%; } /* Name */
+.user-table th:nth-child(2) { width: 20%; } /* Email */
+.user-table th:nth-child(3) { width: 12%; } /* Role */
+.user-table th:nth-child(4) { width: 11%; } /* Status */
+.user-table th:nth-child(5) { width: 8%; }  /* Orders */
+.user-table th:nth-child(6) { width: 12%; } /* Total Spent */
+.user-table th:nth-child(7) { width: 12%; } /* Date Joined */
+.user-table th:nth-child(8) { width: 9%; }  /* Actions */
+
 .user-table thead {
     background: linear-gradient(135deg, #1B5E20, #2E7D32, #43A047);
     position: relative;
@@ -754,6 +776,7 @@ body {
 
 .user-card-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 1rem;
     background: #f9fafb;
@@ -823,6 +846,17 @@ body {
     }
 }
 
+@media (max-width: 992px) {
+    /* Hide desktop table, show mobile cards on tablets/phones */
+    .desktop-table-view {
+        display: none !important;
+    }
+    
+    .mobile-card-view {
+        display: block !important;
+    }
+}
+
 @media (max-width: 576px) {
     .user-management-header {
         margin-bottom: 1rem;
@@ -831,15 +865,6 @@ body {
     .stats-pills .badge {
         padding: 0.375rem 0.75rem;
         font-size: 0.75rem;
-    }
-    
-    /* Hide desktop table, show mobile cards */
-    .desktop-table-view {
-        display: none !important;
-    }
-    
-    .mobile-card-view {
-        display: block !important;
     }
     
     /* Adjust card body padding */

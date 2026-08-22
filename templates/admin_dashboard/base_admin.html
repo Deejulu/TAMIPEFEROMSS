@@ -70,6 +70,18 @@
     }
   }
 
+  /* Keep the admin topbar within the viewport on small phones so the page
+     never needs horizontal scrolling (hides secondary icon-only links). */
+  @media (max-width: 576px) {
+    .admin-topbar-right .admin-shop-link,
+    .admin-topbar-right .admin-dashboard-link {
+      display: none !important;
+    }
+    .admin-topbar-right {
+      gap: 0.35rem;
+    }
+  }
+
   .nav-group-header {
     font-weight: 600;
   }
