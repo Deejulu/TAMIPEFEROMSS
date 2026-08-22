@@ -25,6 +25,15 @@ class Category(models.Model):
         verbose_name_plural = _("categories")
         ordering = ['name']
 
+    @property
+    def badge_class(self):
+        mapping = {
+            'fish': 'bg-info',
+            'poultry': 'bg-warning',
+            'cattle': 'bg-success',
+        }
+        return mapping.get(self.name.lower(), 'bg-secondary')
+
     def __str__(self):
         return self.name
 

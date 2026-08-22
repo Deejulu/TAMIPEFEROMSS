@@ -37,6 +37,99 @@ class SpeciesModelTests(TestCase):
             Species.objects.create(name="Catfish", category=Category.objects.get(name="Fish"))
 
 
+class CategoryBadgeTests(TestCase):
+    def test_badge_class_uses_real_category_name(self):
+        # Known categories map to specific bootstrap badge classes.
+        self.assertEqual(Category.objects.create(name="Fish").badge_class, "bg-info")
+        self.assertEqual(Category.objects.create(name="Poultry").badge_class, "bg-warning")
+        self.assertEqual(Category.objects.create(name="Cattle").badge_class, "bg-success")
+        # Unknown categories fall back to a neutral badge instead of a wrong one.
+        self.assertEqual(Category.objects.create(name="Camelidae").badge_class, "bg-secondary")
+
+
+class SpeciesListViewTests(TestCase):
+    """
+    Regression tests for the Species Management list page.
+
+    Guards against:
+      * the category badge being hardcoded so every non-Fish species shows
+        "Poultry" (e.g. "Cows" stored under "Cattle" must NOT display "Poultry");
+      * the per-species batch count being wrong or not joined to real batches.
+    """
+
+    def setUp(self):
+        self.fish = Category.objects.create(name="Fish")
+        self.poultry = Category.objects.create(name="Poultry")
+        self.cattle = Category.objects.create(name="Cattle")
+
+        self.catfish = Species.objects.create(name="Catfish", category=self.fish, is_active=True)
+        self.cows = Species.objects.create(name="Cows", category=self.cattle, is_active=True)
+
+        # Catfish -> 2 batches, Cows -> 3 batches.
+        for i in range(2):
+            Batch.objects.create(
+                name=f"Catfish Batch {i}",
+                species=self.catfish,
+                initial_count=100,
+                start_date=date.today(),
+                season="rainy",
+            )
+        for i in range(3):
+            Batch.objects.create(
+                name=f"Cows Batch {i}",
+                species=self.cows,
+                initial_count=50,
+                start_date=date.today(),
+                season="dry",
+            )
+
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            email="admin@example.com",
+            full_name="Admin",
+            password="StrongPass1!",
+            role=User.Role.SUPER_ADMIN,
+            is_staff=True,
+        )
+
+    def _get_list(self):
+        self.client.login(username=self.admin.username, password="StrongPass1!")
+        return self.client.get(reverse("farm_management:species_list"))
+
+    def _species_in_context(self, response):
+        # species_list is a paginated Page; materialise to a plain list.
+        return list(response.context["species_list"])
+
+    def test_species_displays_its_real_category_not_hardcoded_poultry(self):
+        response = self._get_list()
+        self.assertEqual(response.status_code, 200)
+
+        cows = next(s for s in self._species_in_context(response) if s.name == "Cows")
+        # The stored category must be Cattle (data is correct)...
+        self.assertEqual(cows.category.name, "Cattle")
+        # ...and exactly that category must be shown in the list.
+        self.assertContains(response, "Cattle")
+        # The bug previously rendered "Poultry" for every non-Fish species.
+        # With no Poultry species in the data, "Poultry" must not appear in
+        # the rendered species rows.
+        self.assertNotContains(response, "Poultry")
+
+    def test_category_badge_matches_stored_category_for_every_row(self):
+        response = self._get_list()
+        for species in self._species_in_context(response):
+            self.assertContains(response, species.category.name)
+            self.assertContains(response, species.category.badge_class)
+
+    def test_batch_count_column_reflects_real_batch_count(self):
+        response = self._get_list()
+        species = {s.name: s for s in self._species_in_context(response)}
+        for species_obj in species.values():
+            # The annotated batch_count must equal the real number of batches.
+            self.assertEqual(species_obj.batch_count, species_obj.batches.count())
+        self.assertEqual(species["Cows"].batch_count, 3)
+        self.assertEqual(species["Catfish"].batch_count, 2)
+
+
 class BatchModelTests(TestCase):
     def setUp(self):
         self.fish_category = Category.objects.create(name="Fish")

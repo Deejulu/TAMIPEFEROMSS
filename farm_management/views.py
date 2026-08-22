@@ -1298,6 +1298,8 @@ class SpeciesListView(AdminRequiredMixin, LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Species Management'
+        context['active_species_count'] = Species.objects.filter(is_active=True).count()
+        context['total_batches'] = Batch.objects.count()
         return context
 
 

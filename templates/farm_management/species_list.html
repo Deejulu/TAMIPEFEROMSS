@@ -68,11 +68,7 @@
                         <tr>
                             <td><strong>{{ species.name }}</strong></td>
                             <td>
-                                 {% if species.category.name == 'Fish' %}
-                                <span class="badge bg-info">Fish</span>
-                                {% else %}
-                                <span class="badge bg-warning">Poultry</span>
-                                {% endif %}
+                                <span class="badge {{ species.category.badge_class }}">{{ species.category.name }}</span>
                             </td>
                             <td>
                                 {% if species.is_active %}
@@ -103,11 +99,7 @@
             <div class="farm-mobile-card-header">
                 <div class="farm-mobile-card-title">{{ species.name }}</div>
                 <div class="farm-mobile-card-subtitle">
-                    {% if species.category == 'fish' %}
-                    <span class="badge bg-info">Fish</span>
-                    {% else %}
-                    <span class="badge bg-warning">Poultry</span>
-                    {% endif %}
+                    <span class="badge {{ species.category.badge_class }}">{{ species.category.name }}</span>
                     {% if species.is_active %}
                     <span class="badge bg-success ms-1">Active</span>
                     {% else %}
